@@ -137,7 +137,7 @@ class DownloadService {
                 ? [
                     Picture(
                       bytes: coverBytes,
-                      mimeType: null,
+                      mimeType: MimeType.jpeg,
                       pictureType: PictureType.coverFront,
                     )
                   ]
