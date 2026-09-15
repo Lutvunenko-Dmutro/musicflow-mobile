@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:audiotags/audiotags.dart';
+import 'package:http/http.dart' as http;
 import '../models/song_model.dart';
 import 'database_service.dart';
 import 'youtube_service.dart';
@@ -113,7 +115,39 @@ class DownloadService {
       await sink.close();
       AppLogger.success('File saved!', 'DOWNLOAD');
 
-      // 5. Update Database
+      // 5.5 Embed ID3 tags
+      try {
+        AppLogger.download('Embedding ID3 tags...');
+        Uint8List? coverBytes = song.coverBytes;
+        if (coverBytes == null && song.coverUrl.isNotEmpty) {
+          final response = await http.get(Uri.parse(song.coverUrl));
+          if (response.statusCode == 200) {
+            coverBytes = response.bodyBytes;
+          }
+        }
+
+        await AudioTags.write(
+          m4aPath,
+          Tag(
+            title: song.title,
+            trackArtist: song.author,
+            pictures: coverBytes != null
+                ? [
+                    Picture(
+                      bytes: coverBytes,
+                      mimeType: null,
+                      pictureType: PictureType.coverFront,
+                    )
+                  ]
+                : [],
+          ),
+        );
+        AppLogger.success('ID3 tags embedded successfully!', 'DOWNLOAD');
+      } catch (e) {
+        AppLogger.warning('Failed to embed ID3 tags: $e', 'DOWNLOAD');
+      }
+
+      // 6. Update Database
       final localSong = song.copyWith(
         isLocal: true,
         localPath: m4aPath,
