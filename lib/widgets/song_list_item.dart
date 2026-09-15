@@ -51,32 +51,46 @@ class SongListItem extends StatelessWidget {
                   style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
                 ),
                 const SizedBox(height: 4),
-                Builder(
-                  builder: (context) {
-                    String subtitleInfo = song.author;
-                    if (song.isLocal && song.localPath != null) {
-                      try {
-                        final file = File(song.localPath!);
-                        if (file.existsSync()) {
-                          final date = file.lastModifiedSync();
-                          final size = file.lengthSync();
-                          final dateStr = "${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}";
-                          final sizeStr = (size / (1024 * 1024)).toStringAsFixed(1);
-                          subtitleInfo = "${song.author} • $dateStr • $sizeStr MB";
-                        }
-                      } catch (_) {}
-                    }
-                    return Text(
-                      subtitleInfo,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: Colors.grey[500], fontSize: 12),
-                    );
-                  },
+                Text(
+                  song.author,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: Colors.grey[500], fontSize: 12),
                 ),
               ],
             ),
           ),
+          if (song.isLocal && song.localPath != null)
+            Builder(
+              builder: (context) {
+                String extraDate = "";
+                String extraSize = "";
+                try {
+                  final file = File(song.localPath!);
+                  if (file.existsSync()) {
+                    final date = file.lastModifiedSync();
+                    final size = file.lengthSync();
+                    extraDate = "${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}";
+                    extraSize = "${(size / (1024 * 1024)).toStringAsFixed(1)} MB";
+                  }
+                } catch (_) {}
+                
+                if (extraDate.isEmpty) return const SizedBox.shrink();
+                
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(extraDate, style: TextStyle(color: Colors.grey[600], fontSize: 11)),
+                      const SizedBox(height: 2),
+                      Text(extraSize, style: TextStyle(color: Colors.grey[600], fontSize: 11)),
+                    ],
+                  ),
+                );
+              },
+            ),
           IconButton(
             icon: Icon(Icons.play_arrow, color: Theme.of(context).primaryColor),
             onPressed: onPlay ?? onTap ?? () {
