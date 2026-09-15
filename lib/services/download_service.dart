@@ -27,7 +27,7 @@ class DownloadService {
   // Observable for progress
   final ValueNotifier<Map<String, DownloadInfo>> downloadProgress = ValueNotifier({});
 
-  Future<void> downloadSong(SongModel song) async {
+  Future<void> downloadSong(SongModel song, {Future<bool> Function()? onFileExists}) async {
     AppLogger.download('Starting: ${song.title} (${song.id})');
     try {
       // 1. Mark as starting (0% progress)
@@ -69,14 +69,22 @@ class DownloadService {
       }
       
       if (existingPath != null) {
-        AppLogger.info('File already exists at $existingPath. Skipping.', 'DOWNLOAD');
-        final localSong = song.copyWith(
-          isLocal: true,
-          localPath: existingPath,
-        );
-        await DatabaseService.instance.saveSong(localSong);
-        _updateProgress(song.id, 1.0, "Вже завантажено");
-        return;
+        AppLogger.info('File already exists at $existingPath.', 'DOWNLOAD');
+        bool skip = true;
+        if (onFileExists != null) {
+          final shouldOverwrite = await onFileExists();
+          skip = !shouldOverwrite;
+        }
+        
+        if (skip) {
+          final localSong = song.copyWith(
+            isLocal: true,
+            localPath: existingPath,
+          );
+          await DatabaseService.instance.saveSong(localSong);
+          _updateProgress(song.id, 1.0, "Вже завантажено");
+          return;
+        }
       }
 
       AppLogger.download('Target path: $m4aPath');

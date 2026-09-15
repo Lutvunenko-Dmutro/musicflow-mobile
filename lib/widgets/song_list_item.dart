@@ -133,7 +133,29 @@ class SongListItem extends StatelessWidget {
               return IconButton(
                 icon: const Icon(Icons.download, color: Colors.white70),
                 onPressed: () {
-                  DownloadService.instance.downloadSong(song);
+                  DownloadService.instance.downloadSong(
+                    song,
+                    onFileExists: () async {
+                      final result = await showDialog<bool>(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          title: const Text('Файл вже існує'),
+                          content: const Text('Ця пісня вже завантажена. Бажаєте завантажити її знову (перезаписати)?'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx, false),
+                              child: const Text('Скасувати', style: TextStyle(color: Colors.grey)),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx, true),
+                              child: const Text('Перезаписати', style: TextStyle(color: Colors.redAccent)),
+                            ),
+                          ],
+                        ),
+                      );
+                      return result ?? false;
+                    },
+                  );
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('Завантаження: ${song.title}'),
