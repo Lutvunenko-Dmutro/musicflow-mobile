@@ -55,19 +55,22 @@ class VisualizerPainter extends CustomPainter {
         currentX += blockGap;
       }
 
-      final Paint barPaint = Paint()
-        ..color = barColors[blockIndex]
-        ..style = PaintingStyle.fill;
-        
-      final Paint dotPaint = Paint()
-        ..color = dotColors[blockIndex]
-        ..style = PaintingStyle.fill;
-
       int dataIndex = i;
       if (isMirrored) {
         double center = barCount / 2;
         dataIndex = ((i - center).abs() * 2).clamp(0, barCount - 1).toInt();
       }
+
+      int colorBlockIndex = dataIndex ~/ groupSize;
+      if (colorBlockIndex >= numBlocks) colorBlockIndex = numBlocks - 1;
+
+      final Paint barPaint = Paint()
+        ..color = barColors[colorBlockIndex]
+        ..style = PaintingStyle.fill;
+        
+      final Paint dotPaint = Paint()
+        ..color = dotColors[colorBlockIndex]
+        ..style = PaintingStyle.fill;
 
       // Малюємо стовпчик
       double currentHeight = heights[dataIndex] * size.height;
