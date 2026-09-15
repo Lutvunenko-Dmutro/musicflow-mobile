@@ -12,10 +12,9 @@ import '../providers/audio_provider.dart';
 import '../utils/app_logger.dart';
 
 enum SortOption {
-  titleAsc,
-  titleDesc,
-  authorAsc,
-  dateAddedDesc,
+  title,
+  author,
+  dateAdded,
 }
 
 class LibraryScreen extends StatefulWidget {
@@ -28,7 +27,8 @@ class LibraryScreen extends StatefulWidget {
 class _LibraryScreenState extends State<LibraryScreen> {
   List<SongModel> _songs = [];
   final Set<String> _selectedIds = {};
-  SortOption _currentSort = SortOption.titleAsc;
+  SortOption _currentSort = SortOption.title;
+  bool _isDescending = false;
 
   @override
   void initState() {
@@ -111,16 +111,13 @@ class _LibraryScreenState extends State<LibraryScreen> {
 
   void _applySorting() {
     switch (_currentSort) {
-      case SortOption.titleAsc:
+      case SortOption.title:
         _songs.sort((a, b) => a.title.compareTo(b.title));
         break;
-      case SortOption.titleDesc:
-        _songs.sort((a, b) => b.title.compareTo(a.title));
-        break;
-      case SortOption.authorAsc:
+      case SortOption.author:
         _songs.sort((a, b) => a.author.compareTo(b.author));
         break;
-      case SortOption.dateAddedDesc:
+      case SortOption.dateAdded:
         _songs.sort((a, b) {
           int timeA = 0;
           int timeB = 0;
@@ -134,9 +131,13 @@ class _LibraryScreenState extends State<LibraryScreen> {
               timeB = File(b.localPath!).lastModifiedSync().millisecondsSinceEpoch;
             } catch (_) {}
           }
-          return timeB.compareTo(timeA);
+          return timeB.compareTo(timeA); // Descending by default (newest first)
         });
         break;
+    }
+
+    if (_isDescending) {
+      _songs = _songs.reversed.toList();
     }
   }
 
@@ -164,6 +165,16 @@ class _LibraryScreenState extends State<LibraryScreen> {
               onPressed: () => _confirmDeleteSelected(context),
             )
           else ...[
+            IconButton(
+              icon: Icon(_isDescending ? Icons.arrow_downward : Icons.arrow_upward),
+              tooltip: 'Змінити напрямок',
+              onPressed: () {
+                setState(() {
+                  _isDescending = !_isDescending;
+                  _applySorting();
+                });
+              },
+            ),
             PopupMenuButton<SortOption>(
               icon: const Icon(Icons.sort),
               onSelected: (SortOption result) {
@@ -174,20 +185,16 @@ class _LibraryScreenState extends State<LibraryScreen> {
               },
               itemBuilder: (BuildContext context) => <PopupMenuEntry<SortOption>>[
                 const PopupMenuItem<SortOption>(
-                  value: SortOption.titleAsc,
-                  child: Text('За назвою (А-Я)'),
+                  value: SortOption.title,
+                  child: Text('За назвою'),
                 ),
                 const PopupMenuItem<SortOption>(
-                  value: SortOption.titleDesc,
-                  child: Text('За назвою (Я-А)'),
-                ),
-                const PopupMenuItem<SortOption>(
-                  value: SortOption.authorAsc,
+                  value: SortOption.author,
                   child: Text('За автором'),
                 ),
                 const PopupMenuItem<SortOption>(
-                  value: SortOption.dateAddedDesc,
-                  child: Text('Спочатку нові (за часом)'),
+                  value: SortOption.dateAdded,
+                  child: Text('За часом додавання'),
                 ),
               ],
             ),
