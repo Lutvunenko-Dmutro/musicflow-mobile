@@ -62,12 +62,14 @@ class SongListItem extends StatelessWidget {
                           final size = file.lengthSync();
                           final dateStr = "${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}";
                           final sizeStr = (size / (1024 * 1024)).toStringAsFixed(1);
-                          subtitleInfo = "$dateStr • $sizeStr MB";
+                          subtitleInfo = "${song.author} • $dateStr • $sizeStr MB";
                         }
                       } catch (_) {}
                     }
                     return Text(
                       subtitleInfo,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: TextStyle(color: Colors.grey[500], fontSize: 12),
                     );
                   },
