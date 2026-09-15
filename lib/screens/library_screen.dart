@@ -128,25 +128,16 @@ class _LibraryScreenState extends State<LibraryScreen> {
                               song.coverBytes!,
                               fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) {
-                                return Container(
-                                  color: Colors.grey[800],
-                                  child: const Icon(Icons.music_note, color: Colors.white),
-                                );
+                                return Image.asset('assets/icon.png', fit: BoxFit.cover);
                               },
                             )
                           : (song.coverUrl.isEmpty
-                              ? Container(
-                                  color: Colors.grey[800],
-                                  child: const Icon(Icons.music_note, color: Colors.white),
-                                )
+                              ? Image.asset('assets/icon.png', fit: BoxFit.cover)
                               : Image.network(
                                   song.coverUrl,
                                   fit: BoxFit.cover,
                                   errorBuilder: (context, error, stackTrace) {
-                                    return Container(
-                                      color: Colors.grey[800],
-                                      child: const Icon(Icons.music_note, color: Colors.white),
-                                    );
+                                    return Image.asset('assets/icon.png', fit: BoxFit.cover);
                                   },
                                 )),
                     ),

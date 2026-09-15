@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'dart:typed_data';
 import 'package:fftea/fftea.dart';
+import 'fft_tuning.dart';
 
 class FftProcessor {
   static final double _ln10 = log(10);
@@ -9,43 +10,6 @@ class FftProcessor {
   static const int fftSize = 4096;
   static final Float64List _rollingBuffer = Float64List(fftSize);
   static int _lastSize = 0;
-
-  // ==========================================
-  // 🎛️ НАЛАШТУВАННЯ ВІЗУАЛІЗАТОРА (ТЮНІНГ)
-  // ==========================================
-  
-  // 1. Динамічний діапазон (чутливість до гучності)
-  static const double noiseFloor = -45.0; // Трохи вищий поріг тиші, щоб відсікти шуми
-  static const double maxDbOffset = -10.0; // Даємо більше місця для піків
-  
-  // 2. Чутливість гучності для КОЖНОГО кольору (Множники)
-  static const double weightRed = 1.0;    // 🟥 Червоні (Бас)
-  static const double weightOrange = 3.0; // 🟧 Оранжеві (Нижня середина)
-  static const double weightYellow = 6.0; // 🟨 Жовті (Піаніно, вокал)
-  static const double weightBlue = 8.0;   // 🟦 Сині (Тарілочки)
-  
-  // 3. Різкість (Punch) для КОЖНОГО кольору (чим вище, тим різкіше падає смужка)
-  static const double punchRed = 1.5;
-  static const double punchOrange = 1.5;
-  static const double punchYellow = 1.5;
-  static const double punchBlue = 1.5;
-
-  // 4. Згладжування (Spatial Smoothing)
-  static const double smoothSelf = 0.5;     // 50% від себе
-  static const double smoothNeighbor = 0.25; // 25% від сусідів (більше хвилеподібності)
-  
-  // ==========================================
-
-  static const List<double> barFrequencies = [
-    // 🟥 Red (24 bars) - 30Hz to 800Hz (Захоплює Бочку, Бас-гітару, Томи і Робочий барабан!)
-    30, 40, 50, 60, 70, 80, 95, 110, 125, 140, 160, 180, 205, 230, 260, 290, 325, 365, 410, 460, 520, 590, 670, 760,
-    // 🟧 Orange (18 bars) - 860Hz to 3900Hz (Вокал, Гітари, Синтезатори)
-    860, 960, 1070, 1190, 1320, 1460, 1610, 1770, 1940, 2120, 2310, 2510, 2720, 2940, 3170, 3410, 3660, 3920,
-    // 🟨 Жовті (12 bars) - 4200Hz to 7300Hz (Скрипки, Тарілочки)
-    4200, 4400, 4650, 4900, 5200, 5500, 5800, 6100, 6400, 6700, 7000, 7300,
-    // 🟦 Сині (6 bars) - 7600Hz to 10000Hz (Свист, Хай-хети)
-    7600, 8000, 8400, 8800, 9400, 10000,
-  ];
 
   static List<double> process(List<int> waveform, int numBands, {double amplitudeBoost = 2.5}) {
     List<double> newHeights = List.filled(numBands, 0.05);
@@ -105,7 +69,7 @@ class FftProcessor {
       // Use our explicit frequency array (fallback to a formula if numBands != 60)
       double targetFreq;
       if (numBands == 60) {
-        targetFreq = barFrequencies[i];
+        targetFreq = FftTuning.barFrequencies[i];
       } else {
         // Fallback logarithmic calculation
         double minFreq = 40.0;
@@ -114,10 +78,10 @@ class FftProcessor {
       }
 
       double prevFreq = i > 0 && numBands == 60
-          ? barFrequencies[i - 1]
+          ? FftTuning.barFrequencies[i - 1]
           : targetFreq * 0.8;
       double nextFreq = i < numBands - 1 && numBands == 60
-          ? barFrequencies[i + 1]
+          ? FftTuning.barFrequencies[i + 1]
           : targetFreq * 1.2;
 
       double exactStartBin = (prevFreq + targetFreq) / 2.0 / binResolution;
@@ -156,16 +120,16 @@ class FftProcessor {
       double weight;
       if (normalizedPosition < 0.40) {
         double t = normalizedPosition / 0.40;
-        weight = weightRed + (weightOrange - weightRed) * t;
+        weight = FftTuning.weightRed + (FftTuning.weightOrange - FftTuning.weightRed) * t;
       } else if (normalizedPosition < 0.70) {
         double t = (normalizedPosition - 0.40) / 0.30;
-        weight = weightOrange + (weightYellow - weightOrange) * t;
+        weight = FftTuning.weightOrange + (FftTuning.weightYellow - FftTuning.weightOrange) * t;
       } else if (normalizedPosition < 0.90) {
         double t = (normalizedPosition - 0.70) / 0.20;
-        weight = weightYellow + (weightBlue - weightYellow) * t;
+        weight = FftTuning.weightYellow + (FftTuning.weightBlue - FftTuning.weightYellow) * t;
       } else {
         double t = (normalizedPosition - 0.90) / 0.10;
-        weight = weightBlue + (weightBlue * 1.2 - weightBlue) * t; 
+        weight = FftTuning.weightBlue + (FftTuning.weightBlue * 1.2 - FftTuning.weightBlue) * t; 
       }
       
       double boostedPeak = peak * weight;
@@ -176,10 +140,10 @@ class FftProcessor {
           : -100.0;
 
       // Dynamic range tuned for normalized fftea output
-      double maxDb = maxDbOffset + (weight > 1.0 ? 20 * log(weight) / _ln10 : 0.0);
-      double dynamicRange = maxDb - noiseFloor;
+      double maxDb = FftTuning.maxDbOffset + (weight > 1.0 ? 20 * log(weight) / _ln10 : 0.0);
+      double dynamicRange = maxDb - FftTuning.noiseFloor;
 
-      double normalized = ((db - noiseFloor) / dynamicRange).clamp(0.0, 1.0);
+      double normalized = ((db - FftTuning.noiseFloor) / dynamicRange).clamp(0.0, 1.0);
       
       // БУСТ АМПЛІТУДИ: множимо результат, щоб смужки стрибали значно вище
       normalized = (normalized * amplitudeBoost).clamp(0.0, 1.0);
@@ -188,15 +152,15 @@ class FftProcessor {
       double punchPower;
       if (normalizedPosition < 0.40) {
         double t = normalizedPosition / 0.40;
-        punchPower = punchRed + (punchOrange - punchRed) * t;
+        punchPower = FftTuning.punchRed + (FftTuning.punchOrange - FftTuning.punchRed) * t;
       } else if (normalizedPosition < 0.70) {
         double t = (normalizedPosition - 0.40) / 0.30;
-        punchPower = punchOrange + (punchYellow - punchOrange) * t;
+        punchPower = FftTuning.punchOrange + (FftTuning.punchYellow - FftTuning.punchOrange) * t;
       } else if (normalizedPosition < 0.90) {
         double t = (normalizedPosition - 0.70) / 0.20;
-        punchPower = punchYellow + (punchBlue - punchYellow) * t;
+        punchPower = FftTuning.punchYellow + (FftTuning.punchBlue - FftTuning.punchYellow) * t;
       } else {
-        punchPower = punchBlue;
+        punchPower = FftTuning.punchBlue;
       }
       
       double punchy = pow(normalized, punchPower).toDouble();
@@ -211,11 +175,11 @@ class FftProcessor {
 
       if (hasLeft && hasRight) {
         // Плавна хвиля по всьому графіку (без розривів між кольорами)
-        smoothedHeights[i] = newHeights[i - 1] * smoothNeighbor + newHeights[i] * smoothSelf + newHeights[i + 1] * smoothNeighbor;
+        smoothedHeights[i] = newHeights[i - 1] * FftTuning.smoothNeighbor + newHeights[i] * FftTuning.smoothSelf + newHeights[i + 1] * FftTuning.smoothNeighbor;
       } else if (hasLeft) {
-        smoothedHeights[i] = newHeights[i] * (1.0 - smoothNeighbor) + newHeights[i - 1] * smoothNeighbor;
+        smoothedHeights[i] = newHeights[i] * (1.0 - FftTuning.smoothNeighbor) + newHeights[i - 1] * FftTuning.smoothNeighbor;
       } else if (hasRight) {
-        smoothedHeights[i] = newHeights[i] * (1.0 - smoothNeighbor) + newHeights[i + 1] * smoothNeighbor;
+        smoothedHeights[i] = newHeights[i] * (1.0 - FftTuning.smoothNeighbor) + newHeights[i + 1] * FftTuning.smoothNeighbor;
       } else {
         smoothedHeights[i] = newHeights[i];
       }

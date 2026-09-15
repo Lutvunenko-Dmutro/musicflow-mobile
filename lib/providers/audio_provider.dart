@@ -1,79 +1,78 @@
 import 'dart:async';
 import 'dart:math';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:audio_service/audio_service.dart';
 import 'package:audio_session/audio_session.dart';
-import 'package:flutter/services.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../models/song_model.dart';
+import '../services/audio_handler.dart';
 import '../services/youtube_service.dart';
+import '../services/native_visualizer_service.dart';
+import '../services/playback_manager.dart';
 import '../utils/app_logger.dart';
+import 'queue_manager_mixin.dart';
 
-enum RepeatMode { off, all, one }
+export 'queue_manager_mixin.dart';
 
-class AudioProvider with ChangeNotifier {
+class AudioProvider with ChangeNotifier, QueueManagerMixin {
   final AudioPlayer _player = AudioPlayer();
   final YoutubeService _ytService = YoutubeService();
-  static const MethodChannel _methodChannel = MethodChannel('com.example.music_flow_mobile/visualizer_method');
-  static const EventChannel _eventChannel = EventChannel('com.example.music_flow_mobile/visualizer_event');
-  StreamSubscription? _visualizerSubscription;
-
   SongModel? _currentSong;
   bool _isLoading = false;
-  List<SongModel> _queue = [];
-  int _currentIndex = -1;
   
-  bool _isShuffleModeEnabled = false;
-  RepeatMode _repeatMode = RepeatMode.off;
   Timer? _sleepTimer;
   DateTime? _sleepTimerEndTime;
 
   SongModel? get currentSong => _currentSong;
-  bool get hasNext => _queue.isNotEmpty && (_currentIndex < _queue.length - 1 || _repeatMode == RepeatMode.all || _isShuffleModeEnabled);
-  bool get hasPrevious => _queue.isNotEmpty && (_currentIndex > 0 || _repeatMode == RepeatMode.all || _isShuffleModeEnabled);
   bool get isPlaying => _player.playing;
   bool get isLoading => _isLoading;
-  bool get isShuffleModeEnabled => _isShuffleModeEnabled;
-  RepeatMode get repeatMode => _repeatMode;
   DateTime? get sleepTimerEndTime => _sleepTimerEndTime;
   
+  @override
+  AudioPlayer get player => _player;
+
   Stream<Duration> get positionStream => _player.positionStream;
   Stream<Duration?> get durationStream => _player.durationStream;
   Stream<PlayerState> get playerStateStream => _player.playerStateStream;
-  Stream<dynamic> get visualizerStream => _eventChannel.receiveBroadcastStream();
+  Stream<dynamic> get visualizerStream => NativeVisualizerService.visualizerStream;
   int? get androidAudioSessionId => _player.androidAudioSessionId;
+
+  MusicAudioHandler? _audioHandler;
+  Future<void>? _initFuture;
 
   AudioProvider() {
     _initSession();
+    _initFuture = _initAudioService();
+    
     _player.playerStateStream.listen((state) {
       if (state.processingState == ProcessingState.completed) {
-        _onSongCompleted();
+        handleSongCompleted();
       }
       if (state.playing && state.processingState == ProcessingState.ready) {
-        _startNativeVisualizer();
+        NativeVisualizerService.startVisualizer(_player.androidAudioSessionId);
       } else if (!state.playing || state.processingState == ProcessingState.completed) {
-        _stopNativeVisualizer();
+        NativeVisualizerService.stopVisualizer();
       }
       notifyListeners();
     });
   }
 
-  Future<void> _startNativeVisualizer() async {
-    final sessionId = _player.androidAudioSessionId;
-    if (sessionId != null && sessionId != 0) {
-      try {
-        await _methodChannel.invokeMethod('startVisualizer', {'sessionId': sessionId});
-      } catch (e) {
-        AppLogger.error('Error starting native visualizer', e, null, 'AUDIO');
-      }
-    }
-  }
-
-  Future<void> _stopNativeVisualizer() async {
-    try {
-      await _methodChannel.invokeMethod('stopVisualizer');
-    } catch (e) {
-      AppLogger.error('Error stopping native visualizer', e, null, 'AUDIO');
-    }
+  Future<void> _initAudioService() async {
+    _audioHandler = await AudioService.init(
+      builder: () => MusicAudioHandler(_player),
+      config: const AudioServiceConfig(
+        androidNotificationChannelId: 'com.example.music_flow_mobile.channel.audio',
+        androidNotificationChannelName: 'Music Flow',
+        androidNotificationOngoing: true,
+        androidStopForegroundOnPause: true,
+        androidNotificationIcon: 'drawable/ic_stat_music_note',
+      ),
+    );
+    _audioHandler!.onSkipToNext = playNext;
+    _audioHandler!.onSkipToPrevious = playPrevious;
   }
 
   Future<void> _initSession() async {
@@ -81,14 +80,7 @@ class AudioProvider with ChangeNotifier {
     await session.configure(const AudioSessionConfiguration.music());
   }
 
-  void setQueue(List<SongModel> queue, {int initialIndex = 0}) {
-    _queue = queue;
-    _currentIndex = initialIndex;
-    if (_queue.isNotEmpty) {
-      playSong(_queue[_currentIndex]);
-    }
-  }
-
+  @override
   Future<void> playSong(SongModel song) async {
     AppLogger.separator('PLAY');
     AppLogger.audio('Title : ${song.title}');
@@ -99,49 +91,27 @@ class AudioProvider with ChangeNotifier {
     _currentSong = song;
     
     // If we are playing a song not from the current queue, clear the queue
-    if (_queue.isEmpty || _currentIndex < 0 || _currentIndex >= _queue.length || _queue[_currentIndex].id != song.id) {
-       _queue = [song];
-       _currentIndex = 0;
+    if (isQueueMismatch(song)) {
+       resetQueueWithSong(song);
     }
 
     notifyListeners();
+    
+    if (_initFuture != null) {
+      await _initFuture;
+    } else if (_audioHandler == null) {
+      // In case of Hot Reload where constructor wasn't re-run
+      _initFuture = _initAudioService();
+      await _initFuture;
+    }
 
     try {
-      if (song.isLocal && song.localPath != null) {
-        AppLogger.audio('Source: Local Storage');
-        final duration = await _player.setAudioSource(AudioSource.file(song.localPath!));
-        if (duration != null) {
-          _currentSong = _currentSong?.copyWith(duration: duration);
-        }
-        AppLogger.success('Playing directly from device.', 'AUDIO');
-        _player.play();
-      } else {
-        AppLogger.audio('Source: Internet (YouTube)');
-        String? audioUrl = song.streamUrl;
-        
-        if (audioUrl == null) {
-          AppLogger.info('Fetching stream URL from YoutubeService...', 'AUDIO');
-          audioUrl = await _ytService.getAudioStreamUrl(song.id);
-          AppLogger.success('Stream URL fetched.', 'AUDIO');
-          _currentSong = song.copyWith(streamUrl: audioUrl);
-        }
-
-        if (audioUrl != null) {
-          AppLogger.info('Connecting to just_audio...', 'AUDIO');
-          await _player.setAudioSource(
-            AudioSource.uri(
-              Uri.parse(audioUrl),
-              headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-              },
-            ),
-          );
-          AppLogger.success('Playing from internet stream.', 'AUDIO');
-          _player.play();
-        } else {
-          AppLogger.error('Failed to fetch audioUrl!', null, null, 'AUDIO');
-        }
-      }
+      _currentSong = await PlaybackManager.preparePlayback(
+        song: song,
+        player: _player,
+        audioHandler: _audioHandler!,
+        ytService: _ytService,
+      );
     } catch (e, stacktrace) {
       AppLogger.error('Exception while playing', e, stacktrace, 'AUDIO');
     } finally {
@@ -168,83 +138,6 @@ class AudioProvider with ChangeNotifier {
   Future<void> stop() async {
     await _player.stop();
     _currentSong = null;
-    notifyListeners();
-  }
-
-  void _onSongCompleted() {
-    if (_repeatMode == RepeatMode.one) {
-      _player.seek(Duration.zero);
-      _player.play();
-      return;
-    }
-    playNext();
-  }
-
-  void playNext() {
-    if (_queue.isEmpty) return;
-    
-    if (_isShuffleModeEnabled && _queue.length > 1) {
-      int nextIndex;
-      do {
-        nextIndex = Random().nextInt(_queue.length);
-      } while (nextIndex == _currentIndex);
-      _currentIndex = nextIndex;
-      playSong(_queue[_currentIndex]);
-    } else {
-      if (_currentIndex < _queue.length - 1) {
-        _currentIndex++;
-        playSong(_queue[_currentIndex]);
-      } else if (_repeatMode == RepeatMode.all) {
-        _currentIndex = 0;
-        playSong(_queue[_currentIndex]);
-      } else {
-        _player.stop();
-        _player.seek(Duration.zero);
-      }
-    }
-  }
-
-  void playPrevious() {
-    if (_queue.isEmpty) return;
-    
-    if (_player.position.inSeconds > 3) {
-      _player.seek(Duration.zero);
-      return;
-    }
-
-    if (_isShuffleModeEnabled && _queue.length > 1) {
-      int prevIndex;
-      do {
-        prevIndex = Random().nextInt(_queue.length);
-      } while (prevIndex == _currentIndex);
-      _currentIndex = prevIndex;
-      playSong(_queue[_currentIndex]);
-    } else {
-      if (_currentIndex > 0) {
-        _currentIndex--;
-        playSong(_queue[_currentIndex]);
-      } else if (_repeatMode == RepeatMode.all) {
-        _currentIndex = _queue.length - 1;
-        playSong(_queue[_currentIndex]);
-      } else {
-        _player.seek(Duration.zero);
-      }
-    }
-  }
-
-  void toggleShuffle() {
-    _isShuffleModeEnabled = !_isShuffleModeEnabled;
-    notifyListeners();
-  }
-
-  void toggleRepeat() {
-    if (_repeatMode == RepeatMode.off) {
-      _repeatMode = RepeatMode.all;
-    } else if (_repeatMode == RepeatMode.all) {
-      _repeatMode = RepeatMode.one;
-    } else {
-      _repeatMode = RepeatMode.off;
-    }
     notifyListeners();
   }
 

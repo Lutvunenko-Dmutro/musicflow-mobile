@@ -30,18 +30,18 @@ class PlayerHeader extends StatelessWidget {
                     provider.playPrevious();
                   }
                 },
-                child: Container(
-                  decoration: BoxDecoration(
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.5),
-                        blurRadius: 20,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
-                  ),
-                  child: Hero(
-                    tag: 'cover_${song.id}',
+                child: Hero(
+                  tag: 'cover_${song.id}',
+                  child: Container(
+                    decoration: BoxDecoration(
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.5),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
+                    ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(16),
                       child: song.coverBytes != null
@@ -107,17 +107,10 @@ class PlayerHeader extends StatelessWidget {
     return Container(
       width: MediaQuery.of(context).size.width * 0.8,
       height: MediaQuery.of(context).size.width * 0.8,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF8E2DE2), // Purple
-            Color(0xFF4A00E0), // Deep blue
-          ],
-        ),
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
       ),
-      child: const Icon(Icons.music_note, color: Colors.white54, size: 80),
+      child: Image.asset('assets/icon.png', fit: BoxFit.cover),
     );
   }
 }

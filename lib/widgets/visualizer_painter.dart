@@ -5,7 +5,12 @@ class VisualizerPainter extends CustomPainter {
   final List<double> dotHeights;
   final int barCount;
 
-  VisualizerPainter({required this.heights, required this.dotHeights, required this.barCount});
+  VisualizerPainter({
+    required this.heights,
+    required this.dotHeights,
+    required this.barCount,
+    Listenable? repaint,
+  }) : super(repaint: repaint);
 
   @override
   void paint(Canvas canvas, Size size) {

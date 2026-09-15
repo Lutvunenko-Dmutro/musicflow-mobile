@@ -4,12 +4,12 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.media.audiofx.Visualizer
 import androidx.core.content.ContextCompat
-import io.flutter.embedding.android.FlutterActivity
+import com.ryanheise.audioservice.AudioServiceActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodChannel
 
-class MainActivity: FlutterActivity() {
+class MainActivity: AudioServiceActivity() {
     private val METHOD_CHANNEL = "com.example.music_flow_mobile/visualizer_method"
     private val EVENT_CHANNEL = "com.example.music_flow_mobile/visualizer_event"
 

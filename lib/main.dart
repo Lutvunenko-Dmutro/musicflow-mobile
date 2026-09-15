@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:audio_service/audio_service.dart';
+import 'package:permission_handler/permission_handler.dart';
+
 import 'providers/audio_provider.dart';
 import 'providers/visualizer_settings_provider.dart';
 import 'screens/main_screen.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Register the AudioProvider and initialize audio_service there, 
+  // or we can initialize it directly in AudioProvider constructor to keep it clean.
+  
   runApp(const MusicFlowApp());
 }
 

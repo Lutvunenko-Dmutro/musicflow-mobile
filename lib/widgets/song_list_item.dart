@@ -20,12 +20,23 @@ class SongListItem extends StatelessWidget {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(6),
-            child: Image.network(
-              song.coverUrl,
-              width: 48,
-              height: 48,
-              fit: BoxFit.cover,
-            ),
+            child: song.coverBytes != null
+                ? Image.memory(
+                    song.coverBytes!,
+                    width: 48,
+                    height: 48,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Image.asset('assets/icon.png', width: 48, height: 48, fit: BoxFit.cover),
+                  )
+                : (song.coverUrl.isEmpty
+                    ? Image.asset('assets/icon.png', width: 48, height: 48, fit: BoxFit.cover)
+                    : Image.network(
+                        song.coverUrl,
+                        width: 48,
+                        height: 48,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => Image.asset('assets/icon.png', width: 48, height: 48, fit: BoxFit.cover),
+                      )),
           ),
           const SizedBox(width: 12),
           Expanded(

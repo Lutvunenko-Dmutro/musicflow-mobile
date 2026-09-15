@@ -4,6 +4,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import '../utils/fft_processor.dart';
+import '../utils/visualizer_physics.dart';
 import 'visualizer_painter.dart';
 import '../providers/visualizer_settings_provider.dart';
 import '../providers/audio_provider.dart';
@@ -37,6 +38,7 @@ class _AudioVisualizerState extends State<AudioVisualizer> with SingleTickerProv
   Ticker? _ticker;
   late VisualizerSettingsProvider _settings;
   StreamSubscription? _visualizerSubscription;
+  final ValueNotifier<int> _repaintNotifier = ValueNotifier<int>(0);
 
   @override
   void initState() {
@@ -115,59 +117,20 @@ class _AudioVisualizerState extends State<AudioVisualizer> with SingleTickerProv
   }
 
   void _onTick(Duration elapsed) {
-    bool needsRepaint = false;
-    double gravity = _settings.gravity;
-    double bounce = _settings.bounce;
-    double attack = _settings.attack;
-    double release = _settings.release;
-
-    for (int i = 0; i < widget.barCount; i++) {
-      double target = _targetHeights[i];
-      double current = _currentHeights[i];
-      
-      double oldCurrent = current;
-      if (target > current) {
-        _currentHeights[i] += (target - current) * attack;
-        needsRepaint = true;
-      } else if (current > target) {
-        _currentHeights[i] += (target - current) * release;
-        needsRepaint = true;
-      }
-      
-      if ((_currentHeights[i] - target).abs() < 0.001) {
-        _currentHeights[i] = target;
-      }
-
-      if (_currentHeights[i] >= _dotHeights[i]) {
-        _dotHeights[i] = _currentHeights[i];
-        
-        // Розраховуємо швидкість, з якою смужка вдарила по крапці
-        double barVelocity = _currentHeights[i] - oldCurrent;
-        if (barVelocity > 0) {
-          // Чим сильніший удар (вища швидкість), тим більше крапка відскакує.
-          // Множник 25.0 налаштовує чутливість, а clamp обмежує максимальний відскок.
-          double bounceFactor = (barVelocity * 25.0).clamp(0.0, 2.0);
-          _dotVelocities[i] = bounce * bounceFactor;
-        } else {
-          _dotVelocities[i] = 0.0;
-        }
-      } else {
-        _dotVelocities[i] += gravity;
-        _dotHeights[i] += _dotVelocities[i];
-        
-        if (_dotHeights[i] < _currentHeights[i]) {
-          _dotHeights[i] = _currentHeights[i];
-          _dotVelocities[i] = 0.0;
-        }
-      }
-      if (_dotVelocities[i] != 0.0 || _dotHeights[i] > _currentHeights[i]) {
-        needsRepaint = true;
-      }
-    }
-    
-    if (needsRepaint && mounted) {
-      setState(() {});
-    }
+    VisualizerPhysics.updateHeights(
+      barCount: widget.barCount,
+      targetHeights: _targetHeights,
+      currentHeights: _currentHeights,
+      dotHeights: _dotHeights,
+      dotVelocities: _dotVelocities,
+      attack: _settings.attack,
+      release: _settings.release,
+      gravity: _settings.gravity,
+      bounce: _settings.bounce,
+      onRepaintNeeded: () {
+        if (mounted) _repaintNotifier.value++;
+      },
+    );
   }
 
   void _processWaveform(List<int> waveform) {
@@ -183,6 +146,7 @@ class _AudioVisualizerState extends State<AudioVisualizer> with SingleTickerProv
   void dispose() {
     _ticker?.dispose();
     _visualizerSubscription?.cancel();
+    _repaintNotifier.dispose();
     super.dispose();
   }
 
@@ -196,6 +160,7 @@ class _AudioVisualizerState extends State<AudioVisualizer> with SingleTickerProv
           heights: _currentHeights,
           dotHeights: _dotHeights,
           barCount: widget.barCount,
+          repaint: _repaintNotifier,
         ),
       ),
     );

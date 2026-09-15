@@ -1,0 +1,116 @@
+import 'dart:math';
+import 'package:flutter/material.dart';
+import 'package:just_audio/just_audio.dart';
+import '../models/song_model.dart';
+
+enum RepeatMode { off, all, one }
+
+mixin QueueManagerMixin on ChangeNotifier {
+  List<SongModel> _queue = [];
+  int _currentIndex = -1;
+  bool _isShuffleModeEnabled = false;
+  RepeatMode _repeatMode = RepeatMode.off;
+
+  bool get hasNext => _queue.isNotEmpty && (_currentIndex < _queue.length - 1 || _repeatMode == RepeatMode.all || _isShuffleModeEnabled);
+  bool get hasPrevious => _queue.isNotEmpty && (_currentIndex > 0 || _repeatMode == RepeatMode.all || _isShuffleModeEnabled);
+  bool get isShuffleModeEnabled => _isShuffleModeEnabled;
+  RepeatMode get repeatMode => _repeatMode;
+  
+  // These must be implemented by the class mixing this in
+  AudioPlayer get player;
+  Future<void> playSong(SongModel song);
+
+  void setQueue(List<SongModel> queue, {int initialIndex = 0}) {
+    _queue = queue;
+    _currentIndex = initialIndex;
+    if (_queue.isNotEmpty) {
+      playSong(_queue[_currentIndex]);
+    }
+  }
+  
+  bool isQueueMismatch(SongModel song) {
+    return _queue.isEmpty || _currentIndex < 0 || _currentIndex >= _queue.length || _queue[_currentIndex].id != song.id;
+  }
+  
+  void resetQueueWithSong(SongModel song) {
+    _queue = [song];
+    _currentIndex = 0;
+  }
+
+  void handleSongCompleted() {
+    if (_repeatMode == RepeatMode.one) {
+      player.seek(Duration.zero);
+      player.play();
+      return;
+    }
+    playNext();
+  }
+
+  void playNext() {
+    if (_queue.isEmpty) return;
+    
+    if (_isShuffleModeEnabled && _queue.length > 1) {
+      int nextIndex;
+      do {
+        nextIndex = Random().nextInt(_queue.length);
+      } while (nextIndex == _currentIndex);
+      _currentIndex = nextIndex;
+      playSong(_queue[_currentIndex]);
+    } else {
+      if (_currentIndex < _queue.length - 1) {
+        _currentIndex++;
+        playSong(_queue[_currentIndex]);
+      } else if (_repeatMode == RepeatMode.all) {
+        _currentIndex = 0;
+        playSong(_queue[_currentIndex]);
+      } else {
+        player.stop();
+        player.seek(Duration.zero);
+      }
+    }
+  }
+
+  void playPrevious() {
+    if (_queue.isEmpty) return;
+    
+    if (player.position.inSeconds > 3) {
+      player.seek(Duration.zero);
+      return;
+    }
+
+    if (_isShuffleModeEnabled && _queue.length > 1) {
+      int prevIndex;
+      do {
+        prevIndex = Random().nextInt(_queue.length);
+      } while (prevIndex == _currentIndex);
+      _currentIndex = prevIndex;
+      playSong(_queue[_currentIndex]);
+    } else {
+      if (_currentIndex > 0) {
+        _currentIndex--;
+        playSong(_queue[_currentIndex]);
+      } else if (_repeatMode == RepeatMode.all) {
+        _currentIndex = _queue.length - 1;
+        playSong(_queue[_currentIndex]);
+      } else {
+        player.seek(Duration.zero);
+      }
+    }
+  }
+
+  void toggleShuffle() {
+    _isShuffleModeEnabled = !_isShuffleModeEnabled;
+    notifyListeners();
+  }
+
+  void toggleRepeat() {
+    if (_repeatMode == RepeatMode.off) {
+      _repeatMode = RepeatMode.all;
+    } else if (_repeatMode == RepeatMode.all) {
+      _repeatMode = RepeatMode.one;
+    } else {
+      _repeatMode = RepeatMode.off;
+    }
+    notifyListeners();
+  }
+}

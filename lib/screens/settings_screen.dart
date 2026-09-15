@@ -15,6 +15,7 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _embedLyrics = true;
   bool _highQuality = true;
+  bool _showMediaNotification = true;
   final String _language = 'Українська';
   String _downloadPath = 'Внутрішня пам\'ять/MusicFlow';
 
@@ -28,6 +29,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       _downloadPath = prefs.getString('download_path') ?? 'За замовчуванням (Внутрішня пам\'ять)';
+      _showMediaNotification = prefs.getBool('show_media_notification') ?? true;
     });
   }
 
@@ -126,6 +128,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                   onTap: () {
                     // Show language picker
+                  },
+                ),
+                SwitchListTile(
+                  title: const Text('Показувати сповіщення плеєра'),
+                  subtitle: const Text('Вимкнення може зупиняти фонову музику', style: TextStyle(fontSize: 12)),
+                  value: _showMediaNotification,
+                  activeColor: Theme.of(context).primaryColor,
+                  onChanged: (val) async {
+                    final prefs = await SharedPreferences.getInstance();
+                    await prefs.setBool('show_media_notification', val);
+                    setState(() => _showMediaNotification = val);
                   },
                 ),
                 ListTile(

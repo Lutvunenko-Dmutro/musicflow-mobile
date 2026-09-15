@@ -60,54 +60,21 @@ class MiniPlayer extends StatelessWidget {
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(8),
                         child: song.coverBytes != null
-                            ? Image.memory(
+                          ? Image.memory(
                                 song.coverBytes!,
                                 width: 48,
                                 height: 48,
                                 fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => Container(
-                                  width: 48,
-                                  height: 48,
-                                  decoration: const BoxDecoration(
-                                    gradient: LinearGradient(
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                      colors: [Color(0xFF8E2DE2), Color(0xFF4A00E0)],
-                                    ),
-                                  ),
-                                  child: const Icon(Icons.music_note, color: Colors.white54, size: 24),
-                                ),
+                                errorBuilder: (context, error, stackTrace) => Image.asset('assets/icon.png', width: 48, height: 48, fit: BoxFit.cover),
                               )
                             : (song.coverUrl.isEmpty
-                                ? Container(
-                                  width: 48,
-                                  height: 48,
-                                  decoration: const BoxDecoration(
-                                    gradient: LinearGradient(
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                      colors: [Color(0xFF8E2DE2), Color(0xFF4A00E0)],
-                                    ),
-                                  ),
-                                  child: const Icon(Icons.music_note, color: Colors.white54, size: 24),
-                                )
+                                ? Image.asset('assets/icon.png', width: 48, height: 48, fit: BoxFit.cover)
                               : Image.network(
                                   song.coverUrl,
                                   width: 48,
                                   height: 48,
                                   fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) => Container(
-                                    width: 48,
-                                    height: 48,
-                                    decoration: const BoxDecoration(
-                                      gradient: LinearGradient(
-                                        begin: Alignment.topLeft,
-                                        end: Alignment.bottomRight,
-                                        colors: [Color(0xFF8E2DE2), Color(0xFF4A00E0)],
-                                      ),
-                                    ),
-                                    child: const Icon(Icons.music_note, color: Colors.white54, size: 24),
-                                  ),
+                                  errorBuilder: (context, error, stackTrace) => Image.asset('assets/icon.png', width: 48, height: 48, fit: BoxFit.cover),
                                 )),
                       ),
                     ),
