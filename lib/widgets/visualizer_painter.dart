@@ -20,8 +20,8 @@ class VisualizerPainter extends CustomPainter {
     int numBlocks = 5;
     int groupSize = barCount ~/ numBlocks;
     
-    // Відступи між блоками
-    double blockGap = size.width * 0.03; 
+    // Відступи між блоками (у дзеркальному режимі прибираємо розриви)
+    double blockGap = isMirrored ? 0.0 : (size.width * 0.03); 
     double totalGaps = blockGap * (numBlocks - 1); 
     
     double usableWidth = size.width - totalGaps;
