@@ -27,13 +27,31 @@ class LibraryScreen extends StatefulWidget {
 class _LibraryScreenState extends State<LibraryScreen> {
   List<SongModel> _songs = [];
   final Set<String> _selectedIds = {};
-  SortOption _currentSort = SortOption.title;
+  SortOption _currentSort = SortOption.dateAdded;
   bool _isDescending = false;
 
   @override
   void initState() {
     super.initState();
+    _loadPrefs();
     _loadSongs();
+  }
+
+  Future<void> _loadPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _currentSort = SortOption.values[prefs.getInt('library_sort_option') ?? SortOption.dateAdded.index];
+      _isDescending = prefs.getBool('library_sort_descending') ?? false;
+    });
+    if (_songs.isNotEmpty) {
+      _applySorting();
+    }
+  }
+
+  Future<void> _savePrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('library_sort_option', _currentSort.index);
+    await prefs.setBool('library_sort_descending', _isDescending);
   }
 
   Future<void> _loadSongs() async {
@@ -173,6 +191,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                   _isDescending = !_isDescending;
                   _applySorting();
                 });
+                _savePrefs();
               },
             ),
             PopupMenuButton<SortOption>(
@@ -182,6 +201,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                   _currentSort = result;
                   _applySorting();
                 });
+                _savePrefs();
               },
               itemBuilder: (BuildContext context) => <PopupMenuEntry<SortOption>>[
                 const PopupMenuItem<SortOption>(

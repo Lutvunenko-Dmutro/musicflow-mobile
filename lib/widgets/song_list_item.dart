@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'dart:io';
 import '../models/song_model.dart';
 import '../providers/audio_provider.dart';
 import '../services/download_service.dart';
@@ -50,9 +51,26 @@ class SongListItem extends StatelessWidget {
                   style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  '${(song.duration.inSeconds / 1024 / 1024 * 5).toStringAsFixed(1)} MB', // Fake size for now based on duration
-                  style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                Builder(
+                  builder: (context) {
+                    String subtitleInfo = song.author;
+                    if (song.isLocal && song.localPath != null) {
+                      try {
+                        final file = File(song.localPath!);
+                        if (file.existsSync()) {
+                          final date = file.lastModifiedSync();
+                          final size = file.lengthSync();
+                          final dateStr = "${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year} ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}";
+                          final sizeStr = (size / (1024 * 1024)).toStringAsFixed(1);
+                          subtitleInfo = "$dateStr • $sizeStr MB";
+                        }
+                      } catch (_) {}
+                    }
+                    return Text(
+                      subtitleInfo,
+                      style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                    );
+                  },
                 ),
               ],
             ),
