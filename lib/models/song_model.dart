@@ -56,6 +56,7 @@ class SongModel {
       'coverUrl': coverUrl,
       'isLocal': isLocal ? 1 : 0,
       'localPath': localPath,
+      'coverBytes': coverBytes,
     };
   }
 
@@ -68,6 +69,7 @@ class SongModel {
       coverUrl: map['coverUrl'],
       isLocal: (map['isLocal'] as int) == 1,
       localPath: map['localPath'],
+      coverBytes: map['coverBytes'] as Uint8List?,
     );
   }
 }

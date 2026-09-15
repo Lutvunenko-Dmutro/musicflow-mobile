@@ -20,8 +20,9 @@ class DatabaseService {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _createDB,
+      onUpgrade: _onUpgrade,
     );
   }
 
@@ -34,9 +35,17 @@ CREATE TABLE songs (
   duration_ms INTEGER NOT NULL,
   coverUrl TEXT NOT NULL,
   isLocal INTEGER NOT NULL,
-  localPath TEXT
+  localPath TEXT,
+  coverBytes BLOB
 )
 ''');
+  }
+
+  Future _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      // Add coverBytes column to existing installs
+      await db.execute('ALTER TABLE songs ADD COLUMN coverBytes BLOB');
+    }
   }
 
   Future<void> saveSong(SongModel song) async {

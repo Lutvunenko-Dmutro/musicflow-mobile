@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:audio_service/audio_service.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 import 'providers/audio_provider.dart';
 import 'providers/visualizer_settings_provider.dart';

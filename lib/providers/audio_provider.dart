@@ -1,12 +1,8 @@
 import 'dart:async';
-import 'dart:math';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:audio_session/audio_session.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
 import '../models/song_model.dart';
 import '../services/audio_handler.dart';
 import '../services/youtube_service.dart';

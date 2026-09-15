@@ -52,6 +52,7 @@ dependencies:
   permission_handler: ^11.3.0
   audiotags: ^1.4.5
   fftea: ^1.5.0+1
+  http: ^1.2.2
 
 dev_dependencies:
   flutter_test:

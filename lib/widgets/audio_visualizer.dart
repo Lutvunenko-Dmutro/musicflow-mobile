@@ -8,7 +8,6 @@ import '../utils/visualizer_physics.dart';
 import 'visualizer_painter.dart';
 import '../providers/visualizer_settings_provider.dart';
 import '../providers/audio_provider.dart';
-import '../utils/app_logger.dart';
 
 class AudioVisualizer extends StatefulWidget {
   final int barCount;

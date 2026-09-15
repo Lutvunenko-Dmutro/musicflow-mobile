@@ -56,10 +56,11 @@ class MainActivity: AudioServiceActivity() {
                     android.media.MediaScannerConnection.scanFile(
                         this@MainActivity,
                         arrayOf(path),
-                        null,
                         null
-                    )
-                    result.success(true)
+                    ) { _, _ ->
+                        // Callback fires when scan is actually complete
+                        result.success(true)
+                    }
                 } else {
                     result.error("INVALID_ARGUMENT", "Path is null", null)
                 }

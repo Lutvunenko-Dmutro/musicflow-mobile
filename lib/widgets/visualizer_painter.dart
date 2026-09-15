@@ -11,8 +11,8 @@ class VisualizerPainter extends CustomPainter {
     required this.dotHeights,
     required this.barCount,
     this.isMirrored = false,
-    Listenable? repaint,
-  }) : super(repaint: repaint);
+    super.repaint,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {

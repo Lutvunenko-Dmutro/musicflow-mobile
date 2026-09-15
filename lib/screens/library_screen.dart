@@ -316,6 +316,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
   }
 
   Future<void> _confirmDeleteSelected(BuildContext context) async {
+    // Capture provider before any async gap
+    final audioProvider = context.read<AudioProvider>();
+
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -334,9 +337,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
       ),
     );
 
-    if (confirm == true) {
-      final audioProvider = context.read<AudioProvider>();
-      
+    if (confirm == true && mounted) {
       for (final id in _selectedIds) {
         if (audioProvider.currentSong?.id == id) {
           await audioProvider.stop();

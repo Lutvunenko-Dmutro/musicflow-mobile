@@ -126,9 +126,9 @@ class DownloadService {
       AppLogger.success('File saved!', 'DOWNLOAD');
 
       // 5.5 Embed ID3 tags
+      Uint8List? coverBytes = song.coverBytes;
       try {
         AppLogger.download('Embedding ID3 tags...');
-        Uint8List? coverBytes = song.coverBytes;
         if (coverBytes == null && song.coverUrl.isNotEmpty) {
           final response = await http.get(Uri.parse(song.coverUrl));
           if (response.statusCode == 200) {
@@ -157,7 +157,9 @@ class DownloadService {
         AppLogger.warning('Failed to embed ID3 tags: $e', 'DOWNLOAD');
       }
 
-      // 5.7 Trigger Android Media Scanner so other apps can see the file
+      // 5.7 Trigger Android Media Scanner AFTER tags are written
+      // Wait a moment to ensure OS has flushed the file to disk before scanning
+      await Future.delayed(const Duration(milliseconds: 500));
       try {
         await _scannerChannel.invokeMethod('scanFile', {'path': m4aPath});
         AppLogger.success('Media scanner triggered.', 'DOWNLOAD');
@@ -165,10 +167,11 @@ class DownloadService {
         AppLogger.warning('Failed to trigger media scanner: $e', 'DOWNLOAD');
       }
 
-      // 6. Update Database
+      // 6. Update Database — include coverBytes so library shows cover art
       final localSong = song.copyWith(
         isLocal: true,
         localPath: m4aPath,
+        coverBytes: coverBytes ?? song.coverBytes,
       );
       await DatabaseService.instance.saveSong(localSong);
       AppLogger.success('DB record updated.', 'DOWNLOAD');
