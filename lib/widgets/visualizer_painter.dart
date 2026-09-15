@@ -4,11 +4,13 @@ class VisualizerPainter extends CustomPainter {
   final List<double> heights;
   final List<double> dotHeights;
   final int barCount;
+  final bool isMirrored;
 
   VisualizerPainter({
     required this.heights,
     required this.dotHeights,
     required this.barCount,
+    this.isMirrored = false,
     Listenable? repaint,
   }) : super(repaint: repaint);
 
@@ -61,8 +63,14 @@ class VisualizerPainter extends CustomPainter {
         ..color = dotColors[blockIndex]
         ..style = PaintingStyle.fill;
 
+      int dataIndex = i;
+      if (isMirrored) {
+        double center = barCount / 2;
+        dataIndex = ((i - center).abs() * 2).clamp(0, barCount - 1).toInt();
+      }
+
       // Малюємо стовпчик
-      double currentHeight = heights[i] * size.height;
+      double currentHeight = heights[dataIndex] * size.height;
       double x = currentX + spacing / 2;
       double y = size.height - currentHeight;
 
@@ -73,7 +81,7 @@ class VisualizerPainter extends CustomPainter {
       canvas.drawRRect(rect, barPaint);
 
       // Малюємо падаючу лінію (крапку)
-      double dotH = dotHeights[i] * size.height;
+      double dotH = dotHeights[dataIndex] * size.height;
       double dotY = size.height - dotH - 4.0; // Трохи вище за висоту стовпчика
       
       final RRect dotRect = RRect.fromRectAndRadius(

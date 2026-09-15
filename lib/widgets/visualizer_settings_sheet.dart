@@ -104,7 +104,16 @@ class VisualizerSettingsSheet extends StatelessWidget {
                     max: 0.2,
                     onChanged: settings.setBounce,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
+                  SwitchListTile(
+                    title: const Text('Віддзеркалити (Від центру)', style: TextStyle(color: Colors.white70, fontSize: 14)),
+                    secondary: const Icon(Icons.flip, color: Colors.white70, size: 20),
+                    value: settings.isMirrored,
+                    onChanged: settings.setMirrored,
+                    activeColor: const Color(0xFFE53935),
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                  const SizedBox(height: 8),
                 ],
               );
             },

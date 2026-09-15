@@ -11,6 +11,13 @@ import '../services/database_service.dart';
 import '../providers/audio_provider.dart';
 import '../utils/app_logger.dart';
 
+enum SortOption {
+  titleAsc,
+  titleDesc,
+  authorAsc,
+  dateAddedDesc,
+}
+
 class LibraryScreen extends StatefulWidget {
   const LibraryScreen({super.key});
 
@@ -20,6 +27,8 @@ class LibraryScreen extends StatefulWidget {
 
 class _LibraryScreenState extends State<LibraryScreen> {
   List<SongModel> _songs = [];
+  final Set<String> _selectedIds = {};
+  SortOption _currentSort = SortOption.titleAsc;
 
   @override
   void initState() {
@@ -96,19 +105,97 @@ class _LibraryScreenState extends State<LibraryScreen> {
 
     setState(() {
       _songs = [...dbSongs, ...localFolderSongs];
+      _applySorting();
     });
+  }
+
+  void _applySorting() {
+    switch (_currentSort) {
+      case SortOption.titleAsc:
+        _songs.sort((a, b) => a.title.compareTo(b.title));
+        break;
+      case SortOption.titleDesc:
+        _songs.sort((a, b) => b.title.compareTo(a.title));
+        break;
+      case SortOption.authorAsc:
+        _songs.sort((a, b) => a.author.compareTo(b.author));
+        break;
+      case SortOption.dateAddedDesc:
+        _songs.sort((a, b) {
+          int timeA = 0;
+          int timeB = 0;
+          if (a.localPath != null) {
+            try {
+              timeA = File(a.localPath!).lastModifiedSync().millisecondsSinceEpoch;
+            } catch (_) {}
+          }
+          if (b.localPath != null) {
+            try {
+              timeB = File(b.localPath!).lastModifiedSync().millisecondsSinceEpoch;
+            } catch (_) {}
+          }
+          return timeB.compareTo(timeA);
+        });
+        break;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final bool isSelectionMode = _selectedIds.isNotEmpty;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Library'),
+        title: Text(isSelectionMode ? '${_selectedIds.length} вибрано' : 'Бібліотека'),
+        leading: isSelectionMode
+            ? IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () {
+                  setState(() {
+                    _selectedIds.clear();
+                  });
+                },
+              )
+            : null,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadSongs,
-          ),
+          if (isSelectionMode)
+            IconButton(
+              icon: const Icon(Icons.delete, color: Colors.redAccent),
+              onPressed: () => _confirmDeleteSelected(context),
+            )
+          else ...[
+            PopupMenuButton<SortOption>(
+              icon: const Icon(Icons.sort),
+              onSelected: (SortOption result) {
+                setState(() {
+                  _currentSort = result;
+                  _applySorting();
+                });
+              },
+              itemBuilder: (BuildContext context) => <PopupMenuEntry<SortOption>>[
+                const PopupMenuItem<SortOption>(
+                  value: SortOption.titleAsc,
+                  child: Text('За назвою (А-Я)'),
+                ),
+                const PopupMenuItem<SortOption>(
+                  value: SortOption.titleDesc,
+                  child: Text('За назвою (Я-А)'),
+                ),
+                const PopupMenuItem<SortOption>(
+                  value: SortOption.authorAsc,
+                  child: Text('За автором'),
+                ),
+                const PopupMenuItem<SortOption>(
+                  value: SortOption.dateAddedDesc,
+                  child: Text('Спочатку нові (за часом)'),
+                ),
+              ],
+            ),
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: _loadSongs,
+            ),
+          ],
         ],
       ),
       body: _songs.isEmpty
@@ -144,23 +231,78 @@ class _LibraryScreenState extends State<LibraryScreen> {
                   ),
                   title: Text(song.title, maxLines: 1),
                   subtitle: Text(song.author, maxLines: 1),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.red),
-                    onPressed: () async {
-                      final audioProvider = context.read<AudioProvider>();
-                      if (audioProvider.currentSong?.id == song.id) {
-                        await audioProvider.stop();
+                  selected: _selectedIds.contains(song.id),
+                  selectedTileColor: Colors.redAccent.withOpacity(0.2),
+                  onLongPress: () {
+                    setState(() {
+                      if (_selectedIds.contains(song.id)) {
+                        _selectedIds.remove(song.id);
+                      } else {
+                        _selectedIds.add(song.id);
                       }
-                      await DatabaseService.instance.deleteSong(song.id);
-                      _loadSongs();
-                    },
-                  ),
+                    });
+                  },
                   onTap: () {
-                    context.read<AudioProvider>().setQueue(_songs, initialIndex: index);
+                    if (isSelectionMode) {
+                      setState(() {
+                        if (_selectedIds.contains(song.id)) {
+                          _selectedIds.remove(song.id);
+                        } else {
+                          _selectedIds.add(song.id);
+                        }
+                      });
+                    } else {
+                      context.read<AudioProvider>().setQueue(_songs, initialIndex: index);
+                    }
                   },
                 );
               },
             ),
     );
+  }
+
+  Future<void> _confirmDeleteSelected(BuildContext context) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Видалити пісні?'),
+        content: Text('Ви впевнені, що хочете видалити ${_selectedIds.length} пісень?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Скасувати', style: TextStyle(color: Colors.grey)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Видалити', style: TextStyle(color: Colors.redAccent)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      final audioProvider = context.read<AudioProvider>();
+      
+      for (final id in _selectedIds) {
+        if (audioProvider.currentSong?.id == id) {
+          await audioProvider.stop();
+        }
+        await DatabaseService.instance.deleteSong(id);
+        
+        // Also delete the physical file if it exists
+        final song = _songs.firstWhere((s) => s.id == id, orElse: () => _songs.first);
+        if (song.id == id && song.localPath != null) {
+          final file = File(song.localPath!);
+          if (await file.exists()) {
+            await file.delete();
+          }
+        }
+      }
+      
+      setState(() {
+        _selectedIds.clear();
+      });
+      _loadSongs();
+    }
   }
 }
