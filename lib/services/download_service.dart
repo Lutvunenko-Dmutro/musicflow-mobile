@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -19,6 +20,7 @@ class DownloadInfo {
 class DownloadService {
   static final DownloadService instance = DownloadService._init();
   final YoutubeService _ytService = YoutubeService();
+  static const MethodChannel _scannerChannel = MethodChannel('com.example.music_flow_mobile/media_scanner');
 
   DownloadService._init();
 
@@ -145,6 +147,14 @@ class DownloadService {
         AppLogger.success('ID3 tags embedded successfully!', 'DOWNLOAD');
       } catch (e) {
         AppLogger.warning('Failed to embed ID3 tags: $e', 'DOWNLOAD');
+      }
+
+      // 5.7 Trigger Android Media Scanner so other apps can see the file
+      try {
+        await _scannerChannel.invokeMethod('scanFile', {'path': m4aPath});
+        AppLogger.success('Media scanner triggered.', 'DOWNLOAD');
+      } catch (e) {
+        AppLogger.warning('Failed to trigger media scanner: $e', 'DOWNLOAD');
       }
 
       // 6. Update Database

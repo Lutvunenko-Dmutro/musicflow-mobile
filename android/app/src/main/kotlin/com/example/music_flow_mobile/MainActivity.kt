@@ -48,6 +48,25 @@ class MainActivity: AudioServiceActivity() {
                 }
             }
         )
+
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "com.example.music_flow_mobile/media_scanner").setMethodCallHandler { call, result ->
+            if (call.method == "scanFile") {
+                val path = call.argument<String>("path")
+                if (path != null) {
+                    android.media.MediaScannerConnection.scanFile(
+                        this@MainActivity,
+                        arrayOf(path),
+                        null,
+                        null
+                    )
+                    result.success(true)
+                } else {
+                    result.error("INVALID_ARGUMENT", "Path is null", null)
+                }
+            } else {
+                result.notImplemented()
+            }
+        }
     }
 
     private fun startVisualizer(sessionId: Int) {
