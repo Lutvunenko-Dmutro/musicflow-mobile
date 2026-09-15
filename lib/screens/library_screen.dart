@@ -258,8 +258,35 @@ class _LibraryScreenState extends State<LibraryScreen> {
                   ),
                   title: Text(song.title, maxLines: 1),
                   subtitle: Text(song.author, maxLines: 1),
+                  trailing: Builder(
+                    builder: (context) {
+                      if (!song.isLocal || song.localPath == null) return const SizedBox.shrink();
+                      String extraDate = "";
+                      String extraSize = "";
+                      try {
+                        final file = File(song.localPath!);
+                        if (file.existsSync()) {
+                          final date = file.lastModifiedSync();
+                          final size = file.lengthSync();
+                          extraDate = "${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}";
+                          extraSize = "${(size / (1024 * 1024)).toStringAsFixed(1)} MB";
+                        }
+                      } catch (_) {}
+                      if (extraDate.isEmpty) return const SizedBox.shrink();
+                      return Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(extraDate, style: TextStyle(color: Colors.grey[600], fontSize: 11)),
+                          const SizedBox(height: 2),
+                          Text(extraSize, style: TextStyle(color: Colors.grey[600], fontSize: 11)),
+                        ],
+                      );
+                    },
+                  ),
                   selected: _selectedIds.contains(song.id),
-                  selectedTileColor: Colors.redAccent.withOpacity(0.2),
+                  selectedTileColor: Colors.redAccent.withValues(alpha: 0.2),
                   onLongPress: () {
                     setState(() {
                       if (_selectedIds.contains(song.id)) {
