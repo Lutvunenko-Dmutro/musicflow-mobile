@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/audio_provider.dart';
 import '../models/song_model.dart';
+import 'smart_cover.dart';
 
 class PlayerHeader extends StatelessWidget {
   final SongModel song;
@@ -43,21 +44,14 @@ class PlayerHeader extends StatelessWidget {
                           ),
                         ],
                       ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: song.coverBytes != null
-                            ? Image.memory(
-                                song.coverBytes!,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => _fallbackCover(context),
-                              )
-                            : (song.coverUrl.isEmpty
-                                ? _fallbackCover(context)
-                                : Image.network(
-                                    song.coverUrl,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) => _fallbackCover(context),
-                                  )),
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          return SmartCover(
+                            song: song,
+                            size: constraints.maxWidth,
+                            borderRadius: 16.0,
+                          );
+                        }
                       ),
                     ),
                   ),
@@ -106,7 +100,7 @@ class PlayerHeader extends StatelessWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
       ),
-      child: Image.asset('assets/icon.png', fit: BoxFit.cover),
+      child: Image.asset('assets/images/default_cover.jpg', fit: BoxFit.cover),
     );
   }
 }

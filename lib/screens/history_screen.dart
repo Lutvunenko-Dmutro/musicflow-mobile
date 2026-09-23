@@ -8,6 +8,7 @@ import '../models/song_model.dart';
 import '../providers/local_library_provider.dart';
 import '../locator.dart';
 import '../widgets/song_download_button.dart';
+import '../widgets/smart_cover.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -43,20 +44,20 @@ class _HistoryScreenState extends State<HistoryScreen> {
     }
   }
 
-  Widget _buildCover(HistoryModel song) {
-    if (song.coverBytes != null) {
-      return Image.memory(
-        song.coverBytes!,
-        width: 50,
-        height: 50,
-        fit: BoxFit.cover,
-      );
-    }
-    return Container(
-      width: 50,
-      height: 50,
-      color: Colors.grey[800],
-      child: const Icon(Icons.music_note, color: Colors.white54),
+  Widget _buildCover(HistoryModel historyItem) {
+    // Convert HistoryModel to SongModel to use SmartCover
+    final song = SongModel(
+      id: historyItem.id,
+      title: historyItem.title,
+      author: historyItem.author,
+      duration: Duration(milliseconds: historyItem.durationMs),
+      coverUrl: historyItem.coverUrl,
+      coverBytes: historyItem.coverBytes,
+    );
+    return SmartCover(
+      song: song,
+      size: 50,
+      borderRadius: 8.0,
     );
   }
 

@@ -4,6 +4,7 @@ import 'dart:io';
 import '../models/song_model.dart';
 import '../providers/audio_provider.dart';
 import 'song_download_button.dart';
+import 'smart_cover.dart';
 
 class SongListItem extends StatelessWidget {
   final SongModel song;
@@ -19,25 +20,10 @@ class SongListItem extends StatelessWidget {
       borderRadius: BorderRadius.circular(8),
       child: Row(
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(6),
-            child: song.coverBytes != null
-                ? Image.memory(
-                    song.coverBytes!,
-                    width: 48,
-                    height: 48,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => Image.asset('assets/icon.png', width: 48, height: 48, fit: BoxFit.cover),
-                  )
-                : (song.coverUrl.isEmpty
-                    ? Image.asset('assets/icon.png', width: 48, height: 48, fit: BoxFit.cover)
-                    : Image.network(
-                        song.coverUrl,
-                        width: 48,
-                        height: 48,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) => Image.asset('assets/icon.png', width: 48, height: 48, fit: BoxFit.cover),
-                      )),
+          SmartCover(
+            song: song,
+            size: 48,
+            borderRadius: 6.0,
           ),
           const SizedBox(width: 12),
           Expanded(

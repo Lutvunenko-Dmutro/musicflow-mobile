@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import '../models/song_model.dart';
+import 'smart_cover.dart';
 
 class LibraryListItem extends StatelessWidget {
   final SongModel song;
@@ -24,25 +25,10 @@ class LibraryListItem extends StatelessWidget {
       leading: SizedBox(
         width: 50,
         height: 50,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(8.0),
-          child: song.coverBytes != null
-              ? Image.memory(
-                  song.coverBytes!,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Image.asset('assets/icon.png', fit: BoxFit.cover);
-                  },
-                )
-              : (song.coverUrl.isEmpty
-                  ? Image.asset('assets/icon.png', fit: BoxFit.cover)
-                  : Image.network(
-                      song.coverUrl,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Image.asset('assets/icon.png', fit: BoxFit.cover);
-                      },
-                    )),
+        child: SmartCover(
+          song: song,
+          size: 50,
+          borderRadius: 8.0,
         ),
       ),
       title: Text(song.title, maxLines: 1),
