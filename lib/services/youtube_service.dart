@@ -1,4 +1,5 @@
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/song_model.dart';
 import '../utils/app_logger.dart';
 
@@ -28,10 +29,23 @@ class YoutubeService {
   /// Get the actual stream info for downloading
   Future<dynamic> getAudioStreamInfo(String videoId) async {
     try {
+      final prefs = await SharedPreferences.getInstance();
+      final highQuality = prefs.getBool('high_quality') ?? true;
+      
       final manifest = await _yt.videos.streamsClient.getManifest(videoId);
-      final audioStreams = manifest.audioOnly.where((s) => s.container.name == 'mp4' || s.container.name == 'm4a');
-      final streamInfo = audioStreams.isNotEmpty ? audioStreams.withHighestBitrate() : manifest.audioOnly.withHighestBitrate();
-      return streamInfo;
+      final audioStreams = manifest.audioOnly.where((s) => s.container.name == 'mp4' || s.container.name == 'm4a').toList();
+      
+      if (audioStreams.isEmpty) {
+        return manifest.audioOnly.withHighestBitrate();
+      }
+      
+      audioStreams.sort((a, b) => a.bitrate.compareTo(b.bitrate));
+      
+      if (highQuality) {
+        return audioStreams.last;
+      } else {
+        return audioStreams[audioStreams.length ~/ 2]; // Mid quality
+      }
     } catch (e) {
       AppLogger.error('Error getting audio stream info', e, null, 'YOUTUBE');
       return null;

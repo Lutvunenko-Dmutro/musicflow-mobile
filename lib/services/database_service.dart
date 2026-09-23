@@ -1,7 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
-import 'package:path/path.dart';
+import 'package:path/path.dart' as p;
+import '../models/history_model.dart';
 import '../models/song_model.dart';
+import '../utils/app_logger.dart';
 
 class DatabaseService extends ChangeNotifier {
   static Database? _database;
@@ -10,67 +12,90 @@ class DatabaseService extends ChangeNotifier {
 
   Future<Database> get database async {
     if (_database != null) return _database!;
-    _database = await _initDB('music_flow.db');
+    _database = await _initDB('music_flow_v3.db');
     return _database!;
   }
 
   Future<Database> _initDB(String filePath) async {
     final dbPath = await getDatabasesPath();
-    final path = join(dbPath, filePath);
+    final path = p.join(dbPath, filePath);
 
     return await openDatabase(
       path,
-      version: 2,
+      version: 1,
       onCreate: _createDB,
-      onUpgrade: _onUpgrade,
     );
   }
 
   Future _createDB(Database db, int version) async {
     await db.execute('''
-CREATE TABLE songs (
+CREATE TABLE history (
   id TEXT PRIMARY KEY,
   title TEXT NOT NULL,
   author TEXT NOT NULL,
   duration_ms INTEGER NOT NULL,
   coverUrl TEXT NOT NULL,
-  isLocal INTEGER NOT NULL,
-  localPath TEXT,
+  play_count INTEGER NOT NULL DEFAULT 1,
+  last_played_at INTEGER NOT NULL,
   coverBytes BLOB
 )
 ''');
   }
 
-  Future _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    if (oldVersion < 2) {
-      // Add coverBytes column to existing installs
-      await db.execute('ALTER TABLE songs ADD COLUMN coverBytes BLOB');
+  Future<void> logPlay(SongModel song) async {
+    try {
+      final db = await database;
+      final existing = await db.query('history', where: 'id = ?', whereArgs: [song.id]);
+
+      if (existing.isNotEmpty) {
+        final currentCount = existing.first['play_count'] as int? ?? 0;
+        await db.update(
+          'history',
+          {
+            'play_count': currentCount + 1,
+            'last_played_at': DateTime.now().millisecondsSinceEpoch,
+          },
+          where: 'id = ?',
+          whereArgs: [song.id],
+        );
+      } else {
+        final historyEntry = HistoryModel.fromSong(song);
+        await db.insert('history', historyEntry.toMap());
+      }
+      notifyListeners();
+    } catch (e) {
+      AppLogger.error('Failed to log play in history', e, null, 'DATABASE');
     }
   }
 
-  Future<void> saveSong(SongModel song) async {
-    final db = await database;
-    await db.insert(
-      'songs',
-      song.toMap(),
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
-    notifyListeners();
+  Future<List<HistoryModel>> getHistory() async {
+    try {
+      final db = await database;
+      final result = await db.query('history', orderBy: 'last_played_at DESC');
+      return result.map((json) => HistoryModel.fromMap(json)).toList();
+    } catch (e) {
+      AppLogger.error('Failed to get history', e, null, 'DATABASE');
+      return [];
+    }
   }
 
-  Future<List<SongModel>> getAllSongs() async {
-    final db = await database;
-    final result = await db.query('songs');
-    return result.map((json) => SongModel.fromMap(json)).toList();
+  Future<void> removeFromHistory(String id) async {
+    try {
+      final db = await database;
+      await db.delete('history', where: 'id = ?', whereArgs: [id]);
+      notifyListeners();
+    } catch (e) {
+      AppLogger.error('Failed to remove from history', e, null, 'DATABASE');
+    }
   }
 
-  Future<void> deleteSong(String id) async {
-    final db = await database;
-    await db.delete(
-      'songs',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
-    notifyListeners();
+  Future<void> clearHistory() async {
+    try {
+      final db = await database;
+      await db.delete('history');
+      notifyListeners();
+    } catch (e) {
+      AppLogger.error('Failed to clear history', e, null, 'DATABASE');
+    }
   }
 }

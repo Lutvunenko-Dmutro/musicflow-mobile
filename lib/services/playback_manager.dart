@@ -46,10 +46,25 @@ class PlaybackManager {
 
     SongModel updatedSong = song;
 
-    if (song.isLocal && song.localPath != null) {
+    bool playLocally = song.isLocal && song.localPath != null;
+    if (playLocally) {
+      if (!File(song.localPath!).existsSync()) {
+        // If the ID is a valid YouTube ID (typically 11 chars), fallback to internet
+        if (song.id.length == 11 && !song.id.contains('/')) {
+          AppLogger.warning('Local file not found, falling back to internet stream.', 'AUDIO');
+          playLocally = false;
+          updatedSong = updatedSong.copyWith(isLocal: false, localPath: null);
+        } else {
+          // If it's a randomly scanned local file, its ID is its file path. We can't stream it.
+          throw Exception('Локальний файл не знайдено, а потокове відтворення неможливе.');
+        }
+      }
+    }
+
+    if (playLocally) {
       AppLogger.audio('Source: Local Storage');
       final duration = await player.setAudioSource(
-        AudioSource.file(song.localPath!),
+        AudioSource.file(updatedSong.localPath!),
       );
 
       Uri? localArtUri = _defaultArtUri;
@@ -140,6 +155,7 @@ class PlaybackManager {
         player.play();
       } else {
         AppLogger.error('Failed to fetch audioUrl!', null, null, 'AUDIO');
+        throw Exception('Ця пісня недоступна для відтворення (обмеження YouTube).');
       }
     }
     return updatedSong;

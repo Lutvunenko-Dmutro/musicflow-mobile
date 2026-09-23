@@ -5,14 +5,18 @@ import 'locator.dart';
 import 'providers/audio_provider.dart';
 import 'providers/visualizer_settings_provider.dart';
 import 'screens/main_screen.dart';
+import 'providers/local_library_provider.dart';
+
+final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   setupLocator();
   
-  // Register the AudioProvider and initialize audio_service there, 
-  // or we can initialize it directly in AudioProvider constructor to keep it clean.
+  // Start background sync of local files on app startup
+  locator<LocalLibraryProvider>().init();
   
   runApp(const MusicFlowApp());
 }
@@ -29,6 +33,8 @@ class MusicFlowApp extends StatelessWidget {
       ],
       child: MaterialApp(
         title: 'MusicFlow Mobile',
+        navigatorKey: navigatorKey,
+        scaffoldMessengerKey: scaffoldMessengerKey,
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           brightness: Brightness.dark,

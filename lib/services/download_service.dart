@@ -1,14 +1,12 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:audiotags/audiotags.dart';
 import 'package:http/http.dart' as http;
-import 'package:image/image.dart' as img;
 import '../models/song_model.dart';
-import 'database_service.dart';
+import '../providers/local_library_provider.dart';
+import '../utils/media_metadata_helper.dart';
 import 'youtube_service.dart';
 import '../utils/app_logger.dart';
 
@@ -22,7 +20,6 @@ class DownloadInfo {
 
 class DownloadService {
   late final YoutubeService _ytService = locator<YoutubeService>();
-  late final DatabaseService _dbService = locator<DatabaseService>();
   static const MethodChannel _scannerChannel = MethodChannel('com.example.music_flow_mobile/media_scanner');
 
   DownloadService();
@@ -51,11 +48,10 @@ class DownloadService {
       String? customPath = prefs.getString('download_path');
       
       String dirPath;
-      if (customPath != null && customPath.isNotEmpty) {
+      if (customPath != null && customPath.isNotEmpty && customPath != 'За замовчуванням (Внутрішня пам\'ять)') {
         dirPath = customPath;
       } else {
-        final dir = await getApplicationDocumentsDirectory();
-        dirPath = dir.path;
+        dirPath = '/storage/emulated/0/Music';
       }
       
       final safeTitle = song.title.replaceAll(RegExp(r'[\\/:*?"<>|]'), '');
@@ -84,7 +80,7 @@ class DownloadService {
             isLocal: true,
             localPath: existingPath,
           );
-          await _dbService.saveSong(localSong);
+          locator<LocalLibraryProvider>().addSong(localSong);
           _updateProgress(song.id, 1.0, "Вже завантажено");
           return;
         }
@@ -141,67 +137,23 @@ class DownloadService {
         AppLogger.warning('Failed to download cover: $e', 'DOWNLOAD');
       }
 
-      // Smart crop cover art to a perfect 1:1 square, removing YouTube letterboxing
+      // 5.5.1 Smart crop cover art to a perfect 1:1 square
+      coverBytes = MediaMetadataHelper.cropCoverArtToSquare(coverBytes);
+
+      // 5.6 Embed tags via audiotags
       if (coverBytes != null) {
-        try {
-          final image = img.decodeImage(coverBytes);
-          if (image != null) {
-            int cropX = 0;
-            int cropY = 0;
-            int cropWidth = image.width;
-            int cropHeight = image.height;
-
-            // YouTube hqdefault (480x360) and sddefault (640x480) are 4:3
-            // but the video inside is usually 16:9, leaving black bars on top and bottom.
-            if ((image.width * 3 - image.height * 4).abs() <= 1) {
-              cropHeight = (image.width * 9) ~/ 16;
-              cropY = (image.height - cropHeight) ~/ 2;
-            }
-
-            // Now crop to 1:1 square from the actual video area
-            int size = cropWidth < cropHeight ? cropWidth : cropHeight;
-            int x = cropX + (cropWidth - size) ~/ 2;
-            int y = cropY + (cropHeight - size) ~/ 2;
-            
-            final croppedImage = img.copyCrop(image, x: x, y: y, width: size, height: size);
-            coverBytes = Uint8List.fromList(img.encodeJpg(croppedImage, quality: 95));
-            AppLogger.download('Cover art smart-cropped to 1:1 square.');
-          }
-        } catch (e) {
-          AppLogger.warning('Failed to crop cover art: $e', 'DOWNLOAD');
-        }
-      }
-
-      // 5.6 Try to embed tags via audiotags (works for some M4A files)
-      if (coverBytes != null) {
-        try {
-          AppLogger.download('Embedding tags...');
-          await AudioTags.write(
-            m4aPath,
-            Tag(
-              title: song.title,
-              trackArtist: song.author,
-              pictures: [
-                Picture(
-                  bytes: coverBytes,
-                  mimeType: MimeType.jpeg,
-                  pictureType: PictureType.coverFront,
-                )
-              ],
-            ),
-          );
-          AppLogger.success('Tags embedded successfully!', 'DOWNLOAD');
-        } catch (e) {
-          AppLogger.warning('audiotags failed ($e), will use MediaStore for cover art', 'DOWNLOAD');
-        }
+        await MediaMetadataHelper.embedTags(
+          filePath: m4aPath,
+          title: song.title,
+          artist: song.author,
+          coverBytes: coverBytes,
+        );
       }
 
       // 5.7 Trigger Android Media Scanner + pass cover art bytes for MediaStore
       await Future.delayed(const Duration(milliseconds: 500));
       try {
-        final coverBase64 = coverBytes != null
-            ? coverBytes.map((b) => b).toList()
-            : null;
+        final coverBase64 = coverBytes?.map((b) => b).toList();
 
         await _scannerChannel.invokeMethod('scanFileWithCover', {
           'path': m4aPath,
@@ -211,21 +163,22 @@ class DownloadService {
         });
         AppLogger.success('Media scanner triggered with cover art.', 'DOWNLOAD');
       } catch (e) {
-        // Fallback: plain scan
         AppLogger.warning('scanFileWithCover failed ($e), trying plain scan', 'DOWNLOAD');
         try {
           await _scannerChannel.invokeMethod('scanFile', {'path': m4aPath});
-        } catch (_) {}
+        } catch (e2) {
+          AppLogger.error('Plain scanFile also failed', e2, null, 'DOWNLOAD');
+        }
       }
 
-      // 6. Update Database
+      // 6. Update Memory Library
       final localSong = song.copyWith(
         isLocal: true,
         localPath: m4aPath,
         coverBytes: coverBytes ?? song.coverBytes,
       );
-      await _dbService.saveSong(localSong);
-      AppLogger.success('DB record updated.', 'DOWNLOAD');
+      locator<LocalLibraryProvider>().addSong(localSong);
+      AppLogger.success('Memory library record updated.', 'DOWNLOAD');
       AppLogger.download('Progress 100% — FINISHED!');
 
     } catch (e, stack) {

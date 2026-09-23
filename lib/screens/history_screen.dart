@@ -1,10 +1,13 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../models/history_model.dart';
 import '../services/database_service.dart';
-import '../models/song_model.dart';
 import '../providers/audio_provider.dart';
-import '../widgets/custom_card.dart';
+import '../models/song_model.dart';
+import '../providers/local_library_provider.dart';
 import '../locator.dart';
+import '../widgets/song_download_button.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -14,21 +17,90 @@ class HistoryScreen extends StatefulWidget {
 }
 
 class _HistoryScreenState extends State<HistoryScreen> {
-  List<SongModel> _history = [];
+  List<HistoryModel> _history = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _loadHistory();
+    locator<DatabaseService>().addListener(_loadHistory);
+  }
+
+  @override
+  void dispose() {
+    locator<DatabaseService>().removeListener(_loadHistory);
+    super.dispose();
   }
 
   Future<void> _loadHistory() async {
-    // For now, we load all downloaded songs.
-    // In a full implementation, you'd have a separate 'history' table for played songs.
-    final songs = await locator<DatabaseService>().getAllSongs();
-    setState(() {
-      _history = songs.reversed.toList();
-    });
+    final history = await locator<DatabaseService>().getHistory();
+    if (mounted) {
+      setState(() {
+        _history = history;
+        _isLoading = false;
+      });
+    }
+  }
+
+  Widget _buildCover(HistoryModel song) {
+    if (song.coverBytes != null) {
+      return Image.memory(
+        song.coverBytes!,
+        width: 50,
+        height: 50,
+        fit: BoxFit.cover,
+      );
+    }
+    return Container(
+      width: 50,
+      height: 50,
+      color: Colors.grey[800],
+      child: const Icon(Icons.music_note, color: Colors.white54),
+    );
+  }
+
+  void _playSong(HistoryModel historyItem, int index) {
+    final audioProvider = context.read<AudioProvider>();
+    
+    // We must convert HistoryModel back to SongModel
+    final songsToPlay = _history.map((h) {
+      return SongModel(
+        id: h.id,
+        title: h.title,
+        author: h.author,
+        coverUrl: h.coverUrl,
+        duration: Duration(milliseconds: h.durationMs),
+        isLocal: h.id.startsWith('/'),
+        localPath: h.id.startsWith('/') ? h.id : null,
+        coverBytes: h.coverBytes,
+      );
+    }).toList();
+
+    audioProvider.setQueue(songsToPlay, initialIndex: index);
+  }
+  
+  bool _isDownloaded(HistoryModel item) {
+    if (item.id.startsWith('/')) {
+      return File(item.id).existsSync();
+    }
+    
+    final libProvider = locator<LocalLibraryProvider>();
+    for (var song in libProvider.songs) {
+      if (song.localPath != null && (song.localPath!.contains(item.id) || song.title == item.title)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final diff = now.difference(date);
+    if (diff.inDays > 0) return '${diff.inDays} дн. тому';
+    if (diff.inHours > 0) return '${diff.inHours} год. тому';
+    if (diff.inMinutes > 0) return '${diff.inMinutes} хв. тому';
+    return 'Щойно';
   }
 
   @override
@@ -37,58 +109,96 @@ class _HistoryScreenState extends State<HistoryScreen> {
       appBar: AppBar(
         title: const Text('Історія'),
       ),
-      body: _history.isEmpty
-          ? const Center(child: Text('Історія порожня'))
-          : ListView.builder(
-              padding: const EdgeInsets.all(16.0),
-              itemCount: _history.length,
-              itemBuilder: (context, index) {
-                final song = _history[index];
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 8.0),
-                  child: CustomCard(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Row(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.network(
-                            song.coverUrl,
-                            width: 56,
-                            height: 56,
-                            fit: BoxFit.cover,
-                          ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _history.isEmpty
+              ? const Center(child: Text('Ви ще нічого не слухали'))
+              : ListView.builder(
+                  itemCount: _history.length,
+                  itemBuilder: (context, index) {
+                    final item = _history[index];
+                    final bool isDownloaded = _isDownloaded(item);
+                    
+                    return Dismissible(
+                      key: Key(item.id),
+                      direction: DismissDirection.endToStart,
+                      background: Container(
+                        color: Colors.redAccent,
+                        alignment: Alignment.centerRight,
+                        padding: const EdgeInsets.only(right: 20.0),
+                        child: const Icon(Icons.delete, color: Colors.white),
+                      ),
+                      onDismissed: (direction) async {
+                        await locator<DatabaseService>().removeFromHistory(item.id);
+                      },
+                      child: ListTile(
+                        leading: ClipRRect(
+                          borderRadius: BorderRadius.circular(8.0),
+                          child: _buildCover(item),
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                song.title,
+                        title: Text(
+                          item.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        subtitle: Row(
+                          children: [
+                            Icon(
+                              isDownloaded ? Icons.offline_pin : Icons.cloud_outlined,
+                              size: 14,
+                              color: isDownloaded ? Colors.greenAccent : Colors.grey,
+                            ),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                '${item.author} • ${_formatDate(item.lastPlayedAt)}',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(fontWeight: FontWeight.bold),
-                              ),
-                              Text(
-                                song.author,
                                 style: TextStyle(color: Colors.grey[400], fontSize: 12),
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                        IconButton(
-                          icon: Icon(Icons.play_arrow, color: Theme.of(context).primaryColor),
-                          onPressed: () {
-                            context.read<AudioProvider>().playSong(song);
-                          },
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (!isDownloaded && !item.id.startsWith('/'))
+                              SongDownloadButton(
+                                song: SongModel(
+                                  id: item.id,
+                                  title: item.title,
+                                  author: item.author,
+                                  coverUrl: item.coverUrl,
+                                  duration: Duration(milliseconds: item.durationMs),
+                                  isLocal: false,
+                                ),
+                              ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).primaryColor.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.play_arrow, size: 14, color: Colors.white70),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '${item.playCount}',
+                                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
+                        onTap: () => _playSong(item, index),
+                      ),
+                    );
+                  },
+                ),
     );
   }
 }

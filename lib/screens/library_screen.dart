@@ -1,16 +1,13 @@
 import 'dart:io';
-import 'package:path/path.dart' as p;
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:audiotags/audiotags.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/song_model.dart';
-import '../services/database_service.dart';
 import '../providers/audio_provider.dart';
-import '../utils/app_logger.dart';
+import '../providers/local_library_provider.dart';
 import '../widgets/library_list_item.dart';
+import '../widgets/library_app_bar.dart';
+import '../utils/library_sorter.dart';
 import '../locator.dart';
 
 enum SortOption {
@@ -31,19 +28,29 @@ class _LibraryScreenState extends State<LibraryScreen> {
   final Set<String> _selectedIds = {};
   SortOption _currentSort = SortOption.dateAdded;
   bool _isDescending = false;
+  final Set<String> _deletingIds = {};
 
   @override
   void initState() {
     super.initState();
     _loadPrefs();
-    _loadSongs();
-    locator<DatabaseService>().addListener(_loadSongs);
+    _onProviderUpdate(); // Initial load
+    locator<LocalLibraryProvider>().addListener(_onProviderUpdate);
   }
 
   @override
   void dispose() {
-    locator<DatabaseService>().removeListener(_loadSongs);
+    locator<LocalLibraryProvider>().removeListener(_onProviderUpdate);
     super.dispose();
+  }
+
+  void _onProviderUpdate() {
+    if (mounted) {
+      setState(() {
+        _songs = List.from(locator<LocalLibraryProvider>().songs);
+        _applySorting();
+      });
+    }
   }
 
   Future<void> _loadPrefs() async {
@@ -63,239 +70,93 @@ class _LibraryScreenState extends State<LibraryScreen> {
     await prefs.setBool('library_sort_descending', _isDescending);
   }
 
-  Future<void> _loadSongs() async {
-    // 1. Load from DB and show immediately
-    final dbSongs = await locator<DatabaseService>().getAllSongs();
-    if (mounted) {
-      setState(() {
-        _songs = List.from(dbSongs);
-        _applySorting();
-      });
-    }
-
-    // 2. Scan download directory asynchronously in the background
-    final prefs = await SharedPreferences.getInstance();
-    String? customPath = prefs.getString('download_path');
-    
-    if (customPath != null && customPath.isNotEmpty && customPath != 'За замовчуванням (Внутрішня пам\'ять)') {
-      final dir = Directory(customPath);
-      if (await dir.exists()) {
-        var manageStatus = await Permission.manageExternalStorage.status;
-        if (!manageStatus.isGranted) {
-          await Permission.manageExternalStorage.request();
-        }
-        var storageStatus = await Permission.storage.status;
-        if (!storageStatus.isGranted) {
-          await Permission.storage.request();
-        }
-
-        final dbPaths = dbSongs.map((s) => s.localPath).where((path) => path != null).toSet();
-        
-        try {
-          // 1. Sync scan to instantly get all file paths
-          final files = dir.listSync();
-          List<SongModel> localFolderSongs = [];
-          
-          for (var file in files) {
-            if (file is File && (file.path.endsWith('.mp3') || file.path.endsWith('.m4a'))) {
-              if (!dbPaths.contains(file.path)) {
-                String fileName = p.basenameWithoutExtension(file.path);
-                String author = 'Local File';
-                String title = fileName.replaceAll('_', ' ');
-                
-                if (title.contains(' - ')) {
-                  final parts = title.split(' - ');
-                  author = parts.first.trim();
-                  title = parts.sublist(1).join(' - ').trim();
-                }
-
-                localFolderSongs.add(SongModel(
-                  id: file.path,
-                  title: title,
-                  author: author,
-                  coverUrl: '',
-                  duration: Duration.zero,
-                  isLocal: true,
-                  localPath: file.path,
-                  coverBytes: null,
-                ));
-              }
-            }
-          }
-
-          // 2. Add them all to UI at once (instant loading)
-          if (localFolderSongs.isNotEmpty && mounted) {
-            setState(() {
-              _songs.addAll(localFolderSongs);
-              _applySorting();
-            });
-            
-            // 3. Load ID3 tags in the background (does NOT block the UI, does NOT trigger expensive sorting)
-            for (var localSong in localFolderSongs) {
-              AudioTags.read(localSong.localPath!).then((tag) {
-                if (tag != null && mounted) {
-                  setState(() {
-                    final index = _songs.indexWhere((s) => s.id == localSong.id);
-                    if (index != -1) {
-                      _songs[index] = _songs[index].copyWith(
-                        title: (tag.title?.isNotEmpty == true) ? tag.title! : _songs[index].title,
-                        author: (tag.trackArtist?.isNotEmpty == true) ? tag.trackArtist! : _songs[index].author,
-                        coverBytes: tag.pictures.isNotEmpty ? tag.pictures.first.bytes : null,
-                      );
-                    }
-                  });
-                }
-              }).catchError((_) {
-                 // Ignore files without valid tags
-              });
-            }
-          }
-        } catch (e) {
-          AppLogger.error('Error reading directory', e, null, 'LIBRARY');
-        }
-      }
-    }
-  }
-
   void _applySorting() {
-    switch (_currentSort) {
-      case SortOption.title:
-        _songs.sort((a, b) => a.title.compareTo(b.title));
-        break;
-      case SortOption.author:
-        _songs.sort((a, b) => a.author.compareTo(b.author));
-        break;
-      case SortOption.dateAdded:
-        _songs.sort((a, b) {
-          int timeA = 0;
-          int timeB = 0;
-          if (a.localPath != null) {
-            try {
-              timeA = File(a.localPath!).lastModifiedSync().millisecondsSinceEpoch;
-            } catch (_) {}
-          }
-          if (b.localPath != null) {
-            try {
-              timeB = File(b.localPath!).lastModifiedSync().millisecondsSinceEpoch;
-            } catch (_) {}
-          }
-          return timeB.compareTo(timeA); // Descending by default (newest first)
-        });
-        break;
-    }
-
-    if (_isDescending) {
-      _songs = _songs.reversed.toList();
-    }
+    LibrarySorter.sortSongs(_songs, _currentSort, _isDescending);
   }
 
   @override
   Widget build(BuildContext context) {
     final bool isSelectionMode = _selectedIds.isNotEmpty;
+    final provider = locator<LocalLibraryProvider>();
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(isSelectionMode ? '${_selectedIds.length} вибрано' : 'Бібліотека'),
-        leading: isSelectionMode
-            ? IconButton(
-                icon: const Icon(Icons.close),
-                onPressed: () {
-                  setState(() {
-                    _selectedIds.clear();
-                  });
-                },
-              )
-            : null,
-        actions: [
-          if (isSelectionMode)
-            IconButton(
-              icon: const Icon(Icons.delete, color: Colors.redAccent),
-              onPressed: () => _confirmDeleteSelected(context),
-            )
-          else ...[
-            IconButton(
-              icon: Icon(_isDescending ? Icons.arrow_downward : Icons.arrow_upward),
-              tooltip: 'Змінити напрямок',
-              onPressed: () {
-                setState(() {
-                  _isDescending = !_isDescending;
-                  _applySorting();
-                });
-                _savePrefs();
-              },
-            ),
-            PopupMenuButton<SortOption>(
-              icon: const Icon(Icons.sort),
-              onSelected: (SortOption result) {
-                setState(() {
-                  _currentSort = result;
-                  _applySorting();
-                });
-                _savePrefs();
-              },
-              itemBuilder: (BuildContext context) => <PopupMenuEntry<SortOption>>[
-                const PopupMenuItem<SortOption>(
-                  value: SortOption.title,
-                  child: Text('За назвою'),
-                ),
-                const PopupMenuItem<SortOption>(
-                  value: SortOption.author,
-                  child: Text('За автором'),
-                ),
-                const PopupMenuItem<SortOption>(
-                  value: SortOption.dateAdded,
-                  child: Text('За часом додавання'),
-                ),
-              ],
-            ),
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: _loadSongs,
-            ),
-          ],
-        ],
+      appBar: LibraryAppBar(
+        selectedCount: _selectedIds.length,
+        isSelectionMode: isSelectionMode,
+        isDescending: _isDescending,
+        onClearSelection: () {
+          setState(() {
+            _selectedIds.clear();
+          });
+        },
+        onDeleteSelected: () => _confirmDeleteSelected(context),
+        onToggleSortDirection: () {
+          setState(() {
+            _isDescending = !_isDescending;
+            _applySorting();
+          });
+          _savePrefs();
+        },
+        onSortSelected: (SortOption result) {
+          setState(() {
+            _currentSort = result;
+            _applySorting();
+          });
+          _savePrefs();
+        },
+        onRefresh: () => provider.init(),
       ),
-      body: _songs.isEmpty
-          ? const Center(child: Text('Your library is empty'))
-          : ListView.builder(
-              itemCount: _songs.length,
-              itemBuilder: (context, index) {
-                final song = _songs[index];
-                return LibraryListItem(
-                  song: song,
-                  isSelected: _selectedIds.contains(song.id),
-                  isSelectionMode: isSelectionMode,
-                  onLongPress: () {
-                    setState(() {
-                      if (_selectedIds.contains(song.id)) {
-                        _selectedIds.remove(song.id);
-                      } else {
-                        _selectedIds.add(song.id);
-                      }
-                    });
+      body: provider.isLoading 
+          ? const Center(child: CircularProgressIndicator())
+          : _songs.isEmpty
+              ? const Center(child: Text('Ваша бібліотека порожня'))
+              : ListView.builder(
+                  itemCount: _songs.length,
+                  itemBuilder: (context, index) {
+                    final song = _songs[index];
+                    final isDeleting = _deletingIds.contains(song.id);
+                    
+                    return AnimatedSize(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                      child: isDeleting
+                          ? const SizedBox(width: double.infinity, height: 0)
+                          : LibraryListItem(
+                              song: song,
+                              isSelected: _selectedIds.contains(song.id),
+                              isSelectionMode: isSelectionMode,
+                              onLongPress: () {
+                                setState(() {
+                                  if (_selectedIds.contains(song.id)) {
+                                    _selectedIds.remove(song.id);
+                                  } else {
+                                    _selectedIds.add(song.id);
+                                  }
+                                });
+                              },
+                              onTap: () {
+                                if (isSelectionMode) {
+                                  setState(() {
+                                    if (_selectedIds.contains(song.id)) {
+                                      _selectedIds.remove(song.id);
+                                    } else {
+                                      _selectedIds.add(song.id);
+                                    }
+                                  });
+                                } else {
+                                  context.read<AudioProvider>().setQueue(_songs, initialIndex: index);
+                                }
+                              },
+                            ),
+                    );
                   },
-                  onTap: () {
-                    if (isSelectionMode) {
-                      setState(() {
-                        if (_selectedIds.contains(song.id)) {
-                          _selectedIds.remove(song.id);
-                        } else {
-                          _selectedIds.add(song.id);
-                        }
-                      });
-                    } else {
-                      context.read<AudioProvider>().setQueue(_songs, initialIndex: index);
-                    }
-                  },
-                );
-              },
-            ),
+                ),
     );
   }
 
   Future<void> _confirmDeleteSelected(BuildContext context) async {
-    // Capture provider before any async gap
     final audioProvider = context.read<AudioProvider>();
+    final libProvider = locator<LocalLibraryProvider>();
 
     final confirm = await showDialog<bool>(
       context: context,
@@ -316,13 +177,20 @@ class _LibraryScreenState extends State<LibraryScreen> {
     );
 
     if (confirm == true && mounted) {
-      for (final id in _selectedIds) {
+      final idsToDelete = List<String>.from(_selectedIds);
+      
+      setState(() {
+        _deletingIds.addAll(idsToDelete);
+        _selectedIds.clear();
+      });
+      
+      await Future.delayed(const Duration(milliseconds: 300));
+      
+      for (final id in idsToDelete) {
         if (audioProvider.currentSong?.id == id) {
           await audioProvider.stop();
         }
-        await locator<DatabaseService>().deleteSong(id);
         
-        // Also delete the physical file if it exists
         final song = _songs.firstWhere((s) => s.id == id, orElse: () => _songs.first);
         if (song.id == id && song.localPath != null) {
           final file = File(song.localPath!);
@@ -330,12 +198,13 @@ class _LibraryScreenState extends State<LibraryScreen> {
             await file.delete();
           }
         }
+        
+        libProvider.removeSong(id);
       }
       
       setState(() {
-        _selectedIds.clear();
+        _deletingIds.removeAll(idsToDelete);
       });
-      _loadSongs();
     }
   }
 }

@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path_provider/path_provider.dart';
 import '../services/database_service.dart';
 import '../locator.dart';
+import '../utils/app_logger.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -31,6 +32,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() {
       _downloadPath = prefs.getString('download_path') ?? 'За замовчуванням (Внутрішня пам\'ять)';
       _showMediaNotification = prefs.getBool('show_media_notification') ?? true;
+      _embedLyrics = prefs.getBool('embed_lyrics') ?? true;
+      _highQuality = prefs.getBool('high_quality') ?? true;
     });
   }
 
@@ -51,8 +54,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _clearHistory() async {
-    final db = await locator<DatabaseService>().database;
-    await db.delete('songs');
+    await locator<DatabaseService>().clearHistory();
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('✅ Історію очищено!')),
@@ -64,7 +66,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final tempDir = await getTemporaryDirectory();
     if (tempDir.existsSync()) {
       tempDir.listSync().forEach((file) {
-        try { file.deleteSync(recursive: true); } catch (_) {}
+        try { 
+          file.deleteSync(recursive: true); 
+        } catch (e) {
+          AppLogger.warning('Failed to delete cache file ${file.path}: $e', 'SETTINGS');
+        }
       });
     }
     if (mounted) {
@@ -97,7 +103,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   subtitle: const Text('Автоматично шукати текст і зберігати у файл', style: TextStyle(fontSize: 12)),
                   value: _embedLyrics,
                   activeColor: Theme.of(context).primaryColor,
-                  onChanged: (val) {
+                  onChanged: (val) async {
+                    final prefs = await SharedPreferences.getInstance();
+                    await prefs.setBool('embed_lyrics', val);
                     setState(() => _embedLyrics = val);
                   },
                 ),
@@ -106,7 +114,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   subtitle: const Text('Завантажувати найбільший бітрейт (потребує більше пам\'яті)', style: TextStyle(fontSize: 12)),
                   value: _highQuality,
                   activeColor: Theme.of(context).primaryColor,
-                  onChanged: (val) {
+                  onChanged: (val) async {
+                    final prefs = await SharedPreferences.getInstance();
+                    await prefs.setBool('high_quality', val);
                     setState(() => _highQuality = val);
                   },
                 ),

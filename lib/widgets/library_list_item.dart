@@ -67,7 +67,10 @@ class LibraryListItem extends StatelessWidget {
         extraDate = "${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}";
         extraSize = "${(size / (1024 * 1024)).toStringAsFixed(1)} MB";
       }
-    } catch (_) {}
+    } catch (e) {
+      // Ignore missing file for UI metadata, but we can print for debug
+      // AppLogger.warning('Failed to load file stats: $e', 'LIBRARY_ITEM'); 
+    }
     if (extraDate.isEmpty) return const SizedBox.shrink();
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
