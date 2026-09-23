@@ -93,11 +93,15 @@ class _SmartCoverState extends State<SmartCover> {
   }
 
   Widget _buildFallback() {
-    return Image.asset(
-      'assets/images/default_cover.jpg',
+    return Container(
       width: widget.size,
       height: widget.size,
-      fit: BoxFit.cover,
+      color: const Color(0xFF2A2A2A),
+      child: Icon(
+        Icons.music_note,
+        color: Colors.grey[600],
+        size: widget.size * 0.45,
+      ),
     );
   }
 }

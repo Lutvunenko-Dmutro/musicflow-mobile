@@ -97,10 +97,14 @@ class PlayerHeader extends StatelessWidget {
 
   Widget _fallbackCover(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
+      color: const Color(0xFF2A2A2A),
+      child: const Center(
+        child: Icon(
+          Icons.music_note,
+          color: Color(0xFF555555),
+          size: 64,
+        ),
       ),
-      child: Image.asset('assets/images/default_cover.jpg', fit: BoxFit.cover),
     );
   }
 }
