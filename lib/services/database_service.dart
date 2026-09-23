@@ -1,12 +1,12 @@
+import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import '../models/song_model.dart';
 
-class DatabaseService {
-  static final DatabaseService instance = DatabaseService._init();
+class DatabaseService extends ChangeNotifier {
   static Database? _database;
 
-  DatabaseService._init();
+  DatabaseService();
 
   Future<Database> get database async {
     if (_database != null) return _database!;
@@ -49,26 +49,28 @@ CREATE TABLE songs (
   }
 
   Future<void> saveSong(SongModel song) async {
-    final db = await instance.database;
+    final db = await database;
     await db.insert(
       'songs',
       song.toMap(),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
+    notifyListeners();
   }
 
   Future<List<SongModel>> getAllSongs() async {
-    final db = await instance.database;
+    final db = await database;
     final result = await db.query('songs');
     return result.map((json) => SongModel.fromMap(json)).toList();
   }
 
   Future<void> deleteSong(String id) async {
-    final db = await instance.database;
+    final db = await database;
     await db.delete(
       'songs',
       where: 'id = ?',
       whereArgs: [id],
     );
+    notifyListeners();
   }
 }

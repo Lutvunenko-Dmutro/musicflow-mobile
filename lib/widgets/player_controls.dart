@@ -19,15 +19,14 @@ class PlayerControls extends StatelessWidget {
   Widget build(BuildContext context) {
     final audioProvider = context.watch<AudioProvider>();
     
-    return Expanded(
-      flex: 6,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
           // Seek Bar
-          Flexible(
-            flex: 3,
-            child: StreamBuilder<Duration>(
+          StreamBuilder<Duration>(
               stream: audioProvider.positionStream,
               builder: (context, snapshot) {
                 final position = snapshot.data ?? Duration.zero;
@@ -80,15 +79,14 @@ class PlayerControls extends StatelessWidget {
                 );
               },
             ),
-          ),
+
+          const SizedBox(height: 8),
 
           // Controls
-          Flexible(
-            flex: 3,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                IconButton(
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              IconButton(
                   icon: const Icon(Icons.shuffle),
                   color: audioProvider.isShuffleModeEnabled ? Theme.of(context).primaryColor : Colors.grey[400],
                   iconSize: 28,
@@ -153,8 +151,6 @@ class PlayerControls extends StatelessWidget {
                 ),
               ],
             ),
-          ),
-          const SizedBox(height: 16),
         ],
       ),
     );

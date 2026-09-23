@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path_provider/path_provider.dart';
 import '../services/database_service.dart';
+import '../locator.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -50,7 +51,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _clearHistory() async {
-    final db = await DatabaseService.instance.database;
+    final db = await locator<DatabaseService>().database;
     await db.delete('songs');
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(

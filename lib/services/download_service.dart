@@ -11,6 +11,8 @@ import 'database_service.dart';
 import 'youtube_service.dart';
 import '../utils/app_logger.dart';
 
+import '../locator.dart';
+
 class DownloadInfo {
   final double progress;
   final String speedText;
@@ -18,11 +20,11 @@ class DownloadInfo {
 }
 
 class DownloadService {
-  static final DownloadService instance = DownloadService._init();
-  final YoutubeService _ytService = YoutubeService();
+  late final YoutubeService _ytService = locator<YoutubeService>();
+  late final DatabaseService _dbService = locator<DatabaseService>();
   static const MethodChannel _scannerChannel = MethodChannel('com.example.music_flow_mobile/media_scanner');
 
-  DownloadService._init();
+  DownloadService();
 
   // Observable for progress
   final ValueNotifier<Map<String, DownloadInfo>> downloadProgress = ValueNotifier({});
@@ -81,7 +83,7 @@ class DownloadService {
             isLocal: true,
             localPath: existingPath,
           );
-          await DatabaseService.instance.saveSong(localSong);
+          await _dbService.saveSong(localSong);
           _updateProgress(song.id, 1.0, "Вже завантажено");
           return;
         }
@@ -173,7 +175,7 @@ class DownloadService {
         localPath: m4aPath,
         coverBytes: coverBytes ?? song.coverBytes,
       );
-      await DatabaseService.instance.saveSong(localSong);
+      await _dbService.saveSong(localSong);
       AppLogger.success('DB record updated.', 'DOWNLOAD');
       AppLogger.download('Progress 100% — FINISHED!');
 

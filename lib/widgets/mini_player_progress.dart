@@ -18,11 +18,11 @@ class MiniPlayerProgress extends StatelessWidget {
         return SliderTheme(
           data: SliderThemeData(
             trackHeight: 2,
-            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
-            overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
+            thumbShape: SliderComponentShape.noThumb,
+            overlayShape: SliderComponentShape.noOverlay,
             activeTrackColor: Theme.of(context).primaryColor,
             inactiveTrackColor: Colors.transparent,
-            thumbColor: Theme.of(context).primaryColor,
+            thumbColor: Colors.transparent,
             trackShape: const RectangularSliderTrackShape(),
           ),
           child: Container(
@@ -37,12 +37,17 @@ class MiniPlayerProgress extends StatelessWidget {
                 if (sliderValue < 0.0) sliderValue = 0.0;
                 if (sliderValue > sliderMax) sliderValue = sliderMax;
 
-                return Slider(
-                  value: sliderValue,
-                  max: sliderMax,
-                  onChanged: (val) {
-                    audioProvider.seek(Duration(milliseconds: val.toInt()));
-                  },
+                return SliderTheme(
+                  data: SliderTheme.of(context).copyWith(
+                    trackShape: _CustomTrackShape(),
+                  ),
+                  child: Slider(
+                    value: sliderValue,
+                    max: sliderMax,
+                    onChanged: (val) {
+                      audioProvider.seek(Duration(milliseconds: val.toInt()));
+                    },
+                  ),
                 );
               }
             ),
@@ -50,5 +55,22 @@ class MiniPlayerProgress extends StatelessWidget {
         );
       },
     );
+  }
+}
+
+class _CustomTrackShape extends RoundedRectSliderTrackShape {
+  @override
+  Rect getPreferredRect({
+    required RenderBox parentBox,
+    Offset offset = Offset.zero,
+    required SliderThemeData sliderTheme,
+    bool isEnabled = false,
+    bool isDiscrete = false,
+  }) {
+    final double trackHeight = sliderTheme.trackHeight ?? 2.0;
+    final double trackLeft = offset.dx;
+    final double trackTop = offset.dy + (parentBox.size.height - trackHeight) / 2;
+    final double trackWidth = parentBox.size.width;
+    return Rect.fromLTWH(trackLeft, trackTop, trackWidth, trackHeight);
   }
 }

@@ -4,6 +4,7 @@ import '../services/database_service.dart';
 import '../models/song_model.dart';
 import '../providers/audio_provider.dart';
 import '../widgets/custom_card.dart';
+import '../locator.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -24,7 +25,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   Future<void> _loadHistory() async {
     // For now, we load all downloaded songs.
     // In a full implementation, you'd have a separate 'history' table for played songs.
-    final songs = await DatabaseService.instance.getAllSongs();
+    final songs = await locator<DatabaseService>().getAllSongs();
     setState(() {
       _history = songs.reversed.toList();
     });

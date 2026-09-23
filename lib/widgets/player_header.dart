@@ -16,8 +16,7 @@ class PlayerHeader extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           // Cover Art
-          Flexible(
-            flex: 5,
+          Expanded(
             child: Center(
               child: GestureDetector(
                 onHorizontalDragEnd: (details) {
@@ -32,35 +31,34 @@ class PlayerHeader extends StatelessWidget {
                 },
                 child: Hero(
                   tag: 'cover_${song.id}',
-                  child: Container(
-                    decoration: BoxDecoration(
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.5),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
-                        ),
-                      ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: song.coverBytes != null
-                          ? Image.memory(
-                              song.coverBytes!,
-                              width: MediaQuery.of(context).size.width * 0.8,
-                              height: MediaQuery.of(context).size.width * 0.8,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) => _fallbackCover(context),
-                            )
-                          : (song.coverUrl.isEmpty
-                              ? _fallbackCover(context)
-                              : Image.network(
-                                  song.coverUrl,
-                                  width: MediaQuery.of(context).size.width * 0.8,
-                                  height: MediaQuery.of(context).size.width * 0.8,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) => _fallbackCover(context),
-                                )),
+                  child: AspectRatio(
+                    aspectRatio: 1.0,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.5),
+                            blurRadius: 20,
+                            offset: const Offset(0, 10),
+                          ),
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: song.coverBytes != null
+                            ? Image.memory(
+                                song.coverBytes!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) => _fallbackCover(context),
+                              )
+                            : (song.coverUrl.isEmpty
+                                ? _fallbackCover(context)
+                                : Image.network(
+                                    song.coverUrl,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) => _fallbackCover(context),
+                                  )),
+                      ),
                     ),
                   ),
                 ),
@@ -68,35 +66,35 @@ class PlayerHeader extends StatelessWidget {
             ),
           ),
           
+          const SizedBox(height: 16),
+          
           // Song Info
-          Flexible(
-            flex: 2,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  song.title,
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                song.title,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  song.author,
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey[400],
-                  ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                song.author,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey[400],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ],
       ),
@@ -105,8 +103,6 @@ class PlayerHeader extends StatelessWidget {
 
   Widget _fallbackCover(BuildContext context) {
     return Container(
-      width: MediaQuery.of(context).size.width * 0.8,
-      height: MediaQuery.of(context).size.width * 0.8,
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
       ),

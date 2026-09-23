@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:io';
 import '../models/song_model.dart';
-import '../providers/audio_provider.dart';
 import '../services/download_service.dart';
+import '../providers/audio_provider.dart';
+import '../locator.dart';
 
 class SongListItem extends StatelessWidget {
   final SongModel song;
@@ -98,7 +99,7 @@ class SongListItem extends StatelessWidget {
             },
           ),
           ValueListenableBuilder<Map<String, DownloadInfo>>(
-            valueListenable: DownloadService.instance.downloadProgress,
+          valueListenable: locator<DownloadService>().downloadProgress,
             builder: (context, progressMap, child) {
               final info = progressMap[song.id];
               
@@ -167,7 +168,7 @@ class SongListItem extends StatelessWidget {
               return IconButton(
                 icon: const Icon(Icons.download, color: Colors.white70),
                 onPressed: () {
-                  DownloadService.instance.downloadSong(
+                  locator<DownloadService>().downloadSong(
                     song,
                     onFileExists: () async {
                       final result = await showDialog<bool>(

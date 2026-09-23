@@ -154,13 +154,22 @@ class _AudioVisualizerState extends State<AudioVisualizer> with SingleTickerProv
     return SizedBox(
       width: widget.width,
       height: widget.height,
-      child: CustomPaint(
-        painter: VisualizerPainter(
-          heights: _currentHeights,
-          dotHeights: _dotHeights,
-          barCount: widget.barCount,
-          isMirrored: _settings.isMirrored,
-          repaint: _repaintNotifier,
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 420),
+          child: SizedBox(
+            width: double.infinity,
+            height: double.infinity,
+            child: CustomPaint(
+              painter: VisualizerPainter(
+                heights: _currentHeights,
+                dotHeights: _dotHeights,
+                barCount: widget.barCount,
+                isMirrored: _settings.isMirrored,
+                repaint: _repaintNotifier,
+              ),
+            ),
+          ),
         ),
       ),
     );

@@ -9,13 +9,14 @@ import '../services/youtube_service.dart';
 import '../services/native_visualizer_service.dart';
 import '../services/playback_manager.dart';
 import '../utils/app_logger.dart';
+import '../locator.dart';
 import 'queue_manager_mixin.dart';
 
 export 'queue_manager_mixin.dart';
 
 class AudioProvider with ChangeNotifier, QueueManagerMixin {
   final AudioPlayer _player = AudioPlayer();
-  final YoutubeService _ytService = YoutubeService();
+  final YoutubeService _ytService = locator<YoutubeService>();
   SongModel? _currentSong;
   bool _isLoading = false;
   

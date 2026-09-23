@@ -28,41 +28,47 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Column(
-        children: [
-          Expanded(
-            child: Stack(
-              children: [
-                _screens[_currentIndex],
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  child: IgnorePointer(
-                    child: Consumer<AudioProvider>(
-                      builder: (context, audioProvider, child) {
-                        if (audioProvider.isPlaying) {
-                          return const SizedBox(
-                            width: double.infinity,
-                            height: 50,
-                            child: AudioVisualizer(
-                              isPlaying: true,
+      body: SafeArea(
+        left: true,
+        right: true,
+        top: false,
+        bottom: false,
+        child: Column(
+          children: [
+            Expanded(
+              child: Stack(
+                children: [
+                  _screens[_currentIndex],
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: IgnorePointer(
+                      child: Consumer<AudioProvider>(
+                        builder: (context, audioProvider, child) {
+                          if (audioProvider.isPlaying) {
+                            return const SizedBox(
                               width: double.infinity,
                               height: 50,
-                              barCount: 60,
-                            ),
-                          );
-                        }
-                        return const SizedBox.shrink();
-                      },
+                              child: AudioVisualizer(
+                                isPlaying: true,
+                                width: double.infinity,
+                                height: 50,
+                                barCount: 60,
+                              ),
+                            );
+                          }
+                          return const SizedBox.shrink();
+                        },
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          const MiniPlayer(),
-        ],
+            const MiniPlayer(),
+          ],
+        ),
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,

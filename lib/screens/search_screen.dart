@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/audio_provider.dart';
 import '../services/youtube_service.dart';
 import '../models/song_model.dart';
+import '../locator.dart';
 import '../widgets/custom_card.dart';
 import '../widgets/search_input_card.dart';
 import '../widgets/song_list_item.dart';
@@ -16,7 +17,7 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
-  final YoutubeService _ytService = YoutubeService();
+  final YoutubeService _ytService = locator<YoutubeService>();
   List<SongModel> _results = [];
   bool _isSearching = false;
 

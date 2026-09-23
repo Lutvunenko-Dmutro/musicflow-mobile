@@ -21,12 +21,15 @@ class VisualizerPainter extends CustomPainter {
     int groupSize = barCount ~/ numBlocks;
     
     // Відступи між блоками (у дзеркальному режимі прибираємо розриви)
-    double blockGap = isMirrored ? 0.0 : (size.width * 0.03); 
+    // Використовуємо фіксований відступ, щоб у горизонтальному режимі він не був завеликим
+    double blockGap = isMirrored ? 0.0 : 12.0; 
     double totalGaps = blockGap * (numBlocks - 1); 
     
     double usableWidth = size.width - totalGaps;
     double barWidth = usableWidth / barCount;
-    double spacing = barWidth * 0.2;
+    
+    // Фіксуємо spacing, щоб смужки не роз'їжджалися занадто сильно
+    double spacing = (barWidth * 0.2).clamp(1.0, 4.0);
     double actualBarWidth = barWidth - spacing;
 
     // Точні кольори з ПК версії (MusicFlow)

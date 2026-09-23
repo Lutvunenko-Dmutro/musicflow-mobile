@@ -50,67 +50,73 @@ class MiniPlayer extends StatelessWidget {
             const MiniPlayerProgress(),
             
             Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Row(
-                  children: [
-                    // Cover Art with rounded corners
-                    Hero(
-                      tag: 'cover_${song.id}',
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: song.coverBytes != null
-                          ? Image.memory(
-                                song.coverBytes!,
-                                width: 48,
-                                height: 48,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => Image.asset('assets/icon.png', width: 48, height: 48, fit: BoxFit.cover),
-                              )
-                            : (song.coverUrl.isEmpty
-                                ? Image.asset('assets/icon.png', width: 48, height: 48, fit: BoxFit.cover)
-                              : Image.network(
-                                  song.coverUrl,
+              child: SafeArea(
+                left: true,
+                right: true,
+                top: false,
+                bottom: false,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Row(
+                    children: [
+                      // Cover Art with rounded corners
+                      Hero(
+                        tag: 'cover_${song.id}',
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: song.coverBytes != null
+                            ? Image.memory(
+                                  song.coverBytes!,
                                   width: 48,
                                   height: 48,
                                   fit: BoxFit.cover,
                                   errorBuilder: (context, error, stackTrace) => Image.asset('assets/icon.png', width: 48, height: 48, fit: BoxFit.cover),
-                                )),
+                                )
+                              : (song.coverUrl.isEmpty
+                                  ? Image.asset('assets/icon.png', width: 48, height: 48, fit: BoxFit.cover)
+                                : Image.network(
+                                    song.coverUrl,
+                                    width: 48,
+                                    height: 48,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) => Image.asset('assets/icon.png', width: 48, height: 48, fit: BoxFit.cover),
+                                  )),
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    
-                    // Title and Author
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            song.title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
+                      const SizedBox(width: 16),
+                      
+                      // Title and Author
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              song.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            song.author,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: Colors.grey[400], 
-                              fontSize: 12,
+                            const SizedBox(height: 4),
+                            Text(
+                              song.author,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: Colors.grey[400], 
+                                fontSize: 12,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                    
-                    const MiniPlayerControls(),
-                  ],
+                      
+                      const MiniPlayerControls(),
+                    ],
+                  ),
                 ),
               ),
             ),

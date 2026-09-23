@@ -10,6 +10,8 @@ import '../models/song_model.dart';
 import '../services/database_service.dart';
 import '../providers/audio_provider.dart';
 import '../utils/app_logger.dart';
+import '../widgets/library_list_item.dart';
+import '../locator.dart';
 
 enum SortOption {
   title,
@@ -35,6 +37,13 @@ class _LibraryScreenState extends State<LibraryScreen> {
     super.initState();
     _loadPrefs();
     _loadSongs();
+    locator<DatabaseService>().addListener(_loadSongs);
+  }
+
+  @override
+  void dispose() {
+    locator<DatabaseService>().removeListener(_loadSongs);
+    super.dispose();
   }
 
   Future<void> _loadPrefs() async {
@@ -55,7 +64,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
   }
 
   Future<void> _loadSongs() async {
-    final dbSongs = await DatabaseService.instance.getAllSongs();
+    final dbSongs = await locator<DatabaseService>().getAllSongs();
     
     // Scan download directory for existing files that are not in DB
     final prefs = await SharedPreferences.getInstance();
@@ -231,62 +240,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
               itemCount: _songs.length,
               itemBuilder: (context, index) {
                 final song = _songs[index];
-                return ListTile(
-                  leading: SizedBox(
-                    width: 50,
-                    height: 50,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8.0),
-                      child: song.coverBytes != null
-                          ? Image.memory(
-                              song.coverBytes!,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Image.asset('assets/icon.png', fit: BoxFit.cover);
-                              },
-                            )
-                          : (song.coverUrl.isEmpty
-                              ? Image.asset('assets/icon.png', fit: BoxFit.cover)
-                              : Image.network(
-                                  song.coverUrl,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Image.asset('assets/icon.png', fit: BoxFit.cover);
-                                  },
-                                )),
-                    ),
-                  ),
-                  title: Text(song.title, maxLines: 1),
-                  subtitle: Text(song.author, maxLines: 1),
-                  trailing: Builder(
-                    builder: (context) {
-                      if (!song.isLocal || song.localPath == null) return const SizedBox.shrink();
-                      String extraDate = "";
-                      String extraSize = "";
-                      try {
-                        final file = File(song.localPath!);
-                        if (file.existsSync()) {
-                          final date = file.lastModifiedSync();
-                          final size = file.lengthSync();
-                          extraDate = "${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}";
-                          extraSize = "${(size / (1024 * 1024)).toStringAsFixed(1)} MB";
-                        }
-                      } catch (_) {}
-                      if (extraDate.isEmpty) return const SizedBox.shrink();
-                      return Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(extraDate, style: TextStyle(color: Colors.grey[600], fontSize: 11)),
-                          const SizedBox(height: 2),
-                          Text(extraSize, style: TextStyle(color: Colors.grey[600], fontSize: 11)),
-                        ],
-                      );
-                    },
-                  ),
-                  selected: _selectedIds.contains(song.id),
-                  selectedTileColor: Colors.redAccent.withValues(alpha: 0.2),
+                return LibraryListItem(
+                  song: song,
+                  isSelected: _selectedIds.contains(song.id),
+                  isSelectionMode: isSelectionMode,
                   onLongPress: () {
                     setState(() {
                       if (_selectedIds.contains(song.id)) {
@@ -342,7 +299,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
         if (audioProvider.currentSong?.id == id) {
           await audioProvider.stop();
         }
-        await DatabaseService.instance.deleteSong(id);
+        await locator<DatabaseService>().deleteSong(id);
         
         // Also delete the physical file if it exists
         final song = _songs.firstWhere((s) => s.id == id, orElse: () => _songs.first);
