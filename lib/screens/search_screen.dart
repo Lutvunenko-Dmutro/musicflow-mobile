@@ -47,7 +47,6 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   void dispose() {
-    _ytService.dispose();
     _searchController.dispose();
     super.dispose();
   }

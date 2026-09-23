@@ -109,7 +109,7 @@ class DownloadService {
           final now = DateTime.now();
           final diff = now.difference(lastTime).inMilliseconds;
           
-          if (diff >= 500) { // Update speed twice a second
+          if (diff >= 500) {
              final bytesPerSec = ((bytesDownloaded - lastBytes) / (diff / 1000)).round();
              if (bytesPerSec > 1024 * 1024) {
                currentSpeedText = '${(bytesPerSec / (1024 * 1024)).toStringAsFixed(1)} MB/s';
@@ -127,49 +127,66 @@ class DownloadService {
       await sink.close();
       AppLogger.success('File saved!', 'DOWNLOAD');
 
-      // 5.5 Embed ID3 tags
+      // 5.5 Download cover art bytes
       Uint8List? coverBytes = song.coverBytes;
       try {
-        AppLogger.download('Embedding ID3 tags...');
         if (coverBytes == null && song.coverUrl.isNotEmpty) {
           final response = await http.get(Uri.parse(song.coverUrl));
           if (response.statusCode == 200) {
             coverBytes = response.bodyBytes;
           }
         }
-
-        await AudioTags.write(
-          m4aPath,
-          Tag(
-            title: song.title,
-            trackArtist: song.author,
-            pictures: coverBytes != null
-                ? [
-                    Picture(
-                      bytes: coverBytes,
-                      mimeType: MimeType.jpeg,
-                      pictureType: PictureType.coverFront,
-                    )
-                  ]
-                : [],
-          ),
-        );
-        AppLogger.success('ID3 tags embedded successfully!', 'DOWNLOAD');
       } catch (e) {
-        AppLogger.warning('Failed to embed ID3 tags: $e', 'DOWNLOAD');
+        AppLogger.warning('Failed to download cover: $e', 'DOWNLOAD');
       }
 
-      // 5.7 Trigger Android Media Scanner AFTER tags are written
-      // Wait a moment to ensure OS has flushed the file to disk before scanning
+      // 5.6 Try to embed tags via audiotags (works for some M4A files)
+      if (coverBytes != null) {
+        try {
+          AppLogger.download('Embedding tags...');
+          await AudioTags.write(
+            m4aPath,
+            Tag(
+              title: song.title,
+              trackArtist: song.author,
+              pictures: [
+                Picture(
+                  bytes: coverBytes,
+                  mimeType: MimeType.jpeg,
+                  pictureType: PictureType.coverFront,
+                )
+              ],
+            ),
+          );
+          AppLogger.success('Tags embedded successfully!', 'DOWNLOAD');
+        } catch (e) {
+          AppLogger.warning('audiotags failed ($e), will use MediaStore for cover art', 'DOWNLOAD');
+        }
+      }
+
+      // 5.7 Trigger Android Media Scanner + pass cover art bytes for MediaStore
       await Future.delayed(const Duration(milliseconds: 500));
       try {
-        await _scannerChannel.invokeMethod('scanFile', {'path': m4aPath});
-        AppLogger.success('Media scanner triggered.', 'DOWNLOAD');
+        final coverBase64 = coverBytes != null
+            ? coverBytes.map((b) => b).toList()
+            : null;
+
+        await _scannerChannel.invokeMethod('scanFileWithCover', {
+          'path': m4aPath,
+          'title': song.title,
+          'artist': song.author,
+          'coverBytes': coverBase64,
+        });
+        AppLogger.success('Media scanner triggered with cover art.', 'DOWNLOAD');
       } catch (e) {
-        AppLogger.warning('Failed to trigger media scanner: $e', 'DOWNLOAD');
+        // Fallback: plain scan
+        AppLogger.warning('scanFileWithCover failed ($e), trying plain scan', 'DOWNLOAD');
+        try {
+          await _scannerChannel.invokeMethod('scanFile', {'path': m4aPath});
+        } catch (_) {}
       }
 
-      // 6. Update Database — include coverBytes so library shows cover art
+      // 6. Update Database
       final localSong = song.copyWith(
         isLocal: true,
         localPath: m4aPath,
@@ -188,7 +205,7 @@ class DownloadService {
   void _updateProgress(String id, double progress, String speedText) {
     final current = Map<String, DownloadInfo>.from(downloadProgress.value);
     if (progress >= 1.0 || progress < 0) {
-      current.remove(id); // Finished or errored
+      current.remove(id);
     } else {
       current[id] = DownloadInfo(progress, speedText);
     }

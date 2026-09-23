@@ -160,7 +160,6 @@ class AudioProvider with ChangeNotifier, QueueManagerMixin {
   void dispose() {
     _sleepTimer?.cancel();
     _player.dispose();
-    _ytService.dispose();
     super.dispose();
   }
 }

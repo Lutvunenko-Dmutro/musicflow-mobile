@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../widgets/custom_card.dart';
 
 class SearchInputCard extends StatelessWidget {
@@ -54,7 +55,16 @@ class SearchInputCard extends StatelessWidget {
               ),
               const SizedBox(width: 12),
               ElevatedButton(
-                onPressed: onSearch,
+                onPressed: () async {
+                  final clipboardData = await Clipboard.getData(Clipboard.kTextPlain);
+                  if (clipboardData != null && clipboardData.text != null) {
+                    final text = clipboardData.text!.trim();
+                    if (text.isNotEmpty) {
+                      controller.text = text;
+                      onSearch();
+                    }
+                  }
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white.withValues(alpha: 0.1),
                   foregroundColor: Colors.white,

@@ -64,17 +64,22 @@ class _LibraryScreenState extends State<LibraryScreen> {
   }
 
   Future<void> _loadSongs() async {
+    // 1. Load from DB and show immediately
     final dbSongs = await locator<DatabaseService>().getAllSongs();
-    
-    // Scan download directory for existing files that are not in DB
+    if (mounted) {
+      setState(() {
+        _songs = List.from(dbSongs);
+        _applySorting();
+      });
+    }
+
+    // 2. Scan download directory asynchronously in the background
     final prefs = await SharedPreferences.getInstance();
     String? customPath = prefs.getString('download_path');
     
-    List<SongModel> localFolderSongs = [];
     if (customPath != null && customPath.isNotEmpty && customPath != 'За замовчуванням (Внутрішня пам\'ять)') {
       final dir = Directory(customPath);
       if (await dir.exists()) {
-        // Request storage permissions on Android to read custom external folders
         var manageStatus = await Permission.manageExternalStorage.status;
         if (!manageStatus.isGranted) {
           await Permission.manageExternalStorage.request();
@@ -87,41 +92,62 @@ class _LibraryScreenState extends State<LibraryScreen> {
         final dbPaths = dbSongs.map((s) => s.localPath).where((path) => path != null).toSet();
         
         try {
+          // 1. Sync scan to instantly get all file paths
           final files = dir.listSync();
+          List<SongModel> localFolderSongs = [];
+          
           for (var file in files) {
-            if (file is File) {
-              if (file.path.endsWith('.mp3') || file.path.endsWith('.m4a')) {
-                if (!dbPaths.contains(file.path)) {
-                  String fileName = p.basenameWithoutExtension(file.path);
-                  String title = fileName;
-                  String author = 'Local File';
-                  Uint8List? coverBytes;
-
-                  try {
-                    final tag = await AudioTags.read(file.path);
-                    if (tag != null) {
-                      title = tag.title ?? fileName;
-                      author = tag.trackArtist ?? 'Local File';
-                      if (tag.pictures.isNotEmpty) {
-                        coverBytes = tag.pictures.first.bytes;
-                      }
-                    }
-                  } catch (e) {
-                    AppLogger.warning('Error reading ID3 tags for ${file.path}: $e', 'LIBRARY');
-                  }
-
-                  localFolderSongs.add(SongModel(
-                    id: file.path, // Use path as unique ID for local files
-                    title: title,
-                    author: author,
-                    coverUrl: '', // Empty means fallback icon
-                    duration: Duration.zero,
-                    isLocal: true,
-                    localPath: file.path,
-                    coverBytes: coverBytes,
-                  ));
+            if (file is File && (file.path.endsWith('.mp3') || file.path.endsWith('.m4a'))) {
+              if (!dbPaths.contains(file.path)) {
+                String fileName = p.basenameWithoutExtension(file.path);
+                String author = 'Local File';
+                String title = fileName.replaceAll('_', ' ');
+                
+                if (title.contains(' - ')) {
+                  final parts = title.split(' - ');
+                  author = parts.first.trim();
+                  title = parts.sublist(1).join(' - ').trim();
                 }
+
+                localFolderSongs.add(SongModel(
+                  id: file.path,
+                  title: title,
+                  author: author,
+                  coverUrl: '',
+                  duration: Duration.zero,
+                  isLocal: true,
+                  localPath: file.path,
+                  coverBytes: null,
+                ));
               }
+            }
+          }
+
+          // 2. Add them all to UI at once (instant loading)
+          if (localFolderSongs.isNotEmpty && mounted) {
+            setState(() {
+              _songs.addAll(localFolderSongs);
+              _applySorting();
+            });
+            
+            // 3. Load ID3 tags in the background (does NOT block the UI, does NOT trigger expensive sorting)
+            for (var localSong in localFolderSongs) {
+              AudioTags.read(localSong.localPath!).then((tag) {
+                if (tag != null && mounted) {
+                  setState(() {
+                    final index = _songs.indexWhere((s) => s.id == localSong.id);
+                    if (index != -1) {
+                      _songs[index] = _songs[index].copyWith(
+                        title: (tag.title?.isNotEmpty == true) ? tag.title! : _songs[index].title,
+                        author: (tag.trackArtist?.isNotEmpty == true) ? tag.trackArtist! : _songs[index].author,
+                        coverBytes: tag.pictures.isNotEmpty ? tag.pictures.first.bytes : null,
+                      );
+                    }
+                  });
+                }
+              }).catchError((_) {
+                 // Ignore files without valid tags
+              });
             }
           }
         } catch (e) {
@@ -129,11 +155,6 @@ class _LibraryScreenState extends State<LibraryScreen> {
         }
       }
     }
-
-    setState(() {
-      _songs = [...dbSongs, ...localFolderSongs];
-      _applySorting();
-    });
   }
 
   void _applySorting() {
