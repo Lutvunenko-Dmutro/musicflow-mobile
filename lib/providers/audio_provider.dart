@@ -11,6 +11,7 @@ import '../services/playback_manager.dart';
 import '../utils/app_logger.dart';
 import '../locator.dart';
 import '../services/database_service.dart';
+import '../services/lyrics_service.dart';
 import '../main.dart';
 import 'queue_manager_mixin.dart';
 
@@ -19,15 +20,23 @@ export 'queue_manager_mixin.dart';
 class AudioProvider with ChangeNotifier, QueueManagerMixin {
   final AudioPlayer _player = AudioPlayer();
   final YoutubeService _ytService = locator<YoutubeService>();
+  final LyricsService _lyricsService = LyricsService();
   SongModel? _currentSong;
+  Map<String, String>? _availableLyrics;
+  String? _selectedLyricsKey;
   bool _isLoading = false;
+  bool _isLyricsLoading = false;
   
   Timer? _sleepTimer;
   DateTime? _sleepTimerEndTime;
 
   SongModel? get currentSong => _currentSong;
+  Map<String, String>? get availableLyrics => _availableLyrics;
+  String? get selectedLyricsKey => _selectedLyricsKey;
+  String? get currentLyrics => _selectedLyricsKey != null && _availableLyrics != null ? _availableLyrics![_selectedLyricsKey!] : null;
   bool get isPlaying => _player.playing;
   bool get isLoading => _isLoading;
+  bool get isLyricsLoading => _isLyricsLoading;
   DateTime? get sleepTimerEndTime => _sleepTimerEndTime;
   
   @override
@@ -87,7 +96,10 @@ class AudioProvider with ChangeNotifier, QueueManagerMixin {
     AppLogger.audio('Local : ${song.isLocal} (Path: ${song.localPath})');
     
     _isLoading = true;
+    _isLyricsLoading = true;
     _currentSong = song;
+    _availableLyrics = null;
+    _selectedLyricsKey = null;
     
     // If we are playing a song not from the current queue, clear the queue
     if (isQueueMismatch(song)) {
@@ -96,6 +108,30 @@ class AudioProvider with ChangeNotifier, QueueManagerMixin {
 
     notifyListeners();
     
+    _lyricsService.getLyrics(
+      song,
+      onUpdate: (freshLyrics) {
+        if (_currentSong?.id == song.id) {
+          _availableLyrics = freshLyrics;
+          if (_selectedLyricsKey == null || !freshLyrics.containsKey(_selectedLyricsKey)) {
+            _selectedLyricsKey = freshLyrics.keys.first;
+          }
+          notifyListeners();
+        }
+      },
+    ).then((lyricsMap) {
+      if (_currentSong?.id == song.id) {
+        _isLyricsLoading = false;
+        if (lyricsMap != null && lyricsMap.isNotEmpty) {
+          _availableLyrics = lyricsMap;
+          if (_selectedLyricsKey == null || !lyricsMap.containsKey(_selectedLyricsKey)) {
+            _selectedLyricsKey = lyricsMap.keys.first;
+          }
+        }
+        notifyListeners();
+      }
+    });
+
     if (_initFuture != null) {
       await _initFuture;
     } else if (_audioHandler == null) {
@@ -167,6 +203,13 @@ class AudioProvider with ChangeNotifier, QueueManagerMixin {
   Future<void> resume() async {
     await _player.play();
     notifyListeners();
+  }
+
+  void changeLyricsTrack(String key) {
+    if (_availableLyrics != null && _availableLyrics!.containsKey(key)) {
+      _selectedLyricsKey = key;
+      notifyListeners();
+    }
   }
 
   Future<void> seek(Duration position) async {

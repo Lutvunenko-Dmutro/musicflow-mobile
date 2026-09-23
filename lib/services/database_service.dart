@@ -22,9 +22,27 @@ class DatabaseService extends ChangeNotifier {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _createDB,
+      onUpgrade: _upgradeDB,
     );
+  }
+
+  Future _upgradeDB(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute('''
+CREATE TABLE local_songs_cache (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  author TEXT NOT NULL,
+  duration_ms INTEGER NOT NULL,
+  coverUrl TEXT NOT NULL,
+  isLocal INTEGER NOT NULL DEFAULT 1,
+  localPath TEXT NOT NULL,
+  coverBytes BLOB
+)
+''');
+    }
   }
 
   Future _createDB(Database db, int version) async {
@@ -40,6 +58,52 @@ CREATE TABLE history (
   coverBytes BLOB
 )
 ''');
+
+    await db.execute('''
+CREATE TABLE local_songs_cache (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  author TEXT NOT NULL,
+  duration_ms INTEGER NOT NULL,
+  coverUrl TEXT NOT NULL,
+  isLocal INTEGER NOT NULL DEFAULT 1,
+  localPath TEXT NOT NULL,
+  coverBytes BLOB
+)
+''');
+  }
+
+  Future<void> cacheLocalSong(SongModel song) async {
+    try {
+      final db = await database;
+      await db.insert(
+        'local_songs_cache',
+        song.toMap(),
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    } catch (e) {
+      AppLogger.error('Failed to cache local song', e, null, 'DATABASE');
+    }
+  }
+
+  Future<List<SongModel>> getCachedLocalSongs() async {
+    try {
+      final db = await database;
+      final result = await db.query('local_songs_cache');
+      return result.map((json) => SongModel.fromMap(json)).toList();
+    } catch (e) {
+      AppLogger.error('Failed to get cached local songs', e, null, 'DATABASE');
+      return [];
+    }
+  }
+
+  Future<void> removeCachedLocalSong(String localPath) async {
+    try {
+      final db = await database;
+      await db.delete('local_songs_cache', where: 'localPath = ?', whereArgs: [localPath]);
+    } catch (e) {
+      AppLogger.error('Failed to remove cached song', e, null, 'DATABASE');
+    }
   }
 
   Future<void> logPlay(SongModel song) async {

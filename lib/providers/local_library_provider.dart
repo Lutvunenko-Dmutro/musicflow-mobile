@@ -7,6 +7,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:audiotags/audiotags.dart';
 import '../models/song_model.dart';
 import '../utils/app_logger.dart';
+import '../services/database_service.dart';
+import '../locator.dart';
 
 class LocalLibraryProvider extends ChangeNotifier {
   List<SongModel> _songs = [];
@@ -49,11 +51,13 @@ class LocalLibraryProvider extends ChangeNotifier {
       
       // 1. Scan Public Directory (e.g. /Music)
       final stream = dir.list(recursive: true);
+      final allFiles = <File>[];
+      
       await for (var file in stream) {
         if (file is File) {
           final ext = p.extension(file.path).toLowerCase();
           if (ext == '.mp3' || ext == '.m4a') {
-            localSongs.add(_createSongFromFile(file));
+            allFiles.add(file);
           }
         }
       }
@@ -67,7 +71,7 @@ class LocalLibraryProvider extends ChangeNotifier {
             if (file is File) {
               final ext = p.extension(file.path).toLowerCase();
               if (ext == '.mp3' || ext == '.m4a') {
-                localSongs.add(_createSongFromFile(file));
+                allFiles.add(file);
               }
             }
           }
@@ -76,36 +80,67 @@ class LocalLibraryProvider extends ChangeNotifier {
         AppLogger.error('Failed to scan internal directory', e, null, 'LIBRARY');
       }
 
+      // 3. Match found files with cache
+      final dbService = locator<DatabaseService>();
+      final cachedSongs = await dbService.getCachedLocalSongs();
+      final foundPaths = <String>{};
+      final unCachedPaths = <String>[];
+      
+      for (var file in allFiles) {
+        foundPaths.add(file.path);
+        final cached = cachedSongs.where((s) => s.localPath == file.path).firstOrNull;
+        
+        if (cached != null) {
+          localSongs.add(cached);
+        } else {
+          localSongs.add(_createSongFromFile(file));
+          unCachedPaths.add(file.path);
+        }
+      }
+
+      // 4. Cleanup cache
+      for (var cached in cachedSongs) {
+        if (!foundPaths.contains(cached.localPath)) {
+          await dbService.removeCachedLocalSong(cached.localPath!);
+        }
+      }
       
       _songs = localSongs;
       _isLoading = false;
-      notifyListeners(); // Instantly show all files
+      notifyListeners(); // Instantly show all files (cached + placeholders)
 
-      // Background parse ID3 tags sequentially to prevent ANR and MethodChannel flooding
-      Future.microtask(() async {
-        for (int i = 0; i < _songs.length; i++) {
-          try {
-            final path = _songs[i].localPath!;
-            final tag = await AudioTags.read(path);
-            if (tag != null) {
-              final idx = _songs.indexWhere((s) => s.localPath == path);
-              if (idx != -1) {
-                _songs[idx] = _songs[idx].copyWith(
-                  title: (tag.title?.isNotEmpty == true) ? tag.title! : _songs[idx].title,
-                  author: (tag.trackArtist?.isNotEmpty == true) ? tag.trackArtist! : _songs[idx].author,
-                  coverBytes: tag.pictures.isNotEmpty ? tag.pictures.first.bytes : null,
-                );
-                notifyListeners();
+      // Background parse ID3 tags ONLY for uncached files
+      if (unCachedPaths.isNotEmpty) {
+        Future.microtask(() async {
+          for (int i = 0; i < unCachedPaths.length; i++) {
+            try {
+              final path = unCachedPaths[i];
+              final tag = await AudioTags.read(path);
+              if (tag != null) {
+                final idx = _songs.indexWhere((s) => s.localPath == path);
+                if (idx != -1) {
+                  final updatedSong = _songs[idx].copyWith(
+                    title: (tag.title?.isNotEmpty == true) ? tag.title! : _songs[idx].title,
+                    author: (tag.trackArtist?.isNotEmpty == true) ? tag.trackArtist! : _songs[idx].author,
+                    coverBytes: tag.pictures.isNotEmpty ? tag.pictures.first.bytes : null,
+                  );
+                  _songs[idx] = updatedSong;
+                  
+                  // Save to cache
+                  await dbService.cacheLocalSong(updatedSong);
+                  
+                  notifyListeners();
+                }
               }
+            } catch (e) {
+              AppLogger.warning('Failed to read ID3 tag for ${unCachedPaths[i]}: $e', 'LIBRARY');
             }
-          } catch (e) {
-            AppLogger.warning('Failed to read ID3 tag for ${_songs[i].localPath}: $e', 'LIBRARY');
+            
+            // Yield to event loop to keep UI smooth
+            await Future.delayed(const Duration(milliseconds: 10));
           }
-          
-          // Yield to event loop to keep UI smooth
-          await Future.delayed(const Duration(milliseconds: 10));
-        }
-      });
+        });
+      }
       
       
     } catch (e) {

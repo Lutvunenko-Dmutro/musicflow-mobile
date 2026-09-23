@@ -5,6 +5,8 @@ import '../widgets/audio_visualizer.dart';
 import '../widgets/player_header.dart';
 import '../widgets/player_controls.dart';
 import '../widgets/visualizer_settings_sheet.dart';
+import 'queue_screen.dart';
+import 'lyrics_screen.dart';
 
 class PlayerScreen extends StatelessWidget {
   const PlayerScreen({super.key});
@@ -32,6 +34,24 @@ class PlayerScreen extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.lyrics_outlined, size: 26),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const LyricsScreen()),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.queue_music, size: 28),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const QueueScreen()),
+              );
+            },
+          ),
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert, size: 28),
             onSelected: (value) {

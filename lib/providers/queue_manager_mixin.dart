@@ -15,6 +15,8 @@ mixin QueueManagerMixin on ChangeNotifier {
   bool get hasPrevious => _queue.isNotEmpty && (_currentIndex > 0 || _repeatMode == RepeatMode.all || _isShuffleModeEnabled);
   bool get isShuffleModeEnabled => _isShuffleModeEnabled;
   RepeatMode get repeatMode => _repeatMode;
+  List<SongModel> get queue => _queue;
+  int get currentIndex => _currentIndex;
   
   // These must be implemented by the class mixing this in
   AudioPlayer get player;
@@ -110,6 +112,44 @@ mixin QueueManagerMixin on ChangeNotifier {
       _repeatMode = RepeatMode.one;
     } else {
       _repeatMode = RepeatMode.off;
+    }
+    notifyListeners();
+  }
+
+  void reorderQueue(int oldIndex, int newIndex) {
+    if (oldIndex < newIndex) {
+      newIndex -= 1;
+    }
+    final SongModel item = _queue.removeAt(oldIndex);
+    _queue.insert(newIndex, item);
+
+    if (_currentIndex == oldIndex) {
+      _currentIndex = newIndex;
+    } else if (oldIndex < _currentIndex && newIndex >= _currentIndex) {
+      _currentIndex--;
+    } else if (oldIndex > _currentIndex && newIndex <= _currentIndex) {
+      _currentIndex++;
+    }
+    notifyListeners();
+  }
+
+  void removeFromQueue(int index) {
+    if (index < 0 || index >= _queue.length) return;
+    
+    _queue.removeAt(index);
+    if (index < _currentIndex) {
+      _currentIndex--;
+    } else if (index == _currentIndex) {
+      // If we removed the currently playing song
+      if (_queue.isEmpty) {
+        _currentIndex = -1;
+        player.stop();
+      } else {
+        if (_currentIndex >= _queue.length) {
+          _currentIndex = 0;
+        }
+        playSong(_queue[_currentIndex]);
+      }
     }
     notifyListeners();
   }

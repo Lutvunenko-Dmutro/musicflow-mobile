@@ -73,6 +73,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
         }
       });
     }
+    
+    // Clear SharedPreferences lyrics cache
+    final prefs = await SharedPreferences.getInstance();
+    final keys = prefs.getKeys();
+    for (final key in keys) {
+      if (key.startsWith('lyrics_cache_')) {
+        await prefs.remove(key);
+      }
+    }
+
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('✅ Кеш успішно очищено!')),
