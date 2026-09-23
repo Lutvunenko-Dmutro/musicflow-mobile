@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../models/song_model.dart';
 
 class SmartCover extends StatefulWidget {
@@ -30,6 +31,7 @@ class _SmartCoverState extends State<SmartCover> {
 
   @override
   Widget build(BuildContext context) {
+    // Local bytes — highest priority
     if (widget.song.coverBytes != null) {
       return ClipRRect(
         borderRadius: BorderRadius.circular(widget.borderRadius),
@@ -38,6 +40,7 @@ class _SmartCoverState extends State<SmartCover> {
           width: widget.size,
           height: widget.size,
           fit: BoxFit.cover,
+          gaplessPlayback: true,
           errorBuilder: (_, __, ___) => _buildFallback(),
         ),
       );
@@ -55,6 +58,7 @@ class _SmartCoverState extends State<SmartCover> {
       currentUrl = currentUrl.replaceAll('maxresdefault', 'hqdefault');
     }
 
+    // 4:3 thumbnails (hqdefault) need extra scale to fill square without bars
     final bool is4x3 = currentUrl.contains('hqdefault') || currentUrl.contains('sddefault');
     final double scale = is4x3 ? 1.3333 : 1.0;
 
@@ -62,12 +66,12 @@ class _SmartCoverState extends State<SmartCover> {
       borderRadius: BorderRadius.circular(widget.borderRadius),
       child: Transform.scale(
         scale: scale,
-        child: Image.network(
-          currentUrl,
+        child: CachedNetworkImage(
+          imageUrl: currentUrl,
           width: widget.size,
           height: widget.size,
           fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
+          errorWidget: (context, url, error) {
             if (!_triedHqDefault && widget.song.coverUrl.contains('maxresdefault')) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 if (mounted) {
@@ -76,10 +80,10 @@ class _SmartCoverState extends State<SmartCover> {
                   });
                 }
               });
-              return const SizedBox(); // Temporary empty space while it rebuilds
+              return const SizedBox();
             }
             return Transform.scale(
-              scale: 1.0 / scale, // Revert the scale for the fallback!
+              scale: 1.0 / scale,
               child: _buildFallback(),
             );
           },
