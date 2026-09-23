@@ -6,6 +6,7 @@ import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:audiotags/audiotags.dart';
 import 'package:http/http.dart' as http;
+import 'package:image/image.dart' as img;
 import '../models/song_model.dart';
 import 'database_service.dart';
 import 'youtube_service.dart';
@@ -138,6 +139,37 @@ class DownloadService {
         }
       } catch (e) {
         AppLogger.warning('Failed to download cover: $e', 'DOWNLOAD');
+      }
+
+      // Smart crop cover art to a perfect 1:1 square, removing YouTube letterboxing
+      if (coverBytes != null) {
+        try {
+          final image = img.decodeImage(coverBytes);
+          if (image != null) {
+            int cropX = 0;
+            int cropY = 0;
+            int cropWidth = image.width;
+            int cropHeight = image.height;
+
+            // YouTube hqdefault (480x360) and sddefault (640x480) are 4:3
+            // but the video inside is usually 16:9, leaving black bars on top and bottom.
+            if ((image.width * 3 - image.height * 4).abs() <= 1) {
+              cropHeight = (image.width * 9) ~/ 16;
+              cropY = (image.height - cropHeight) ~/ 2;
+            }
+
+            // Now crop to 1:1 square from the actual video area
+            int size = cropWidth < cropHeight ? cropWidth : cropHeight;
+            int x = cropX + (cropWidth - size) ~/ 2;
+            int y = cropY + (cropHeight - size) ~/ 2;
+            
+            final croppedImage = img.copyCrop(image, x: x, y: y, width: size, height: size);
+            coverBytes = Uint8List.fromList(img.encodeJpg(croppedImage, quality: 95));
+            AppLogger.download('Cover art smart-cropped to 1:1 square.');
+          }
+        } catch (e) {
+          AppLogger.warning('Failed to crop cover art: $e', 'DOWNLOAD');
+        }
       }
 
       // 5.6 Try to embed tags via audiotags (works for some M4A files)
