@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:music_flow_mobile/providers/audio_provider.dart';
+import 'package:music_flow_mobile/core/animations/animated_play_pause.dart';
+import 'package:music_flow_mobile/core/animations/scale_tap_button.dart';
 
 class MiniPlayerControls extends StatelessWidget {
   const MiniPlayerControls({super.key});
@@ -27,24 +29,25 @@ class MiniPlayerControls extends StatelessWidget {
             ),
           )
         else
-          Container(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Theme.of(context).primaryColor,
-            ),
-            child: IconButton(
-              icon: Icon(
-                audioProvider.isPlaying ? Icons.pause : Icons.play_arrow,
+          ScaleTapButton(
+            onTap: () {
+              if (audioProvider.isPlaying) {
+                audioProvider.pause();
+              } else {
+                audioProvider.resume();
+              }
+            },
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Theme.of(context).primaryColor,
+              ),
+              child: AnimatedPlayPauseIcon(
+                isPlaying: audioProvider.isPlaying,
                 color: Colors.white,
                 size: 28,
               ),
-              onPressed: () {
-                if (audioProvider.isPlaying) {
-                  audioProvider.pause();
-                } else {
-                  audioProvider.resume();
-                }
-              },
             ),
           ),
         IconButton(

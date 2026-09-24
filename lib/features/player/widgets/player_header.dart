@@ -31,29 +31,27 @@ class PlayerHeader extends StatelessWidget {
                     provider.playPrevious();
                   }
                 },
-                child: Hero(
-                  tag: 'cover_${song.id}',
-                  child: AspectRatio(
-                    aspectRatio: 1.0,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.5),
-                            blurRadius: 20,
-                            offset: const Offset(0, 10),
-                          ),
-                        ],
-                      ),
-                      child: LayoutBuilder(
-                        builder: (context, constraints) {
-                          return SmartCover(
-                            song: song,
-                            size: constraints.maxWidth,
-                            borderRadius: 16.0,
-                          );
-                        }
-                      ),
+                child: AspectRatio(
+                  aspectRatio: 1.0,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.5),
+                          blurRadius: 20,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        return SmartCover(
+                          song: song,
+                          size: constraints.maxWidth,
+                          borderRadius: 16.0,
+                          heroTag: 'cover_${song.id}',
+                        );
+                      }
                     ),
                   ),
                 ),

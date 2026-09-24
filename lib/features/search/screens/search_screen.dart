@@ -171,15 +171,15 @@ class _SearchScreenState extends State<SearchScreen> {
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: _localResults.length,
                       separatorBuilder: (context, index) => const SizedBox(height: 8),
-                      itemBuilder: (context, index) {
-                        final song = _localResults[index];
-                        return SongListItem(
-                          song: song,
-                          onTap: () {
-                            context.read<AudioProvider>().setQueue(_localResults, initialIndex: index);
-                          },
-                        );
-                      },
+                        itemBuilder: (context, index) {
+                          final song = _localResults[index];
+                          return SongListItem(
+                            song: song,
+                            onTap: () {
+                              context.read<AudioProvider>().setQueue(_localResults, initialIndex: index);
+                            },
+                          );
+                        },
                     ),
                   ],
                 ),

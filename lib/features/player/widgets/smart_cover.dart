@@ -7,12 +7,14 @@ class SmartCover extends StatefulWidget {
   final SongModel song;
   final double size;
   final double borderRadius;
+  final String? heroTag;
 
   const SmartCover({
     super.key,
     required this.song,
     required this.size,
     this.borderRadius = 8.0,
+    this.heroTag,
   });
 
   @override
@@ -32,9 +34,11 @@ class _SmartCoverState extends State<SmartCover> {
 
   @override
   Widget build(BuildContext context) {
+    Widget content;
+    
     // Local bytes — highest priority
     if (widget.song.coverBytes != null) {
-      return ClipRRect(
+      content = ClipRRect(
         borderRadius: BorderRadius.circular(widget.borderRadius),
         child: Image.memory(
           widget.song.coverBytes!,
@@ -45,52 +49,58 @@ class _SmartCoverState extends State<SmartCover> {
           errorBuilder: (_, __, ___) => _buildFallback(),
         ),
       );
-    }
-
-    if (widget.song.coverUrl.isEmpty) {
-      return ClipRRect(
+    } else if (widget.song.coverUrl.isEmpty) {
+      content = ClipRRect(
         borderRadius: BorderRadius.circular(widget.borderRadius),
         child: _buildFallback(),
       );
-    }
+    } else {
+      String currentUrl = widget.song.coverUrl;
+      if (_triedHqDefault && currentUrl.contains('maxresdefault')) {
+        currentUrl = currentUrl.replaceAll('maxresdefault', 'hqdefault');
+      }
 
-    String currentUrl = widget.song.coverUrl;
-    if (_triedHqDefault && currentUrl.contains('maxresdefault')) {
-      currentUrl = currentUrl.replaceAll('maxresdefault', 'hqdefault');
-    }
+      // 4:3 thumbnails (hqdefault) need extra scale to fill square without bars
+      final bool is4x3 = currentUrl.contains('hqdefault') || currentUrl.contains('sddefault');
+      final double scale = is4x3 ? 1.3333 : 1.0;
 
-    // 4:3 thumbnails (hqdefault) need extra scale to fill square without bars
-    final bool is4x3 = currentUrl.contains('hqdefault') || currentUrl.contains('sddefault');
-    final double scale = is4x3 ? 1.3333 : 1.0;
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(widget.borderRadius),
-      child: Transform.scale(
-        scale: scale,
-        child: CachedNetworkImage(
-          imageUrl: currentUrl,
-          width: widget.size,
-          height: widget.size,
-          fit: BoxFit.cover,
-          errorWidget: (context, url, error) {
-            if (!_triedHqDefault && widget.song.coverUrl.contains('maxresdefault')) {
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                if (mounted) {
-                  setState(() {
-                    _triedHqDefault = true;
-                  });
-                }
-              });
-              return const SizedBox();
-            }
-            return Transform.scale(
-              scale: 1.0 / scale,
-              child: _buildFallback(),
-            );
-          },
+      content = ClipRRect(
+        borderRadius: BorderRadius.circular(widget.borderRadius),
+        child: Transform.scale(
+          scale: scale,
+          child: CachedNetworkImage(
+            imageUrl: currentUrl,
+            width: widget.size,
+            height: widget.size,
+            fit: BoxFit.cover,
+            errorWidget: (context, url, error) {
+              if (!_triedHqDefault && widget.song.coverUrl.contains('maxresdefault')) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) {
+                    setState(() {
+                      _triedHqDefault = true;
+                    });
+                  }
+                });
+                return const SizedBox();
+              }
+              return Transform.scale(
+                scale: 1.0 / scale,
+                child: _buildFallback(),
+              );
+            },
+          ),
         ),
-      ),
-    );
+      );
+    }
+
+    if (widget.heroTag != null) {
+      return Hero(
+        tag: widget.heroTag!,
+        child: content,
+      );
+    }
+    return content;
   }
 
   Widget _buildFallback() {

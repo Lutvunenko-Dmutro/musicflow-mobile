@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:music_flow_mobile/providers/audio_provider.dart';
 import 'package:music_flow_mobile/models/song_model.dart';
+import 'package:music_flow_mobile/core/animations/animated_play_pause.dart';
+import 'package:music_flow_mobile/core/animations/scale_tap_button.dart';
 
 class PlayerControls extends StatelessWidget {
   final SongModel song;
@@ -100,33 +102,39 @@ class PlayerControls extends StatelessWidget {
                   color: audioProvider.hasPrevious ? Colors.white : Colors.grey[700],
                   onPressed: audioProvider.hasPrevious ? () => audioProvider.playPrevious() : null,
                 ),
-                Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Theme.of(context).primaryColor,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Theme.of(context).primaryColor.withValues(alpha: 0.4),
-                        blurRadius: 16,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
-                  ),
-                  child: IconButton(
-                    icon: Icon(
-                      audioProvider.isLoading ? Icons.hourglass_empty : (audioProvider.isPlaying ? Icons.pause : Icons.play_arrow),
-                    ),
-                    iconSize: 48,
-                    color: Colors.white,
+                ScaleTapButton(
+                  onTap: () {
+                    if (audioProvider.isLoading) return;
+                    if (audioProvider.isPlaying) {
+                      audioProvider.pause();
+                    } else {
+                      audioProvider.resume();
+                    }
+                  },
+                  child: Container(
                     padding: const EdgeInsets.all(16),
-                    onPressed: () {
-                      if (audioProvider.isLoading) return;
-                      if (audioProvider.isPlaying) {
-                        audioProvider.pause();
-                      } else {
-                        audioProvider.resume();
-                      }
-                    },
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Theme.of(context).primaryColor,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Theme.of(context).primaryColor.withValues(alpha: 0.4),
+                          blurRadius: 16,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: audioProvider.isLoading 
+                      ? const SizedBox(
+                          width: 48, 
+                          height: 48, 
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3)
+                        )
+                      : AnimatedPlayPauseIcon(
+                          isPlaying: audioProvider.isPlaying,
+                          color: Colors.white,
+                          size: 48,
+                        ),
                   ),
                 ),
                 IconButton(
