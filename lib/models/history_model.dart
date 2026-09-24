@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'song_model.dart';
+import 'package:music_flow_mobile/models/song_model.dart';
 
 class HistoryModel {
   final String id;

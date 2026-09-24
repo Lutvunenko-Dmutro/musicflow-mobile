@@ -1,9 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart' as p;
-import '../models/history_model.dart';
-import '../models/song_model.dart';
-import '../utils/app_logger.dart';
+import 'package:music_flow_mobile/models/history_model.dart';
+import 'package:music_flow_mobile/models/song_model.dart';
+import 'package:music_flow_mobile/utils/app_logger.dart';
 
 class DatabaseService extends ChangeNotifier {
   static Database? _database;

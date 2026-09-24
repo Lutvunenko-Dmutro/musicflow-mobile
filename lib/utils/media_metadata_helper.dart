@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 import 'package:audiotags/audiotags.dart';
 import 'package:image/image.dart' as img;
-import '../utils/app_logger.dart';
+import 'package:music_flow_mobile/utils/app_logger.dart';
 
 class MediaMetadataHelper {
   /// Smart crops YouTube cover art to a 1:1 square, removing black letterboxing if present.

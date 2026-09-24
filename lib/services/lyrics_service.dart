@@ -1,12 +1,12 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:audiotags/audiotags.dart';
-import '../models/song_model.dart';
-import '../utils/app_logger.dart';
-import '../services/youtube_service.dart';
-import '../locator.dart';
+import 'package:music_flow_mobile/models/song_model.dart';
+import 'package:music_flow_mobile/utils/app_logger.dart';
+import 'package:music_flow_mobile/services/youtube_service.dart';
+import 'package:music_flow_mobile/locator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../locator.dart';
+import 'package:music_flow_mobile/locator.dart';
 
 class LyricsService {
   static const String _lrclibUrl = 'https://lrclib.net/api/search';

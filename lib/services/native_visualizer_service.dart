@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/services.dart';
-import '../utils/app_logger.dart';
+import 'package:music_flow_mobile/utils/app_logger.dart';
 
 class NativeVisualizerService {
   static const MethodChannel _methodChannel = MethodChannel('com.example.music_flow_mobile/visualizer_method');

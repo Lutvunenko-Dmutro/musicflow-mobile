@@ -1,7 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
-import '../models/song_model.dart';
+import 'package:music_flow_mobile/models/song_model.dart';
 
 enum RepeatMode { off, all, one }
 

@@ -6,10 +6,10 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../models/song_model.dart';
-import '../services/audio_handler.dart';
-import '../services/youtube_service.dart';
-import '../utils/app_logger.dart';
+import 'package:music_flow_mobile/models/song_model.dart';
+import 'package:music_flow_mobile/services/audio_handler.dart';
+import 'package:music_flow_mobile/services/youtube_service.dart';
+import 'package:music_flow_mobile/utils/app_logger.dart';
 
 class PlaybackManager {
   static Uri? _defaultArtUri;

@@ -1,7 +1,7 @@
 import 'dart:io';
-import '../models/song_model.dart';
-import '../screens/library_screen.dart' show SortOption;
-import 'app_logger.dart';
+import 'package:music_flow_mobile/models/song_model.dart';
+import 'package:music_flow_mobile/features/library/screens/library_screen.dart' show SortOption;
+import 'package:music_flow_mobile/utils/app_logger.dart';
 
 class LibrarySorter {
   static void sortSongs(List<SongModel> songs, SortOption currentSort, bool isDescending) {

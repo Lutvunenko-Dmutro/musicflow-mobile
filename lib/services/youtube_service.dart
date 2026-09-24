@@ -1,7 +1,7 @@
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../models/song_model.dart';
-import '../utils/app_logger.dart';
+import 'package:music_flow_mobile/models/song_model.dart';
+import 'package:music_flow_mobile/utils/app_logger.dart';
 
 class YoutubeService {
   final YoutubeExplode _yt = YoutubeExplode();

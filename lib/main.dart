@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'locator.dart';
-import 'providers/audio_provider.dart';
-import 'providers/visualizer_settings_provider.dart';
-import 'screens/main_screen.dart';
-import 'providers/local_library_provider.dart';
+import 'package:music_flow_mobile/locator.dart';
+import 'package:music_flow_mobile/providers/audio_provider.dart';
+import 'package:music_flow_mobile/providers/visualizer_settings_provider.dart';
+import 'package:music_flow_mobile/features/main/screens/main_screen.dart';
+import 'package:music_flow_mobile/providers/local_library_provider.dart';
+import 'package:music_flow_mobile/core/app_theme.dart';
 
 final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -36,32 +37,7 @@ class MusicFlowApp extends StatelessWidget {
         navigatorKey: navigatorKey,
         scaffoldMessengerKey: scaffoldMessengerKey,
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          brightness: Brightness.dark,
-          primaryColor: const Color(0xFFE53935), // Red Accent
-          scaffoldBackgroundColor: const Color(0xFF161616), // Dark background
-          appBarTheme: const AppBarTheme(
-            backgroundColor: Color(0xFF161616),
-            elevation: 0,
-            centerTitle: true,
-          ),
-          bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-            backgroundColor: Color(0xFF1E1E1E),
-            selectedItemColor: Color(0xFFE53935),
-            unselectedItemColor: Colors.grey,
-            elevation: 8,
-            type: BottomNavigationBarType.fixed,
-            showSelectedLabels: true,
-            showUnselectedLabels: true,
-          ),
-          cardColor: const Color(0xFF212121),
-          colorScheme: const ColorScheme.dark(
-            primary: Color(0xFFE53935),
-            secondary: Color(0xFFE53935),
-            surface: Color(0xFF212121),
-          ),
-          fontFamily: 'Inter',
-        ),
+        theme: AppTheme.darkTheme,
         home: const MainScreen(),
       ),
     );

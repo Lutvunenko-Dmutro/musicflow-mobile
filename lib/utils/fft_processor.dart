@@ -1,7 +1,7 @@
 import 'dart:math';
 import 'dart:typed_data';
 import 'package:fftea/fftea.dart';
-import 'fft_tuning.dart';
+import 'package:music_flow_mobile/utils/fft_tuning.dart';
 
 class FftProcessor {
   static final double _ln10 = log(10);

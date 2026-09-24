@@ -3,17 +3,17 @@ import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:audio_service/audio_service.dart';
 import 'package:audio_session/audio_session.dart';
-import '../models/song_model.dart';
-import '../services/audio_handler.dart';
-import '../services/youtube_service.dart';
-import '../services/native_visualizer_service.dart';
-import '../services/playback_manager.dart';
-import '../utils/app_logger.dart';
-import '../locator.dart';
-import '../services/database_service.dart';
-import '../services/lyrics_service.dart';
-import '../main.dart';
-import 'queue_manager_mixin.dart';
+import 'package:music_flow_mobile/models/song_model.dart';
+import 'package:music_flow_mobile/services/audio_handler.dart';
+import 'package:music_flow_mobile/services/youtube_service.dart';
+import 'package:music_flow_mobile/services/native_visualizer_service.dart';
+import 'package:music_flow_mobile/services/playback_manager.dart';
+import 'package:music_flow_mobile/utils/app_logger.dart';
+import 'package:music_flow_mobile/locator.dart';
+import 'package:music_flow_mobile/services/database_service.dart';
+import 'package:music_flow_mobile/services/lyrics_service.dart';
+import 'package:music_flow_mobile/main.dart';
+import 'package:music_flow_mobile/providers/queue_manager_mixin.dart';
 
 export 'queue_manager_mixin.dart';
 

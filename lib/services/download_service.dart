@@ -1,18 +1,18 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
-import '../main.dart';
+import 'package:music_flow_mobile/main.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
-import '../models/song_model.dart';
-import '../providers/local_library_provider.dart';
-import '../utils/media_metadata_helper.dart';
-import 'youtube_service.dart';
-import '../utils/app_logger.dart';
+import 'package:music_flow_mobile/models/song_model.dart';
+import 'package:music_flow_mobile/providers/local_library_provider.dart';
+import 'package:music_flow_mobile/utils/media_metadata_helper.dart';
+import 'package:music_flow_mobile/services/youtube_service.dart';
+import 'package:music_flow_mobile/utils/app_logger.dart';
 
-import '../locator.dart';
+import 'package:music_flow_mobile/locator.dart';
 
 class DownloadInfo {
   final double progress;

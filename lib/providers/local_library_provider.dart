@@ -5,10 +5,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:audiotags/audiotags.dart';
-import '../models/song_model.dart';
-import '../utils/app_logger.dart';
-import '../services/database_service.dart';
-import '../locator.dart';
+import 'package:music_flow_mobile/models/song_model.dart';
+import 'package:music_flow_mobile/utils/app_logger.dart';
+import 'package:music_flow_mobile/services/database_service.dart';
+import 'package:music_flow_mobile/locator.dart';
 
 class LocalLibraryProvider extends ChangeNotifier {
   List<SongModel> _songs = [];
