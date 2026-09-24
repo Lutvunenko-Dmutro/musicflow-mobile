@@ -26,6 +26,8 @@ class AudioProvider with ChangeNotifier, QueueManagerMixin {
   String? _selectedLyricsKey;
   bool _isLoading = false;
   bool _isLyricsLoading = false;
+  String? _lyricsErrorMsg;
+  String? _playbackError;
   
   Timer? _sleepTimer;
   DateTime? _sleepTimerEndTime;
@@ -37,6 +39,8 @@ class AudioProvider with ChangeNotifier, QueueManagerMixin {
   bool get isPlaying => _player.playing;
   bool get isLoading => _isLoading;
   bool get isLyricsLoading => _isLyricsLoading;
+  String? get lyricsErrorMsg => _lyricsErrorMsg;
+  String? get playbackError => _playbackError;
   DateTime? get sleepTimerEndTime => _sleepTimerEndTime;
   
   @override
@@ -100,6 +104,8 @@ class AudioProvider with ChangeNotifier, QueueManagerMixin {
     _currentSong = song;
     _availableLyrics = null;
     _selectedLyricsKey = null;
+    _lyricsErrorMsg = null;
+    _playbackError = null;
     
     // If we are playing a song not from the current queue, clear the queue
     if (isQueueMismatch(song)) {
@@ -127,6 +133,26 @@ class AudioProvider with ChangeNotifier, QueueManagerMixin {
           if (_selectedLyricsKey == null || !lyricsMap.containsKey(_selectedLyricsKey)) {
             _selectedLyricsKey = lyricsMap.keys.first;
           }
+        }
+        notifyListeners();
+      }
+    }).catchError((e) {
+      if (_currentSong?.id == song.id) {
+        _isLyricsLoading = false;
+        if (e.toString().contains('SocketException')) {
+          _lyricsErrorMsg = 'Немає підключення до інтернету.';
+        } else {
+          _lyricsErrorMsg = 'Помилка завантаження тексту.';
+        }
+        notifyListeners();
+      }
+    }).catchError((e) {
+      if (_currentSong?.id == song.id) {
+        _isLyricsLoading = false;
+        if (e.toString().contains('SocketException')) {
+          _lyricsErrorMsg = 'Немає підключення до інтернету.';
+        } else {
+          _lyricsErrorMsg = 'Помилка завантаження тексту.';
         }
         notifyListeners();
       }
@@ -179,10 +205,20 @@ class AudioProvider with ChangeNotifier, QueueManagerMixin {
             ),
           );
         }
-      } else {
+      } else if (errorMsg.contains('SocketException') || errorMsg.contains('Failed host lookup')) {
+        _playbackError = 'Немає підключення до інтернету.';
         scaffoldMessengerKey.currentState?.showSnackBar(
           SnackBar(
-            content: Text(errorMsg),
+            content: Text(_playbackError!),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      } else {
+        _playbackError = 'Помилка: $errorMsg';
+        scaffoldMessengerKey.currentState?.showSnackBar(
+          SnackBar(
+            content: Text(_playbackError!),
             backgroundColor: Colors.redAccent,
             behavior: SnackBarBehavior.floating,
           ),

@@ -34,7 +34,7 @@ class _SearchScreenState extends State<SearchScreen> {
     });
 
     // Search local library immediately (instant, no network)
-    final localSongs = context.read<LocalLibraryProvider>().songs;
+    final localSongs = locator<LocalLibraryProvider>().songs;
     final queryLower = query.toLowerCase();
     final localMatches = localSongs.where((song) {
       return song.title.toLowerCase().contains(queryLower) ||
@@ -48,18 +48,40 @@ class _SearchScreenState extends State<SearchScreen> {
     }
 
     // Then search YouTube
-    List<SongModel> results;
-    if (query.startsWith('http')) {
-      results = await _ytService.resolveLink(query);
-    } else {
-      results = await _ytService.searchSongs(query);
-    }
+    try {
+      List<SongModel> results;
+      if (query.startsWith('http')) {
+        results = await _ytService.resolveLink(query);
+      } else {
+        results = await _ytService.searchSongs(query);
+      }
 
-    if (mounted) {
-      setState(() {
-        _results = results;
-        _isSearching = false;
-      });
+      if (mounted) {
+        setState(() {
+          _results = results;
+          _isSearching = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isSearching = false;
+          _results = [];
+        });
+        
+        String errorMsg = 'Помилка пошуку.';
+        if (e.toString().contains('SocketException')) {
+          errorMsg = 'Немає підключення до інтернету.';
+        }
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMsg),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
   }
 

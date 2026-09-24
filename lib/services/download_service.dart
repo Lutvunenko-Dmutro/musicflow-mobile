@@ -1,5 +1,7 @@
 import 'dart:io';
+import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import '../main.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -184,6 +186,16 @@ class DownloadService {
     } catch (e, stack) {
       AppLogger.error('Download failed', e, stack, 'DOWNLOAD');
       _updateProgress(song.id, -1.0, "Помилка");
+      
+      if (e.toString().contains('SocketException')) {
+        scaffoldMessengerKey.currentState?.showSnackBar(
+          const SnackBar(
+            content: Text('Немає підключення до інтернету. Завантаження скасовано.'),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
   }
 

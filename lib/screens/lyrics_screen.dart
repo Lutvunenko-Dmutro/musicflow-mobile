@@ -201,10 +201,10 @@ class _LyricsScreenState extends State<LyricsScreen> {
                   child: CircularProgressIndicator(color: Colors.white54),
                 )
               : audioProvider.currentLyrics == null
-                  ? const Center(
+                  ? Center(
                       child: Text(
-                        'Текст пісні не знайдено...',
-                        style: TextStyle(color: Colors.white54, fontSize: 16),
+                        audioProvider.lyricsErrorMsg ?? 'Текст пісні не знайдено...',
+                        style: const TextStyle(color: Colors.white54, fontSize: 16),
                       ),
                     )
                   : StreamBuilder<Duration>(

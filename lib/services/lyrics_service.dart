@@ -106,6 +106,7 @@ class LyricsService {
         }
       } catch (e) {
         AppLogger.error('Ultimate fallback failed', e, null, 'LYRICS');
+        if (e.toString().contains('SocketException')) rethrow;
       }
     }
 
@@ -131,6 +132,7 @@ class LyricsService {
       }
     } catch (e) {
       AppLogger.error('Failed to fetch lyrics from OVH', e, null, 'LYRICS');
+      if (e.toString().contains('SocketException')) rethrow;
     }
     return null;
   }
@@ -166,6 +168,7 @@ class LyricsService {
       }
     } catch (e) {
       AppLogger.error('Failed to fetch lyrics from lrclib', e, null, 'LYRICS');
+      if (e.toString().contains('SocketException')) rethrow;
     }
     
     return null;

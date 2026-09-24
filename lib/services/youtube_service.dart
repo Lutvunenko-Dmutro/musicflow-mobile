@@ -22,7 +22,7 @@ class YoutubeService {
       }).toList();
     } catch (e) {
       AppLogger.error('Error searching songs', e, null, 'YOUTUBE');
-      return [];
+      rethrow;
     }
   }
 
@@ -48,7 +48,7 @@ class YoutubeService {
       }
     } catch (e) {
       AppLogger.error('Error getting audio stream info', e, null, 'YOUTUBE');
-      return null;
+      rethrow;
     }
   }
 
@@ -64,7 +64,7 @@ class YoutubeService {
       return streamInfo?.url.toString();
     } catch (e) {
       AppLogger.error('Error getting stream URL', e, null, 'YOUTUBE');
-      return null;
+      rethrow;
     }
   }
 
@@ -98,7 +98,7 @@ class YoutubeService {
       }
     } catch (e) {
       AppLogger.error('Error resolving link', e, null, 'YOUTUBE');
-      return [];
+      rethrow;
     }
   }
 

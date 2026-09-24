@@ -124,11 +124,28 @@ class PlayerScreen extends StatelessWidget {
               children: [
                 PlayerHeader(song: song),
 
-                // Visualizer
+                // Visualizer or Error
                 SizedBox(
                   height: 60,
                   width: double.infinity,
-                  child: AudioVisualizer(isPlaying: audioProvider.isPlaying),
+                  child: audioProvider.playbackError != null
+                      ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.wifi_off, color: Colors.redAccent, size: 24),
+                              const SizedBox(height: 8),
+                              Text(
+                                audioProvider.playbackError!,
+                                style: const TextStyle(color: Colors.redAccent, fontSize: 14),
+                                textAlign: TextAlign.center,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        )
+                      : AudioVisualizer(isPlaying: audioProvider.isPlaying),
                 ),
 
                 PlayerControls(song: song),
