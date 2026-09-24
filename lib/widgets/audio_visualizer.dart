@@ -165,7 +165,7 @@ class _AudioVisualizerState extends State<AudioVisualizer> with SingleTickerProv
                 heights: _currentHeights,
                 dotHeights: _dotHeights,
                 barCount: widget.barCount,
-                isMirrored: _settings.isMirrored,
+                style: _settings.style,
                 repaint: _repaintNotifier,
               ),
             ),

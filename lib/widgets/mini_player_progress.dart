@@ -17,16 +17,16 @@ class MiniPlayerProgress extends StatelessWidget {
         
         return SliderTheme(
           data: SliderThemeData(
-            trackHeight: 2,
-            thumbShape: SliderComponentShape.noThumb,
-            overlayShape: SliderComponentShape.noOverlay,
+            trackHeight: 3,
+            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 5),
+            overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
             activeTrackColor: Theme.of(context).primaryColor,
-            inactiveTrackColor: Colors.transparent,
-            thumbColor: Colors.transparent,
+            inactiveTrackColor: Colors.white.withValues(alpha: 0.1),
+            thumbColor: Theme.of(context).primaryColor,
             trackShape: const RectangularSliderTrackShape(),
           ),
           child: Container(
-            height: 12,
+            height: 20,
             margin: const EdgeInsets.only(top: 0),
             child: Builder(
               builder: (context) {

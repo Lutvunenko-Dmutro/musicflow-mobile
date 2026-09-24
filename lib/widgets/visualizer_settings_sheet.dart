@@ -105,13 +105,32 @@ class VisualizerSettingsSheet extends StatelessWidget {
                     onChanged: settings.setBounce,
                   ),
                   const SizedBox(height: 8),
-                  SwitchListTile(
-                    title: const Text('Віддзеркалити (Від центру)', style: TextStyle(color: Colors.white70, fontSize: 14)),
-                    secondary: const Icon(Icons.flip, color: Colors.white70, size: 20),
-                    value: settings.isMirrored,
-                    onChanged: settings.setMirrored,
-                    activeColor: const Color(0xFFE53935),
-                    contentPadding: EdgeInsets.zero,
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.palette, color: Colors.white70, size: 18),
+                          SizedBox(width: 8),
+                          Text('Стиль візуалізації', style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w500)),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            _buildStyleChip(context, settings, VisualizerStyle.bars, 'Смуги', Icons.bar_chart),
+                            const SizedBox(width: 8),
+                            _buildStyleChip(context, settings, VisualizerStyle.mirrored, 'Центр', Icons.graphic_eq),
+                            const SizedBox(width: 8),
+                            _buildStyleChip(context, settings, VisualizerStyle.circle, 'Коло', Icons.radio_button_unchecked),
+                            const SizedBox(width: 8),
+                            _buildStyleChip(context, settings, VisualizerStyle.wave, 'Хвиля', Icons.waves),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 8),
                 ],
@@ -171,6 +190,28 @@ class VisualizerSettingsSheet extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildStyleChip(BuildContext context, VisualizerSettingsProvider settings, VisualizerStyle style, String label, IconData icon) {
+    final isSelected = settings.style == style;
+    return ChoiceChip(
+      label: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: isSelected ? Colors.white : Colors.white70),
+          const SizedBox(width: 6),
+          Text(label, style: TextStyle(color: isSelected ? Colors.white : Colors.white70, fontSize: 13)),
+        ],
+      ),
+      selected: isSelected,
+      onSelected: (selected) {
+        if (selected) settings.setStyle(style);
+      },
+      backgroundColor: Colors.white.withValues(alpha: 0.05),
+      selectedColor: Theme.of(context).primaryColor,
+      side: BorderSide.none,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
     );
   }
 }
