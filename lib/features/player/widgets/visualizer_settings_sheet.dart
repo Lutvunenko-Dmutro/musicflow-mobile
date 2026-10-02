@@ -3,6 +3,8 @@ import 'package:music_flow_mobile/core/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:music_flow_mobile/providers/visualizer_settings_provider.dart';
+import 'package:music_flow_mobile/features/player/widgets/visualizer_slider_setting.dart';
+import 'package:music_flow_mobile/features/player/widgets/visualizer_style_chip.dart';
 
 class VisualizerSettingsSheet extends StatelessWidget {
   const VisualizerSettingsSheet({super.key});
@@ -64,7 +66,7 @@ class VisualizerSettingsSheet extends StatelessWidget {
                   ),
                   const SizedBox(height: 24),
                   
-                  _buildSlider(
+                  VisualizerSliderSetting(
                     icon: Icons.height,
                     label: 'Амплітуда (Висота)',
                     value: settings.amplitudeBoost.clamp(0.5, 1.20),
@@ -72,7 +74,7 @@ class VisualizerSettingsSheet extends StatelessWidget {
                     max: 1.20,
                     onChanged: settings.setAmplitudeBoost,
                   ),
-                  _buildSlider(
+                  VisualizerSliderSetting(
                     icon: Icons.speed,
                     label: 'Підйом (Attack)',
                     value: settings.attack,
@@ -80,7 +82,7 @@ class VisualizerSettingsSheet extends StatelessWidget {
                     max: 1.0,
                     onChanged: settings.setAttack,
                   ),
-                  _buildSlider(
+                  VisualizerSliderSetting(
                     icon: Icons.waves,
                     label: 'Падіння (Release)',
                     value: settings.release,
@@ -88,7 +90,7 @@ class VisualizerSettingsSheet extends StatelessWidget {
                     max: 0.5,
                     onChanged: settings.setRelease,
                   ),
-                  _buildSlider(
+                  VisualizerSliderSetting(
                     icon: Icons.arrow_downward,
                     label: 'Гравітація ліній',
                     value: settings.gravity.abs().clamp(0.0005, 0.02),
@@ -97,7 +99,7 @@ class VisualizerSettingsSheet extends StatelessWidget {
                     fractionDigits: 4,
                     onChanged: (val) => settings.setGravity(-val),
                   ),
-                  _buildSlider(
+                  VisualizerSliderSetting(
                     icon: Icons.vertical_align_top,
                     label: 'Відскок ліній',
                     value: settings.bounce,
@@ -121,13 +123,13 @@ class VisualizerSettingsSheet extends StatelessWidget {
                         scrollDirection: Axis.horizontal,
                         child: Row(
                           children: [
-                            _buildStyleChip(context, settings, VisualizerStyle.bars, 'Смуги', Icons.bar_chart),
+                            VisualizerStyleChip(settings: settings, style: VisualizerStyle.bars, label: 'Смуги', icon: Icons.bar_chart),
                             const SizedBox(width: 8),
-                            _buildStyleChip(context, settings, VisualizerStyle.mirrored, 'Центр', Icons.graphic_eq),
+                            VisualizerStyleChip(settings: settings, style: VisualizerStyle.mirrored, label: 'Центр', icon: Icons.graphic_eq),
                             const SizedBox(width: 8),
-                            _buildStyleChip(context, settings, VisualizerStyle.circle, 'Коло', Icons.radio_button_unchecked),
+                            VisualizerStyleChip(settings: settings, style: VisualizerStyle.circle, label: 'Коло', icon: Icons.radio_button_unchecked),
                             const SizedBox(width: 8),
-                            _buildStyleChip(context, settings, VisualizerStyle.wave, 'Хвиля', Icons.waves),
+                            VisualizerStyleChip(settings: settings, style: VisualizerStyle.wave, label: 'Хвиля', icon: Icons.waves),
                           ],
                         ),
                       ),
@@ -143,76 +145,4 @@ class VisualizerSettingsSheet extends StatelessWidget {
     );
   }
 
-  Widget _buildSlider({
-    required IconData icon,
-    required String label,
-    required double value,
-    required double min,
-    required double max,
-    required ValueChanged<double> onChanged,
-    int fractionDigits = 2,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16.0),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Icon(icon, size: 18, color: Colors.white70),
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: const TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w500),
-              ),
-              const Spacer(),
-              Text(
-                value.toStringAsFixed(fractionDigits),
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 13, fontFamily: 'monospace'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          SliderTheme(
-            data: SliderThemeData(
-              trackHeight: 4,
-              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
-              overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
-              activeTrackColor: AppColors.primary, // Theme primary
-              inactiveTrackColor: Colors.white.withValues(alpha: 0.1),
-              thumbColor: Colors.white,
-              overlayColor: AppColors.primary.withValues(alpha: 0.2),
-            ),
-            child: Slider(
-              value: value,
-              min: min,
-              max: max,
-              onChanged: onChanged,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStyleChip(BuildContext context, VisualizerSettingsProvider settings, VisualizerStyle style, String label, IconData icon) {
-    final isSelected = settings.style == style;
-    return ChoiceChip(
-      label: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16, color: isSelected ? Colors.white : Colors.white70),
-          const SizedBox(width: 6),
-          Text(label, style: TextStyle(color: isSelected ? Colors.white : Colors.white70, fontSize: 13)),
-        ],
-      ),
-      selected: isSelected,
-      onSelected: (selected) {
-        if (selected) settings.setStyle(style);
-      },
-      backgroundColor: Colors.white.withValues(alpha: 0.05),
-      selectedColor: Theme.of(context).primaryColor,
-      side: BorderSide.none,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-    );
-  }
 }

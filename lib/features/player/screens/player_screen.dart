@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:music_flow_mobile/core/app_colors.dart';
 import 'package:provider/provider.dart';
 import 'package:music_flow_mobile/providers/audio_provider.dart';
 import 'package:music_flow_mobile/features/player/widgets/audio_visualizer.dart';
 import 'package:music_flow_mobile/features/player/widgets/player_header.dart';
 import 'package:music_flow_mobile/features/player/widgets/player_controls.dart';
-import 'package:music_flow_mobile/features/player/widgets/visualizer_settings_sheet.dart';
 import 'package:music_flow_mobile/features/player/screens/queue_screen.dart';
 import 'package:music_flow_mobile/features/lyrics/screens/lyrics_screen.dart';
 import 'package:music_flow_mobile/features/lyrics/widgets/inline_lyrics.dart';
-import 'package:music_flow_mobile/features/settings/screens/equalizer_screen.dart';
+import 'package:music_flow_mobile/features/player/widgets/player_popup_menu.dart';
 
 class PlayerScreen extends StatelessWidget {
   const PlayerScreen({super.key});
@@ -55,85 +53,7 @@ class PlayerScreen extends StatelessWidget {
               );
             },
           ),
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert, size: 28),
-            onSelected: (value) {
-              if (value == 'visualizer_settings') {
-                showModalBottomSheet(
-                  context: context,
-                  backgroundColor: Colors.transparent,
-                  isScrollControlled: true,
-                  builder: (context) => const VisualizerSettingsSheet(),
-                );
-              } else if (value == 'toggle_visualizer') {
-                audioProvider.toggleVisualizer();
-              } else if (value == 'toggle_lyrics') {
-                audioProvider.toggleInlineLyrics();
-              } else if (value == 'sleep_timer') {
-                _showSleepTimerDialog(context, audioProvider);
-              } else if (value == 'equalizer') {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => const EqualizerScreen()));
-              }
-            },
-            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-              PopupMenuItem<String>(
-                value: 'toggle_lyrics',
-                child: Row(
-                  children: [
-                    Icon(
-                      audioProvider.showInlineLyrics ? Icons.lyrics : Icons.lyrics_outlined, 
-                      size: 20
-                    ),
-                    const SizedBox(width: 12),
-                    Text(audioProvider.showInlineLyrics ? 'Приховати міні-караоке' : 'Показати міні-караоке'),
-                  ],
-                ),
-              ),
-              PopupMenuItem<String>(
-                value: 'toggle_visualizer',
-                child: Row(
-                  children: [
-                    Icon(
-                      audioProvider.showVisualizer ? Icons.graphic_eq : Icons.graphic_eq_outlined, 
-                      size: 20
-                    ),
-                    const SizedBox(width: 12),
-                    Text(audioProvider.showVisualizer ? 'Приховати візуалізатор' : 'Показати візуалізатор'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem<String>(
-                value: 'visualizer_settings',
-                child: Row(
-                  children: [
-                    Icon(Icons.tune, size: 20),
-                    SizedBox(width: 12),
-                    Text('Налаштування візуалізатора'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem<String>(
-                value: 'sleep_timer',
-                child: Row(
-                  children: [
-                    Icon(Icons.timer_outlined, size: 20),
-                    SizedBox(width: 12),
-                    Text('Таймер сну'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem<String>(
-                value: 'equalizer',
-                child: Row(
-                  children: [
-                    Icon(Icons.equalizer, size: 20),
-                    SizedBox(width: 12),
-                    Text('Еквалайзер'),
-                  ],
-                ),
-              ),
-            ],
-          ),
+          PlayerPopupMenu(audioProvider: audioProvider),
         ],
       ),
       extendBodyBehindAppBar: true,
@@ -262,58 +182,4 @@ class PlayerScreen extends StatelessWidget {
     );
   }
 
-  void _showSleepTimerDialog(BuildContext context, AudioProvider provider) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          backgroundColor: AppColors.surfaceElevated,
-          title: const Text('Таймер сну', style: TextStyle(color: Colors.white)),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Музика автоматично зупиниться через обраний час.',
-                style: TextStyle(color: Colors.white70, fontSize: 14),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              if (provider.sleepTimerEndTime != null) ...[
-                Text(
-                  'Таймер активний до ${provider.sleepTimerEndTime!.hour.toString().padLeft(2, '0')}:${provider.sleepTimerEndTime!.minute.toString().padLeft(2, '0')}',
-                  style: const TextStyle(color: Colors.green),
-                ),
-                const SizedBox(height: 16),
-                ListTile(
-                  title: const Text('Вимкнути таймер', style: TextStyle(color: Colors.redAccent)),
-                  onTap: () {
-                    provider.cancelSleepTimer();
-                    Navigator.pop(context);
-                  },
-                ),
-                const Divider(color: Colors.white24),
-              ],
-              _buildTimerOption(context, provider, 15),
-              _buildTimerOption(context, provider, 30),
-              _buildTimerOption(context, provider, 45),
-              _buildTimerOption(context, provider, 60),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildTimerOption(BuildContext context, AudioProvider provider, int minutes) {
-    return ListTile(
-      title: Text('$minutes хвилин', style: const TextStyle(color: Colors.white)),
-      onTap: () {
-        provider.setSleepTimer(Duration(minutes: minutes));
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Таймер встановлено на $minutes хвилин')),
-        );
-      },
-    );
-  }
 }

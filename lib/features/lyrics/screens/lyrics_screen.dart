@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:music_flow_mobile/providers/audio_provider.dart';
+import 'package:music_flow_mobile/models/lyrics_line.dart';
+import 'package:music_flow_mobile/utils/lyrics_parser.dart';
+import 'package:music_flow_mobile/features/lyrics/widgets/lyrics_list_view.dart';
 
 class LyricsScreen extends StatefulWidget {
   const LyricsScreen({super.key});
@@ -9,27 +12,9 @@ class LyricsScreen extends StatefulWidget {
   State<LyricsScreen> createState() => _LyricsScreenState();
 }
 
-class _WordSpan {
-  final double timeSec;
-  final String text;
-  _WordSpan(this.timeSec, this.text);
-}
-
-class _LyricsLine {
-  final double timeSec;
-  final String text;
-  final List<_WordSpan> spans;
-
-  _LyricsLine(this.timeSec, this.text, [this.spans = const []]);
-}
-
 class _LyricsScreenState extends State<LyricsScreen> {
-  final ScrollController _scrollController = ScrollController();
-  final Map<int, GlobalKey> _keys = {};
-  List<_LyricsLine> _lines = [];
+  List<LyricsLine> _lines = [];
   bool _isKaraoke = false;
-  int _activeIndex = -1;
-
   String? _lastParsedLyrics;
 
   @override
@@ -43,86 +28,12 @@ class _LyricsScreenState extends State<LyricsScreen> {
   }
 
   void _parseLyricsStr(String? lyricsText) {
-    
-    if (lyricsText == null || lyricsText.isEmpty) {
-      if (_lines.isNotEmpty) {
-        setState(() {
-          _lines = [];
-          _isKaraoke = false;
-          _keys.clear();
-        });
-      }
-      return;
-    }
-
-    final parsedLines = <_LyricsLine>[];
-    bool hasTimeTags = false;
-    
-    // Parse LRC format [mm:ss.xx] text
-    final regex = RegExp(r'\[(\d+):(\d+\.?\d*)\]\s*(.*)');
-    
-    for (var line in lyricsText.split('\n')) {
-      final match = regex.firstMatch(line.trim());
-      if (match != null) {
-        hasTimeTags = true;
-        final minutes = int.parse(match.group(1)!);
-        final seconds = double.parse(match.group(2)!);
-        final text = match.group(3) ?? '';
-        
-        if (text.trim().isNotEmpty) {
-          final spans = <_WordSpan>[];
-          String plainText = text;
-          
-          if (text.contains('<') && text.contains('>')) {
-            plainText = text.replaceAll(RegExp(r'<[^>]*>'), '');
-            
-            double currentSpanTime = minutes * 60 + seconds;
-            final parts = text.split(RegExp(r'(?=<\d+:\d+\.?\d*>)'));
-            
-            for (var part in parts) {
-               if (part.isEmpty) continue;
-               final timeMatch = RegExp(r'^<(\d+):(\d+\.?\d*)>\s*').firstMatch(part);
-               if (timeMatch != null) {
-                  final m = int.parse(timeMatch.group(1)!);
-                  final s = double.parse(timeMatch.group(2)!);
-                  currentSpanTime = m * 60 + s;
-                  final word = part.substring(timeMatch.end);
-                  if (word.isNotEmpty) spans.add(_WordSpan(currentSpanTime, word));
-               } else {
-                  spans.add(_WordSpan(currentSpanTime, part));
-               }
-            }
-          }
-          
-          parsedLines.add(_LyricsLine(minutes * 60 + seconds, plainText.trim(), spans));
-        }
-      } else if (line.trim().isNotEmpty) {
-        parsedLines.add(_LyricsLine(-1, line.trim()));
-      }
-    }
-
+    final result = LyricsParser.parse(lyricsText);
     setState(() {
-      _lines = parsedLines;
-      _isKaraoke = hasTimeTags;
-      _keys.clear();
+      _lines = result.lines;
+      _isKaraoke = result.isKaraoke;
     });
   }
-
-  void _scrollToActiveIndex(int index) {
-    if (!_scrollController.hasClients || index < 0 || index >= _lines.length) return;
-    
-    final key = _keys[index];
-    final keyContext = key?.currentContext;
-    if (keyContext != null) {
-      Scrollable.ensureVisible(
-        keyContext,
-        alignment: 0.5,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOutCubic,
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final audioProvider = context.watch<AudioProvider>();
@@ -215,126 +126,16 @@ class _LyricsScreenState extends State<LyricsScreen> {
                     if (snapshot.hasData) {
                       currentSec = snapshot.data!.inMilliseconds / 1000.0;
                     }
-
-                    if (_isKaraoke && snapshot.hasData) {
-                      // Find active line
-                      int newActiveIndex = -1;
-                      for (int i = 0; i < _lines.length; i++) {
-                        if (_lines[i].timeSec >= 0 && currentSec >= _lines[i].timeSec) {
-                          newActiveIndex = i;
-                        } else if (_lines[i].timeSec > currentSec) {
-                          break;
-                        }
-                      }
-                      
-                      if (newActiveIndex != _activeIndex) {
-                        _activeIndex = newActiveIndex;
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          _scrollToActiveIndex(_activeIndex);
-                        });
-                      }
-                    }
                     
-                    return ListView.builder(
-                      controller: _scrollController,
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 24, 
-                        vertical: MediaQuery.of(context).size.height / 2.5
-                      ),
-                      cacheExtent: 3000,
-                      itemCount: _lines.length,
-                      itemBuilder: (context, index) {
-                        final line = _lines[index];
-                        final isActive = _isKaraoke && index == _activeIndex;
-                        
-                        _keys[index] ??= GlobalKey();
-                        
-                        Widget lineContent;
-                        if (line.spans.isNotEmpty && isActive) {
-                          lineContent = RichText(
-                            textAlign: TextAlign.center,
-                            text: TextSpan(
-                              children: line.spans.map((span) {
-                                final isWordSung = currentSec >= span.timeSec;
-                                return TextSpan(
-                                  text: span.text,
-                                  style: TextStyle(
-                                    fontSize: 26,
-                                    fontWeight: FontWeight.bold,
-                                    color: isWordSung 
-                                      ? Theme.of(context).primaryColor 
-                                      : Colors.white.withValues(alpha: 0.6),
-                                  ),
-                                );
-                              }).toList(),
-                            ),
-                          );
-                        } else {
-                          lineContent = Text(
-                            line.text,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: isActive ? 26 : 18,
-                              fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
-                              color: isActive 
-                                ? Theme.of(context).primaryColor 
-                                : Colors.white.withValues(alpha: 0.3),
-                            ),
-                          );
-                        }
-
-                        // Check for instrumental pause (gap > 8 seconds after the last word starts)
-                        bool hasLongPause = false;
-                        if (_isKaraoke && index < _lines.length - 1) {
-                          final nextLine = _lines[index + 1];
-                          double currentLineEndTime = line.timeSec;
-                          
-                          if (line.spans.isNotEmpty) {
-                            currentLineEndTime = line.spans.last.timeSec;
-                          }
-                          
-                          if (nextLine.timeSec - currentLineEndTime > 8.0) {
-                            hasLongPause = true;
-                          }
-                        }
-
-                        return Container(
-                          key: _keys[index],
-                          child: Column(
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                                child: lineContent,
-                              ),
-                              if (hasLongPause)
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 24.0),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Container(width: 4, height: 4, decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.3), shape: BoxShape.circle)),
-                                      const SizedBox(width: 12),
-                                      Container(width: 6, height: 6, decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.3), shape: BoxShape.circle)),
-                                      const SizedBox(width: 12),
-                                      Container(width: 4, height: 4, decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.3), shape: BoxShape.circle)),
-                                    ],
-                                  ),
-                                ),
-                            ],
-                          ),
-                        );
-                      },
+                    return LyricsListView(
+                      lines: _lines,
+                      isKaraoke: _isKaraoke,
+                      currentSec: currentSec,
                     );
                   },
                 ),
         ),
       ),
     );
-  }
-  
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
   }
 }

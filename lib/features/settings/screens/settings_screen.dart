@@ -6,6 +6,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:music_flow_mobile/services/database_service.dart';
 import 'package:music_flow_mobile/locator.dart';
 import 'package:music_flow_mobile/utils/app_logger.dart';
+import 'package:provider/provider.dart';
+import 'package:music_flow_mobile/providers/audio_provider.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -18,6 +20,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _embedLyrics = true;
   bool _highQuality = true;
   bool _showMediaNotification = true;
+  bool _enableCrossfade = true;
   final String _language = 'Українська';
   String _downloadPath = 'Внутрішня пам\'ять/MusicFlow';
 
@@ -34,6 +37,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _showMediaNotification = prefs.getBool('show_media_notification') ?? true;
       _embedLyrics = prefs.getBool('embed_lyrics') ?? true;
       _highQuality = prefs.getBool('high_quality') ?? true;
+      _enableCrossfade = prefs.getBool('enable_crossfade') ?? true;
     });
   }
 
@@ -128,6 +132,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     final prefs = await SharedPreferences.getInstance();
                     await prefs.setBool('high_quality', val);
                     setState(() => _highQuality = val);
+                  },
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          const SizedBox(height: 16),
+          CustomCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Відтворення',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 16),
+                SwitchListTile(
+                  title: const Text('Плавний перехід (Crossfade)'),
+                  subtitle: const Text('Плавне затихання і перехід між треками', style: TextStyle(fontSize: 12)),
+                  value: _enableCrossfade,
+                  activeColor: Theme.of(context).primaryColor,
+                  onChanged: (val) async {
+                    setState(() => _enableCrossfade = val);
+                    if (mounted) {
+                      Provider.of<AudioProvider>(context, listen: false).toggleCrossfade();
+                    }
                   },
                 ),
               ],

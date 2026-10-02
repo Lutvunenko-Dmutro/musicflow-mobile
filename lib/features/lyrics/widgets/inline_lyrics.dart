@@ -1,20 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:music_flow_mobile/providers/audio_provider.dart';
-
-class _WordSpan {
-  final double timeSec;
-  final String text;
-  _WordSpan(this.timeSec, this.text);
-}
-
-class _LyricsLine {
-  final double timeSec;
-  final String text;
-  final List<_WordSpan> spans;
-
-  _LyricsLine(this.timeSec, this.text, [this.spans = const []]);
-}
+import 'package:music_flow_mobile/models/lyrics_line.dart';
+import 'package:music_flow_mobile/utils/lyrics_parser.dart';
 
 class InlineLyrics extends StatefulWidget {
   const InlineLyrics({super.key});
@@ -24,7 +12,7 @@ class InlineLyrics extends StatefulWidget {
 }
 
 class _InlineLyricsState extends State<InlineLyrics> {
-  List<_LyricsLine> _lines = [];
+  List<LyricsLine> _lines = [];
   bool _isKaraoke = false;
   String? _lastParsedLyrics;
   
@@ -45,55 +33,16 @@ class _InlineLyricsState extends State<InlineLyrics> {
       return;
     }
 
-    final parsedLines = <_LyricsLine>[];
-    bool hasTimeTags = false;
-    final regex = RegExp(r'\[(\d+):(\d+\.?\d*)\]\s*(.*)');
-
-    for (var line in lyricsText.split('\n')) {
-      final match = regex.firstMatch(line.trim());
-      if (match != null) {
-        hasTimeTags = true;
-        final minutes = int.parse(match.group(1)!);
-        final seconds = double.parse(match.group(2)!);
-        final text = match.group(3) ?? '';
-        
-        if (text.trim().isNotEmpty) {
-          final spans = <_WordSpan>[];
-          String plainText = text;
-          
-          if (text.contains('<') && text.contains('>')) {
-            plainText = text.replaceAll(RegExp(r'<[^>]*>'), '');
-            double currentSpanTime = minutes * 60 + seconds;
-            final parts = text.split(RegExp(r'(?=<\d+:\d+\.?\d*>)'));
-            
-            for (var part in parts) {
-               if (part.isEmpty) continue;
-               final timeMatch = RegExp(r'^<(\d+):(\d+\.?\d*)>\s*').firstMatch(part);
-               if (timeMatch != null) {
-                  final m = int.parse(timeMatch.group(1)!);
-                  final s = double.parse(timeMatch.group(2)!);
-                  currentSpanTime = m * 60 + s;
-                  final word = part.substring(timeMatch.end);
-                  if (word.isNotEmpty) spans.add(_WordSpan(currentSpanTime, word));
-               } else {
-                  spans.add(_WordSpan(currentSpanTime, part));
-               }
-            }
-          }
-          parsedLines.add(_LyricsLine(minutes * 60 + seconds, plainText.trim(), spans));
-        }
-      } else if (line.trim().isNotEmpty) {
-        parsedLines.add(_LyricsLine(-1, line.trim()));
-      }
-    }
-
+    final result = LyricsParser.parse(lyricsText);
     setState(() {
-      _lines = parsedLines;
-      _isKaraoke = hasTimeTags;
+      _lines = result.lines;
+      _isKaraoke = result.isKaraoke;
       _lastActiveIndex = -1;
       _keys.clear();
     });
   }
+
+
 
   @override
   void dispose() {

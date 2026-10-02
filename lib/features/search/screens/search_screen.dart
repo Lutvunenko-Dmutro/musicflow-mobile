@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:music_flow_mobile/providers/audio_provider.dart';
 import 'package:music_flow_mobile/providers/local_library_provider.dart';
 import 'package:music_flow_mobile/services/youtube_service.dart';
 import 'package:music_flow_mobile/models/song_model.dart';
 import 'package:music_flow_mobile/locator.dart';
-import 'package:music_flow_mobile/core/widgets/custom_card.dart';
 import 'package:music_flow_mobile/features/search/widgets/search_input_card.dart';
-import 'package:music_flow_mobile/core/widgets/song_list_item.dart';
+import 'package:music_flow_mobile/features/search/widgets/local_search_results.dart';
+import 'package:music_flow_mobile/features/search/widgets/youtube_search_results.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -135,108 +133,13 @@ class _SearchScreenState extends State<SearchScreen> {
 
             // Local library results
             if (_localResults.isNotEmpty) ...[
-              CustomCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.library_music, color: Theme.of(context).primaryColor, size: 18),
-                        const SizedBox(width: 8),
-                        const Text(
-                          'В бібліотеці',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).primaryColor.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Text(
-                            '${_localResults.length}',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Theme.of(context).primaryColor,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    ListView.separated(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: _localResults.length,
-                      separatorBuilder: (context, index) => const SizedBox(height: 8),
-                        itemBuilder: (context, index) {
-                          final song = _localResults[index];
-                          return SongListItem(
-                            song: song,
-                            onTap: () {
-                              context.read<AudioProvider>().setQueue(_localResults, initialIndex: index);
-                            },
-                          );
-                        },
-                    ),
-                  ],
-                ),
-              ),
+              LocalSearchResults(localResults: _localResults),
               const SizedBox(height: 16),
             ],
 
             // YouTube results
             if (hasAnyResults) ...[
-              CustomCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.youtube_searched_for, color: Colors.red, size: 18),
-                        const SizedBox(width: 8),
-                        const Text(
-                          'YouTube',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    if (_isSearching)
-                      const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(24.0),
-                          child: CircularProgressIndicator(),
-                        ),
-                      )
-                    else if (_results.isEmpty)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 16.0),
-                        child: Center(
-                          child: Text('Нічого не знайдено', style: TextStyle(color: Colors.white54)),
-                        ),
-                      )
-                    else
-                      ListView.separated(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: _results.length,
-                        separatorBuilder: (context, index) => const SizedBox(height: 8),
-                        itemBuilder: (context, index) {
-                          final song = _results[index];
-                          return SongListItem(
-                            song: song,
-                            onTap: () {
-                              context.read<AudioProvider>().setQueue(_results, initialIndex: index);
-                            },
-                          );
-                        },
-                      ),
-                  ],
-                ),
-              ),
+              YoutubeSearchResults(results: _results, isSearching: _isSearching),
             ],
           ],
         ),

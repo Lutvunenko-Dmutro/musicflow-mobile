@@ -11,6 +11,8 @@
 ///   AppLogger.download('Прогрес: 45%');           // ⬇️ синій
 ///   AppLogger.visualizer('FFT розмір: 1024');     // 📊 сірий
 class AppLogger {
+  static const bool _verbose = false; // Зміни на true, якщо потрібні детальні логи
+  
   // ANSI color codes
   static const String _reset   = '\x1B[0m';
   static const String _red     = '\x1B[31m';
@@ -43,6 +45,7 @@ class AppLogger {
 
   /// ℹ️ Загальна інформація
   static void info(String message, [String? tag]) {
+    if (!_verbose) return;
     if (!_shouldShow('info:$tag:$message')) return;
     final t = tag != null ? '[$tag] ' : '';
     print('$_cyan${_bold}ℹ️  [${_time()}] $t$_reset$_cyan$message$_reset');
@@ -50,6 +53,7 @@ class AppLogger {
 
   /// ✅ Успішна операція
   static void success(String message, [String? tag]) {
+    if (!_verbose) return;
     final t = tag != null ? '[$tag] ' : '';
     print('$_green${_bold}✅ [${_time()}] $t$_reset$_green$message$_reset');
   }
@@ -75,18 +79,21 @@ class AppLogger {
 
   /// 🎧 Аудіо-плеєр (відтворення, пауза, перемотка)
   static void audio(String message) {
+    if (!_verbose) return;
     if (!_shouldShow('audio:$message')) return;
     print('$_magenta${_bold}🎧 [${_time()}] [AUDIO]$_reset$_magenta $message$_reset');
   }
 
   /// ⬇️ Завантаження файлів
   static void download(String message) {
+    if (!_verbose) return;
     if (!_shouldShow('dl:$message')) return;
     print('$_blue${_bold}⬇️  [${_time()}] [DOWNLOAD]$_reset$_blue $message$_reset');
   }
 
   /// 📊 Візуалізатор/FFT
   static void visualizer(String message) {
+    if (!_verbose) return;
     if (!_shouldShow('viz:$message')) return;
     print('$_grey${_bold}📊 [${_time()}] [FFT]$_reset$_grey $message$_reset');
   }
@@ -103,6 +110,7 @@ class AppLogger {
 
   /// Роздільник для зручного читання
   static void separator([String? label]) {
+    if (!_verbose) return;
     if (label != null) {
       print('$_grey${_bold}── $label ${'-' * (40 - label.length)}$_reset');
     } else {

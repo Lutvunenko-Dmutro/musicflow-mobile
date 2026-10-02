@@ -11,17 +11,20 @@ import 'package:music_flow_mobile/services/playback_manager.dart';
 import 'package:music_flow_mobile/utils/app_logger.dart';
 import 'package:music_flow_mobile/locator.dart';
 import 'package:music_flow_mobile/services/database_service.dart';
-import 'package:music_flow_mobile/services/lyrics_service.dart';
-import 'package:music_flow_mobile/main.dart';
+
+import 'package:music_flow_mobile/utils/audio_error_handler.dart';
+import 'package:music_flow_mobile/providers/lyrics_manager_mixin.dart';
+import 'package:music_flow_mobile/providers/crossfade_manager_mixin.dart';
 import 'package:music_flow_mobile/providers/equalizer_provider.dart';
 import 'package:music_flow_mobile/providers/queue_manager_mixin.dart';
+import 'package:music_flow_mobile/providers/playback_controls_mixin.dart';
+import 'package:music_flow_mobile/providers/preferences_manager_mixin.dart';
 
 export 'queue_manager_mixin.dart';
 
-class AudioProvider with ChangeNotifier, QueueManagerMixin {
+class AudioProvider with ChangeNotifier, QueueManagerMixin, LyricsManagerMixin, CrossfadeManagerMixin, PlaybackControlsMixin, PreferencesManagerMixin {
   final AndroidEqualizer _equalizer1 = AndroidEqualizer();
   late final AudioPlayer _player1;
-
   final AndroidEqualizer _equalizer2 = AndroidEqualizer();
   late final AudioPlayer _player2;
 
@@ -30,46 +33,30 @@ class AudioProvider with ChangeNotifier, QueueManagerMixin {
     equalizer2: _equalizer2,
   );
   
-  bool _usePlayer1 = true;
-  
-  bool _isCrossfading = false;
-  bool _isAutoChangingSong = false;
-  Timer? _crossfadeTimer;
-
   @override
-  AudioPlayer get player => _usePlayer1 ? _player1 : _player2;
-  AudioPlayer get _fadingPlayer => _usePlayer1 ? _player2 : _player1;
+  AudioPlayer get player1 => _player1;
+  @override
+  AudioPlayer get player2 => _player2;
+  @override
+  AudioPlayer get player => currentPlayer;
+
+  bool _isAutoChangingSong = false;
 
   final YoutubeService _ytService = locator<YoutubeService>();
-  final LyricsService _lyricsService = LyricsService();
   SongModel? _currentSong;
-  Map<String, String>? _availableLyrics;
-  String? _selectedLyricsKey;
   bool _isLoading = false;
-  bool _isLyricsLoading = false;
-  String? _lyricsErrorMsg;
-  // Player UI Settings
-  bool _showVisualizer = true;
-  bool get showVisualizer => _showVisualizer;
-
-  bool _showInlineLyrics = true;
-  bool get showInlineLyrics => _showInlineLyrics;
-
+  
   String? _playbackError;
   
-  Timer? _sleepTimer;
-  DateTime? _sleepTimerEndTime;
-
+  @override
   SongModel? get currentSong => _currentSong;
-  Map<String, String>? get availableLyrics => _availableLyrics;
-  String? get selectedLyricsKey => _selectedLyricsKey;
-  String? get currentLyrics => _selectedLyricsKey != null && _availableLyrics != null ? _availableLyrics![_selectedLyricsKey!] : null;
+  
+  @override
+  set currentSongInternal(SongModel? song) => _currentSong = song;
+  
   bool get isPlaying => player.playing;
-  bool get isLoading => _isLoading;
-  bool get isLyricsLoading => _isLyricsLoading;
-  String? get lyricsErrorMsg => _lyricsErrorMsg;
+  bool get isLoading => _isLoading || isFetchingAutoContinue;
   String? get playbackError => _playbackError;
-  DateTime? get sleepTimerEndTime => _sleepTimerEndTime;
   
   Stream<Duration> get positionStream => player.positionStream;
   Stream<Duration?> get durationStream => player.durationStream;
@@ -90,6 +77,7 @@ class AudioProvider with ChangeNotifier, QueueManagerMixin {
 
     _initSession();
     _initFuture = _initAudioService();
+    initPrefs();
     
     _setupPlayer(_player1);
     _setupPlayer(_player2);
@@ -98,10 +86,13 @@ class AudioProvider with ChangeNotifier, QueueManagerMixin {
   void _setupPlayer(AudioPlayer p) {
     p.playerStateStream.listen((state) {
       if (state.processingState == ProcessingState.completed) {
-        if (player == p && !_isCrossfading) handleSongCompleted();
+        if (player == p && !isCrossfading) handleSongCompleted();
       }
       if (state.playing && state.processingState == ProcessingState.ready) {
-        if (player == p) NativeVisualizerService.startVisualizer(p.androidAudioSessionId);
+        if (player == p) {
+          if (showVisualizer) NativeVisualizerService.startVisualizer(p.androidAudioSessionId);
+          startFadeInIfNeeded(p);
+        }
       } else if (!state.playing || state.processingState == ProcessingState.completed) {
         if (player == p) NativeVisualizerService.stopVisualizer();
       }
@@ -114,63 +105,21 @@ class AudioProvider with ChangeNotifier, QueueManagerMixin {
       if (dur != null && _currentSong != null) {
         final remaining = dur - pos;
         if (remaining.inMilliseconds <= 3000 && remaining.inMilliseconds > 0) {
-          if (!_isCrossfading && hasNext) {
-            _startCrossfade();
+          if (!isCrossfading && hasNext && isCrossfadeEnabled) {
+            startCrossfade(
+              onPlayerChanged: (newPlayer) {
+                _audioHandler?.updatePlayer(newPlayer);
+              },
+              playNextAction: () {
+                _isAutoChangingSong = true;
+                playNext(); // This will load the next song into the new player
+                _isAutoChangingSong = false;
+              },
+            );
           }
         }
       }
     });
-  }
-
-  void _startCrossfade() {
-    if (_isCrossfading) return;
-    _isCrossfading = true;
-
-    final oldPlayer = player;
-    _usePlayer1 = !_usePlayer1;
-    final newPlayer = player;
-    
-    _audioHandler?.updatePlayer(newPlayer);
-    
-    _crossfadeTimer?.cancel();
-    int steps = 30; // 3 seconds
-    int durationMs = 3000;
-    int stepDuration = durationMs ~/ steps;
-    
-    double oldVol = 1.0;
-    double newVol = 0.0;
-    newPlayer.setVolume(0.0);
-    
-    _isAutoChangingSong = true;
-    playNext(); // This will load the next song into the new player
-    _isAutoChangingSong = false;
-    
-    _crossfadeTimer = Timer.periodic(Duration(milliseconds: stepDuration), (timer) {
-      oldVol -= (1.0 / steps);
-      newVol += (1.0 / steps);
-      
-      if (oldVol <= 0.0 || newVol >= 1.0) {
-        oldPlayer.setVolume(0.0);
-        oldPlayer.stop();
-        newPlayer.setVolume(1.0);
-        _isCrossfading = false;
-        timer.cancel();
-      } else {
-        oldPlayer.setVolume(oldVol);
-        newPlayer.setVolume(newVol);
-      }
-    });
-    
-    notifyListeners();
-  }
-
-  void _cancelCrossfade() {
-    if (_isCrossfading) {
-      _crossfadeTimer?.cancel();
-      _isCrossfading = false;
-      _fadingPlayer.stop();
-      player.setVolume(1.0);
-    }
   }
 
   Future<void> _initAudioService() async {
@@ -196,7 +145,7 @@ class AudioProvider with ChangeNotifier, QueueManagerMixin {
   @override
   Future<void> playSong(SongModel song) async {
     if (!_isAutoChangingSong) {
-      _cancelCrossfade();
+      cancelCrossfade();
     }
     AppLogger.separator('PLAY');
     AppLogger.audio('Title : ${song.title}');
@@ -204,11 +153,8 @@ class AudioProvider with ChangeNotifier, QueueManagerMixin {
     AppLogger.audio('Local : ${song.isLocal} (Path: ${song.localPath})');
     
     _isLoading = true;
-    _isLyricsLoading = true;
     _currentSong = song;
-    _availableLyrics = null;
-    _selectedLyricsKey = null;
-    _lyricsErrorMsg = null;
+    resetLyricsState();
     _playbackError = null;
     
     // If we are playing a song not from the current queue, clear the queue
@@ -218,49 +164,7 @@ class AudioProvider with ChangeNotifier, QueueManagerMixin {
 
     notifyListeners();
     
-    _lyricsService.getLyrics(
-      song,
-      onUpdate: (freshLyrics) {
-        if (_currentSong?.id == song.id) {
-          _availableLyrics = freshLyrics;
-          if (_selectedLyricsKey == null || !freshLyrics.containsKey(_selectedLyricsKey)) {
-            _selectedLyricsKey = freshLyrics.keys.first;
-          }
-          notifyListeners();
-        }
-      },
-    ).then((lyricsMap) {
-      if (_currentSong?.id == song.id) {
-        _isLyricsLoading = false;
-        if (lyricsMap != null && lyricsMap.isNotEmpty) {
-          _availableLyrics = lyricsMap;
-          if (_selectedLyricsKey == null || !lyricsMap.containsKey(_selectedLyricsKey)) {
-            _selectedLyricsKey = lyricsMap.keys.first;
-          }
-        }
-        notifyListeners();
-      }
-    }).catchError((e) {
-      if (_currentSong?.id == song.id) {
-        _isLyricsLoading = false;
-        if (e.toString().contains('SocketException')) {
-          _lyricsErrorMsg = 'Немає підключення до інтернету.';
-        } else {
-          _lyricsErrorMsg = 'Помилка завантаження тексту.';
-        }
-        notifyListeners();
-      }
-    }).catchError((e) {
-      if (_currentSong?.id == song.id) {
-        _isLyricsLoading = false;
-        if (e.toString().contains('SocketException')) {
-          _lyricsErrorMsg = 'Немає підключення до інтернету.';
-        } else {
-          _lyricsErrorMsg = 'Помилка завантаження тексту.';
-        }
-        notifyListeners();
-      }
-    });
+    loadLyricsForSong(song, () => _currentSong);
 
     if (_initFuture != null) {
       await _initFuture;
@@ -285,52 +189,7 @@ class AudioProvider with ChangeNotifier, QueueManagerMixin {
       equalizerProvider.initIfNeeded();
       
     } catch (e, stacktrace) {
-      AppLogger.error('Exception while playing', e, stacktrace, 'AUDIO');
-      final errorMsg = e.toString().replaceAll('Exception: ', '');
-      
-      if (errorMsg.contains('Локальний файл не знайдено')) {
-        final ctx = navigatorKey.currentContext;
-        if (ctx != null && ctx.mounted) {
-          showDialog(
-            context: ctx,
-            builder: (dialogCtx) => AlertDialog(
-              title: const Text('Файл відсутній'),
-              content: const Text('Цей аудіофайл було видалено з пристрою. Бажаєте видалити цей запис з історії?'),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(dialogCtx),
-                  child: const Text('Ні', style: TextStyle(color: Colors.grey)),
-                ),
-                TextButton(
-                  onPressed: () {
-                    locator<DatabaseService>().removeFromHistory(song.id);
-                    Navigator.pop(dialogCtx);
-                  },
-                  child: const Text('Видалити', style: TextStyle(color: Colors.redAccent)),
-                ),
-              ],
-            ),
-          );
-        }
-      } else if (errorMsg.contains('SocketException') || errorMsg.contains('Failed host lookup')) {
-        _playbackError = 'Немає підключення до інтернету.';
-        scaffoldMessengerKey.currentState?.showSnackBar(
-          SnackBar(
-            content: Text(_playbackError!),
-            backgroundColor: Colors.redAccent,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      } else {
-        _playbackError = 'Помилка: $errorMsg';
-        scaffoldMessengerKey.currentState?.showSnackBar(
-          SnackBar(
-            content: Text(_playbackError!),
-            backgroundColor: Colors.redAccent,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
+      handleAudioPlaybackError(e, stacktrace, song, (msg) => _playbackError = msg);
     } finally {
       AppLogger.separator();
       _isLoading = false;
@@ -338,69 +197,12 @@ class AudioProvider with ChangeNotifier, QueueManagerMixin {
     }
   }
 
-  Future<void> pause() async {
-    await player.pause();
-    if (_isCrossfading) await _fadingPlayer.pause();
-    notifyListeners();
-  }
 
-  Future<void> resume() async {
-    await player.play();
-    if (_isCrossfading) await _fadingPlayer.play();
-    notifyListeners();
-  }
-
-  void changeLyricsTrack(String key) {
-    if (_availableLyrics != null && _availableLyrics!.containsKey(key)) {
-      _selectedLyricsKey = key;
-      notifyListeners();
-    }
-  }
-
-  Future<void> seek(Duration position) async {
-    await player.seek(position);
-  }
-
-  Future<void> stop() async {
-    await player.stop();
-    if (_isCrossfading) await _fadingPlayer.stop();
-    _cancelCrossfade();
-    _currentSong = null;
-    notifyListeners();
-  }
-
-  void setSleepTimer(Duration duration) {
-    _sleepTimer?.cancel();
-    _sleepTimerEndTime = DateTime.now().add(duration);
-    _sleepTimer = Timer(duration, () {
-      pause();
-      _sleepTimerEndTime = null;
-      notifyListeners();
-    });
-    notifyListeners();
-  }
-
-  void cancelSleepTimer() {
-    _sleepTimer?.cancel();
-    _sleepTimer = null;
-    _sleepTimerEndTime = null;
-    notifyListeners();
-  }
-
-  void toggleVisualizer() {
-    _showVisualizer = !_showVisualizer;
-    notifyListeners();
-  }
-
-  void toggleInlineLyrics() {
-    _showInlineLyrics = !_showInlineLyrics;
-    notifyListeners();
-  }
 
   @override
   void dispose() {
-    _sleepTimer?.cancel();
-    _crossfadeTimer?.cancel();
+    disposeSleepTimer();
+    disposeCrossfade();
     _player1.dispose();
     _player2.dispose();
     super.dispose();

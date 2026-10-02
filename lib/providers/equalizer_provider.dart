@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:music_flow_mobile/providers/equalizer_presets_data.dart';
 
 class EqualizerProvider extends ChangeNotifier {
   final AndroidEqualizer equalizer1;
@@ -154,8 +155,6 @@ class EqualizerProvider extends ChangeNotifier {
     try {
       final maxD = _params1!.maxDecibels;
       final minD = _params1!.minDecibels;
-      
-      // Calculate gains proportionally to maxDecibels (e.g. if maxD is 15.0, boost is up to 7.5)
       final bassGain = _bassBoost * maxD * 0.5; 
       final virtGain = _virtualizer * maxD * 0.4;
       
@@ -163,16 +162,10 @@ class EqualizerProvider extends ChangeNotifier {
 
       for (int i = 0; i < _params1!.bands.length; i++) {
         double currentGain = _bandGains[i];
-        
-        // Add bass to lower bands (0 and 1)
         if (i == 0) currentGain += bassGain;
         if (i == 1) currentGain += bassGain * 0.5;
-        
-        // Add virtualizer/clarity to higher bands (3 and 4)
         if (i == 3) currentGain += virtGain * 0.5;
         if (i == 4) currentGain += virtGain;
-        
-        // Clamp to min/max
         final finalGain = currentGain.clamp(minD, maxD);
         await _params1!.bands[i].setGain(finalGain);
         await _params2!.bands[i].setGain(finalGain);
@@ -212,21 +205,7 @@ class EqualizerProvider extends ChangeNotifier {
   }
   
   Future<void> applyPreset(String presetName) async {
-    final Map<String, List<double>> presets = {
-      'Налаштувати': [0.0, 0.0, 0.0, 0.0, 0.0],
-      'Звичайний': [0.0, 0.0, 0.0, 0.0, 0.0],
-      'Класика': [4.0, 3.0, -3.0, 4.0, 4.0],
-      'Танцювальна': [6.0, 0.0, 2.0, 4.0, 1.0],
-      'Стандарт': [0.0, 0.0, 0.0, 0.0, 0.0],
-      'Фолк': [3.0, 0.0, 0.0, 2.0, -1.0],
-      'Метал': [4.0, 1.0, 9.0, 3.0, 0.0],
-      'Хіп-хоп': [5.0, 3.0, 0.0, 1.0, 3.0],
-      'Джаз': [4.0, 2.0, -2.0, 2.0, 5.0],
-      'Поп': [-1.0, 2.0, 5.0, 1.0, -2.0],
-      'Рок': [5.0, 3.0, -1.0, 3.0, 5.0],
-    };
-
-    final presetGains = presets[presetName];
+    final presetGains = equalizerPresetsData[presetName];
     if (presetGains != null) {
       for (int i = 0; i < bandCount && i < presetGains.length; i++) {
         await setBandGain(i, presetGains[i]);
