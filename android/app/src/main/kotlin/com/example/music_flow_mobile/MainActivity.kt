@@ -15,6 +15,9 @@ class MainActivity: AudioServiceActivity() {
 
     private var visualizer: Visualizer? = null
     private var eventSink: EventChannel.EventSink? = null
+    
+    private var captureWaveform = true
+    private var captureFft = false
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -98,6 +101,25 @@ class MainActivity: AudioServiceActivity() {
                     } else {
                         result.error("NOT_FOUND", "Could not open sound settings", null)
                     }
+                }
+                "setVisualizerCore" -> {
+                    val core = call.argument<String>("core") ?: "software"
+                    if (core == "hardware") {
+                        captureWaveform = false
+                        captureFft = true
+                    } else {
+                        captureWaveform = true
+                        captureFft = false
+                    }
+                    
+                    visualizer?.let {
+                        // Must disable before changing listener, then re-enable
+                        it.enabled = false
+                        val captureRate = Math.min(Visualizer.getMaxCaptureRate(), 30000)
+                        it.setDataCaptureListener(visualizerListener, captureRate, captureWaveform, captureFft)
+                        it.enabled = true
+                    }
+                    result.success(true)
                 }
                 else -> result.notImplemented()
             }
@@ -222,27 +244,41 @@ class MainActivity: AudioServiceActivity() {
 
     }
 
+    private val visualizerListener = object : Visualizer.OnDataCaptureListener {
+        var lastTimeWave = 0L
+        var lastTimeFft = 0L
+
+        override fun onWaveFormDataCapture(visualizer: Visualizer, waveform: ByteArray, samplingRate: Int) {
+            if (!captureWaveform) return
+            val now = System.currentTimeMillis()
+            if (now - lastTimeWave >= 32) {
+                lastTimeWave = now
+                runOnUiThread {
+                    eventSink?.success(waveform)
+                }
+            }
+        }
+
+        override fun onFftDataCapture(visualizer: Visualizer, fft: ByteArray, samplingRate: Int) {
+            if (!captureFft) return
+            val now = System.currentTimeMillis()
+            if (now - lastTimeFft >= 32) {
+                lastTimeFft = now
+                runOnUiThread {
+                    eventSink?.success(fft)
+                }
+            }
+        }
+    }
+
     private fun startVisualizer(sessionId: Int) {
         stopVisualizer()
         try {
             visualizer = Visualizer(sessionId)
             visualizer?.captureSize = Visualizer.getCaptureSizeRange()[1] // Max capture size
             val captureRate = Math.min(Visualizer.getMaxCaptureRate(), 30000)
-            visualizer?.setDataCaptureListener(object : Visualizer.OnDataCaptureListener {
-                var lastTime = 0L
-                override fun onWaveFormDataCapture(visualizer: Visualizer, waveform: ByteArray, samplingRate: Int) {
-                    val now = System.currentTimeMillis()
-                    // Throttle to ~30 FPS (32ms) to prevent flooding the Flutter bridge
-                    if (now - lastTime >= 32) {
-                        lastTime = now
-                        runOnUiThread {
-                            eventSink?.success(waveform)
-                        }
-                    }
-                }
+            visualizer?.setDataCaptureListener(visualizerListener, captureRate, captureWaveform, captureFft)
 
-                override fun onFftDataCapture(visualizer: Visualizer, fft: ByteArray, samplingRate: Int) {}
-            }, captureRate, true, false)
             
             visualizer?.enabled = true
         } catch (e: Exception) {

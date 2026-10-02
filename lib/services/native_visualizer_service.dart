@@ -20,6 +20,14 @@ class NativeVisualizerService {
     }
   }
 
+  static Future<void> setVisualizerCore(String core) async {
+    try {
+      await _methodChannel.invokeMethod('setVisualizerCore', {'core': core});
+    } catch (e) {
+      AppLogger.error('Error setting visualizer core', e, null, 'AUDIO');
+    }
+  }
+
   static Future<void> stopVisualizer() async {
     try {
       await _methodChannel.invokeMethod('stopVisualizer');

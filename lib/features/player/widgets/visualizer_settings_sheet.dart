@@ -136,6 +136,45 @@ class VisualizerSettingsSheet extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 8),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.memory, color: Colors.white70, size: 18),
+                          SizedBox(width: 8),
+                          Text('Ядро візуалізатора', style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w500)),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Software — FFT-аналіз хвилі (рекомендовано)\nHardware — пряме FFT від Android (може відрізнятись)',
+                        style: TextStyle(color: Colors.white38, fontSize: 11),
+                      ),
+                      const SizedBox(height: 12),
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            _CoreChip(
+                              label: 'Software (FFT)',
+                              icon: Icons.psychology,
+                              selected: settings.core == VisualizerCore.software,
+                              onTap: () => settings.setCore(VisualizerCore.software),
+                            ),
+                            const SizedBox(width: 8),
+                            _CoreChip(
+                              label: 'Hardware',
+                              icon: Icons.developer_board,
+                              selected: settings.core == VisualizerCore.hardware,
+                              onTap: () => settings.setCore(VisualizerCore.hardware),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
                 ],
               );
             },
@@ -145,4 +184,54 @@ class VisualizerSettingsSheet extends StatelessWidget {
     );
   }
 
+}
+
+class _CoreChip extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _CoreChip({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: selected
+              ? Theme.of(context).primaryColor.withValues(alpha: 0.25)
+              : Colors.white.withValues(alpha: 0.07),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: selected ? Theme.of(context).primaryColor : Colors.white24,
+            width: 1.5,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 16, color: selected ? Theme.of(context).primaryColor : Colors.white54),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                color: selected ? Colors.white : Colors.white60,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

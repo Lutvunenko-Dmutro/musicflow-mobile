@@ -132,13 +132,24 @@ class _AudioVisualizerState extends State<AudioVisualizer> with SingleTickerProv
     );
   }
 
-  void _processWaveform(List<int> waveform) {
+  void _processWaveform(List<int> raw) {
     if (!mounted) return;
-    _targetHeights = FftProcessor.process(
-      waveform, 
-      widget.barCount,
-      amplitudeBoost: _settings.amplitudeBoost,
-    );
+    if (_settings.core == VisualizerCore.hardware) {
+      // Hardware mode: Android sends raw FFT bytes (packed real/imag pairs).
+      // We skip our own FFT and map magnitudes directly to bars.
+      _targetHeights = FftProcessor.processHardwareFft(
+        raw,
+        widget.barCount,
+        amplitudeBoost: _settings.amplitudeBoost,
+      );
+    } else {
+      // Software mode: time-domain waveform → our own FFT (fftea)
+      _targetHeights = FftProcessor.process(
+        raw,
+        widget.barCount,
+        amplitudeBoost: _settings.amplitudeBoost,
+      );
+    }
   }
 
   @override

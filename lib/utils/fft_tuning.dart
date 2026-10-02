@@ -1,23 +1,24 @@
 class FftTuning {
   // 1. Динамічний діапазон (чутливість до гучності)
-  static const double noiseFloor = -45.0; // Трохи вищий поріг тиші, щоб відсікти шуми
-  static const double maxDbOffset = -10.0; // Даємо більше місця для піків
+  static const double noiseFloor  = -35.0; // Вищий поріг = відсікаємо більше тиші
+  static const double maxDbOffset = -18.0; // Менша стеля = смужки не б'ють у 100%
   
   // 2. Чутливість гучності для КОЖНОГО кольору (Множники)
-  static const double weightRed = 1.0;    // 🟥 Червоні (Бас)
-  static const double weightOrange = 3.0; // 🟧 Оранжеві (Нижня середина)
-  static const double weightYellow = 6.0; // 🟨 Жовті (Піаніно, вокал)
-  static const double weightBlue = 8.0;   // 🟦 Сині (Тарілочки)
+  static const double weightRed    = 0.35; // 🟥 Червоні (Бас)
+  static const double weightOrange = 2.0;  // 🟧 Оранжеві (Нижня середина)
+  static const double weightYellow = 4.0;  // 🟨 Жовті (Піаніно, вокал)
+  static const double weightBlue   = 7.0;  // 🟦 Сині (Тарілочки)
   
   // 3. Різкість (Punch) для КОЖНОГО кольору (чим вище, тим різкіше падає смужка)
-  static const double punchRed = 1.5;
+  static const double punchRed    = 1.2; // трохи плавніший підйом для басів
   static const double punchOrange = 1.5;
   static const double punchYellow = 1.5;
-  static const double punchBlue = 1.5;
+  static const double punchBlue   = 1.5;
 
   // 4. Згладжування (Spatial Smoothing)
-  static const double smoothSelf = 0.5;     // 50% від себе
-  static const double smoothNeighbor = 0.25; // 25% від сусідів (більше хвилеподібності)
+  static const double smoothSelf     = 0.70; // 70% від себе — більше незалежності
+  static const double smoothNeighbor = 0.15; // 15% від сусідів — смужки більш розрізнимі
+
   
   static const List<double> barFrequencies = [
     // 🟥 Red (24 bars) - 30Hz to 800Hz (Захоплює Бочку, Бас-гітару, Томи і Робочий барабан!)
