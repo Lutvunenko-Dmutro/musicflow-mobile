@@ -8,6 +8,7 @@
 | [architecture_audio_provider.md](architecture_audio_provider.md) | Як влаштований AudioProvider + mixins + потік відтворення |
 | [visualizer_system.md](visualizer_system.md) | Вся система візуалізатора: Android → Flutter → Canvas |
 | [services.md](services.md) | Всі сервіси: YouTube, БД, Download, Lyrics, Native |
+| [audit.md](audit.md) | 🔍 Повний аудит: сильні/слабкі сторони, вразливості, план фіксів |
 | [known_issues_todo.md](known_issues_todo.md) | ⚠️ Баги, TODO, де шукати при дебагу |
 
 ---
