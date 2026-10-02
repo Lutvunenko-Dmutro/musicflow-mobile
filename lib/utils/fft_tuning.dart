@@ -1,13 +1,16 @@
 class FftTuning {
-  // 1. Динамічний діапазон (чутливість до гучності)
-  static const double noiseFloor  = -35.0; // Вищий поріг = відсікаємо більше тиші
-  static const double maxDbOffset = -18.0; // Менша стеля = смужки не б'ють у 100%
-  
-  // 2. Чутливість гучності для КОЖНОГО кольору (Множники)
-  static const double weightRed    = 0.35; // 🟥 Червоні (Бас)
-  static const double weightOrange = 2.0;  // 🟧 Оранжеві (Нижня середина)
-  static const double weightYellow = 4.0;  // 🟨 Жовті (Піаніно, вокал)
-  static const double weightBlue   = 7.0;  // 🟦 Сині (Тарілочки)
+  // 1. Динамічний діапазон
+  //    noiseFloor  = нижня межа (сигнали нижче цього = 0%)
+  //    maxDbOffset = СТЕЛЯ для басів. Для інших кольорів стеля = maxDbOffset + 20*log10(weight)
+  //    ВАЖЛИВО: чим МЕНШ НЕГАТИВНЕ maxDbOffset — тим ВИЩА стеля (менше кліпінгу)
+  static const double noiseFloor  = -55.0; // Більший діапазон = більше деталей
+  static const double maxDbOffset =   0.0; // 0 dB = повна гучність. Баси б'ють в стелю тільки при максимумі
+
+  // 2. Множники для кожного кольору
+  static const double weightRed    = 0.60; // 🟥 Баси
+  static const double weightOrange = 2.5;  // 🟧 Нижня середина
+  static const double weightYellow = 5.0;  // 🟨 Вокал / піаніно
+  static const double weightBlue   = 8.0;  // 🟦 Тарілки
   
   // 3. Різкість (Punch) для КОЖНОГО кольору (чим вище, тим різкіше падає смужка)
   static const double punchRed    = 1.2; // трохи плавніший підйом для басів
