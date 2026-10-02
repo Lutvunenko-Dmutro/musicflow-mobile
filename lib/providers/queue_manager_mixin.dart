@@ -10,6 +10,7 @@ mixin QueueManagerMixin on ChangeNotifier {
   int _currentIndex = -1;
   bool _isShuffleModeEnabled = false;
   RepeatMode _repeatMode = RepeatMode.off;
+  bool _isPlayingNext = true;
 
   bool get hasNext => _queue.isNotEmpty && (_currentIndex < _queue.length - 1 || _repeatMode == RepeatMode.all || _isShuffleModeEnabled);
   bool get hasPrevious => _queue.isNotEmpty && (_currentIndex > 0 || _repeatMode == RepeatMode.all || _isShuffleModeEnabled);
@@ -17,6 +18,7 @@ mixin QueueManagerMixin on ChangeNotifier {
   RepeatMode get repeatMode => _repeatMode;
   List<SongModel> get queue => _queue;
   int get currentIndex => _currentIndex;
+  bool get isPlayingNext => _isPlayingNext;
   
   // These must be implemented by the class mixing this in
   AudioPlayer get player;
@@ -49,6 +51,7 @@ mixin QueueManagerMixin on ChangeNotifier {
   }
 
   void playNext() {
+    _isPlayingNext = true;
     if (_queue.isEmpty) return;
     
     if (_isShuffleModeEnabled && _queue.length > 1) {
@@ -73,6 +76,7 @@ mixin QueueManagerMixin on ChangeNotifier {
   }
 
   void playPrevious() {
+    _isPlayingNext = false;
     if (_queue.isEmpty) return;
     
     if (player.position.inSeconds > 3) {

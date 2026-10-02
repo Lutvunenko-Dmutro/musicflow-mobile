@@ -55,7 +55,7 @@ void main() {
       
       final fileDir = file.parent.path;
       final absolutePath = p.normalize(p.join(fileDir, importPath));
-      final libIndex = absolutePath.indexOf('lib' + Platform.pathSeparator);
+      final libIndex = absolutePath.indexOf('lib${Platform.pathSeparator}');
       if (libIndex != -1) {
         final packagePath = absolutePath.substring(libIndex + 4).replaceAll('\\', '/');
         return "import 'package:music_flow_mobile/$packagePath';";
@@ -76,6 +76,7 @@ void main() {
       final newFile = File(newPath);
       newFile.parent.createSync(recursive: true);
       oldFile.renameSync(newPath);
+      // ignore: avoid_print
       print('Moved $oldPath -> $newPath');
     }
   }
@@ -102,6 +103,7 @@ void main() {
     
     if (changed) {
       file.writeAsStringSync(content);
+      // ignore: avoid_print
       print('Updated imports in ${file.path}');
     }
   }

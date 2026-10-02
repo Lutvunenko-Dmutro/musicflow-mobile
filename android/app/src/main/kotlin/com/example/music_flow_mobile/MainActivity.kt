@@ -34,6 +34,71 @@ class MainActivity: AudioServiceActivity() {
                     stopVisualizer()
                     result.success(true)
                 }
+                "openSystemEqualizer" -> {
+                    val sessionId = call.argument<Int>("sessionId") ?: 0
+                    try {
+                        val broadcastIntent = android.content.Intent(android.media.audiofx.AudioEffect.ACTION_OPEN_AUDIO_EFFECT_CONTROL_SESSION).apply {
+                            putExtra(android.media.audiofx.AudioEffect.EXTRA_AUDIO_SESSION, sessionId)
+                            putExtra(android.media.audiofx.AudioEffect.EXTRA_PACKAGE_NAME, packageName)
+                            putExtra(android.media.audiofx.AudioEffect.EXTRA_CONTENT_TYPE, android.media.audiofx.AudioEffect.CONTENT_TYPE_MUSIC)
+                        }
+                        sendBroadcast(broadcastIntent)
+                    } catch (e: Exception) {
+                        // ignore broadcast errors
+                    }
+
+                    var opened = false
+
+                    // 1. Try standard AudioEffect control panel
+                    val panelIntent = android.content.Intent(android.media.audiofx.AudioEffect.ACTION_DISPLAY_AUDIO_EFFECT_CONTROL_PANEL).apply {
+                        putExtra(android.media.audiofx.AudioEffect.EXTRA_AUDIO_SESSION, sessionId)
+                        putExtra(android.media.audiofx.AudioEffect.EXTRA_PACKAGE_NAME, packageName)
+                        putExtra(android.media.audiofx.AudioEffect.EXTRA_CONTENT_TYPE, android.media.audiofx.AudioEffect.CONTENT_TYPE_MUSIC)
+                    }
+                    if (panelIntent.resolveActivity(packageManager) != null) {
+                        try {
+                            startActivityForResult(panelIntent, 0)
+                            opened = true
+                        } catch (e: Exception) {
+                            opened = false
+                        }
+                    }
+
+                    // 2. Try Xiaomi / MIUI Sound Effects activity
+                    if (!opened) {
+                        try {
+                            val miuiIntent = android.content.Intent().apply {
+                                setClassName("com.miui.misound", "com.miui.misound.HeadsetSettingsActivity")
+                                addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
+                            if (miuiIntent.resolveActivity(packageManager) != null) {
+                                startActivity(miuiIntent)
+                                opened = true
+                            }
+                        } catch (e: Exception) {
+                            opened = false
+                        }
+                    }
+
+                    // 3. Fallback for any Android device: Settings.ACTION_SOUND_SETTINGS
+                    if (!opened) {
+                        try {
+                            val soundSettingsIntent = android.content.Intent(android.provider.Settings.ACTION_SOUND_SETTINGS).apply {
+                                addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
+                            startActivity(soundSettingsIntent)
+                            opened = true
+                        } catch (e: Exception) {
+                            opened = false
+                        }
+                    }
+
+                    if (opened) {
+                        result.success(true)
+                    } else {
+                        result.error("NOT_FOUND", "Could not open sound settings", null)
+                    }
+                }
                 else -> result.notImplemented()
             }
         }

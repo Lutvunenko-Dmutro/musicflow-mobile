@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:music_flow_mobile/core/app_colors.dart';
 import 'package:provider/provider.dart';
 import 'package:music_flow_mobile/providers/audio_provider.dart';
 import 'package:music_flow_mobile/models/song_model.dart';
@@ -12,26 +11,50 @@ class PlayerHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      flex: 7,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          // Cover Art
-          Expanded(
-            child: Center(
-              child: GestureDetector(
-                onHorizontalDragEnd: (details) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        Expanded(
+          child: Center(
+            child: GestureDetector(
+              onHorizontalDragEnd: (details) {
+                final provider = context.read<AudioProvider>();
+                if (details.primaryVelocity! < -300) {
+                  // Swipe left -> Next
+                  provider.playNext();
+                } else if (details.primaryVelocity! > 300) {
+                  // Swipe right -> Prev
+                  provider.playPrevious();
+                }
+              },
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 500),
+                switchInCurve: Curves.easeOutCubic,
+                switchOutCurve: Curves.easeInCubic,
+                transitionBuilder: (Widget child, Animation<double> animation) {
                   final provider = context.read<AudioProvider>();
-                  if (details.primaryVelocity! < -300) {
-                    // Swipe left -> Next
-                    provider.playNext();
-                  } else if (details.primaryVelocity! > 300) {
-                    // Swipe right -> Prev
-                    provider.playPrevious();
+                  final bool isNext = provider.isPlayingNext;
+                  final bool isIncoming = child.key == ValueKey(song.id);
+                  
+                  Offset offset;
+                  if (isNext) {
+                    offset = isIncoming ? const Offset(1.0, 0.0) : const Offset(-1.0, 0.0);
+                  } else {
+                    offset = isIncoming ? const Offset(-1.0, 0.0) : const Offset(1.0, 0.0);
                   }
+                  
+                  final slideAnimation = Tween<Offset>(begin: offset, end: Offset.zero).animate(animation);
+                  
+                  return SlideTransition(
+                    position: slideAnimation,
+                    child: FadeTransition(
+                      opacity: animation,
+                      child: child,
+                    ),
+                  );
                 },
                 child: AspectRatio(
+                  key: ValueKey(song.id),
                   aspectRatio: 1.0,
                   child: Container(
                     decoration: BoxDecoration(
@@ -58,11 +81,35 @@ class PlayerHeader extends StatelessWidget {
               ),
             ),
           ),
-          
-          const SizedBox(height: 16),
-          
-          // Song Info
-          Column(
+        ),
+        
+        const SizedBox(height: 16),
+        
+        // Song Info
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 400),
+          transitionBuilder: (Widget child, Animation<double> animation) {
+            final provider = context.read<AudioProvider>();
+            final bool isNext = provider.isPlayingNext;
+            final bool isIncoming = child.key == ValueKey(song.id);
+            
+            Offset offset;
+            if (isNext) {
+              offset = isIncoming ? const Offset(1.0, 0.0) : const Offset(-1.0, 0.0);
+            } else {
+              offset = isIncoming ? const Offset(-1.0, 0.0) : const Offset(1.0, 0.0);
+            }
+            
+            return FadeTransition(
+              opacity: animation,
+              child: SlideTransition(
+                position: Tween<Offset>(begin: offset, end: Offset.zero).animate(animation),
+                child: child,
+              ),
+            );
+          },
+          child: Column(
+            key: ValueKey(song.id),
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -89,21 +136,8 @@ class PlayerHeader extends StatelessWidget {
               ),
             ],
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _fallbackCover(BuildContext context) {
-    return Container(
-      color: AppColors.surfaceMuted,
-      child: const Center(
-        child: Icon(
-          Icons.music_note,
-          color: AppColors.iconMuted,
-          size: 64,
         ),
-      ),
+      ],
     );
   }
 }

@@ -1,15 +1,26 @@
+import 'dart:async';
 import 'package:audio_service/audio_service.dart';
 import 'package:just_audio/just_audio.dart';
 
 class MusicAudioHandler extends BaseAudioHandler {
-  final AudioPlayer _player;
+  AudioPlayer _player;
+  StreamSubscription? _playbackEventSub;
+  StreamSubscription? _durationSub;
 
   MusicAudioHandler(this._player) {
     _notifyAudioHandlerAboutPlaybackEvents();
   }
+  
+  void updatePlayer(AudioPlayer newPlayer) {
+    _player = newPlayer;
+    _notifyAudioHandlerAboutPlaybackEvents();
+  }
 
   void _notifyAudioHandlerAboutPlaybackEvents() {
-    _player.playbackEventStream.listen((PlaybackEvent event) {
+    _playbackEventSub?.cancel();
+    _durationSub?.cancel();
+    
+    _playbackEventSub = _player.playbackEventStream.listen((PlaybackEvent event) {
       final playing = _player.playing;
       playbackState.add(playbackState.value.copyWith(
         controls: [
@@ -38,7 +49,7 @@ class MusicAudioHandler extends BaseAudioHandler {
       ));
     });
 
-    _player.durationStream.listen((Duration? duration) {
+    _durationSub = _player.durationStream.listen((Duration? duration) {
       if (duration != null && mediaItem.value != null) {
         mediaItem.add(mediaItem.value!.copyWith(duration: duration));
       }

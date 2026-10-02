@@ -118,9 +118,9 @@ class PlayerControls extends StatelessWidget {
                       color: Theme.of(context).primaryColor,
                       boxShadow: [
                         BoxShadow(
-                          color: Theme.of(context).primaryColor.withValues(alpha: 0.4),
-                          blurRadius: 16,
-                          offset: const Offset(0, 8),
+                          color: Colors.black.withValues(alpha: 0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
                         ),
                       ],
                     ),

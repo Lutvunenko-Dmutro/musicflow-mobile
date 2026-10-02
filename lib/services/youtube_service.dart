@@ -136,10 +136,10 @@ class YoutubeService {
         
         void flushCurrentLine() {
           if (currentMergedLrc != null && currentMergedStart != null) {
-            final minutes = currentMergedStart!.inMinutes.toString().padLeft(2, '0');
-            final seconds = (currentMergedStart!.inSeconds % 60).toString().padLeft(2, '0');
-            final ms = (currentMergedStart!.inMilliseconds % 1000 ~/ 10).toString().padLeft(2, '0');
-            lrcBuffer.writeln('[$minutes:$seconds.$ms] ${currentMergedLrc!.trim()}');
+            final minutes = currentMergedStart.inMinutes.toString().padLeft(2, '0');
+            final seconds = (currentMergedStart.inSeconds % 60).toString().padLeft(2, '0');
+            final ms = (currentMergedStart.inMilliseconds % 1000 ~/ 10).toString().padLeft(2, '0');
+            lrcBuffer.writeln('[$minutes:$seconds.$ms] ${currentMergedLrc.trim()}');
           }
         }
 
@@ -164,16 +164,16 @@ class YoutubeService {
             currentMergedStart = caption.offset;
             lastChunkEnd = caption.offset + caption.duration;
           } else {
-            bool endsWithPunc = currentMergedRaw!.endsWith('.') || 
-                                currentMergedRaw!.endsWith('!') || 
-                                currentMergedRaw!.endsWith('?');
+            bool endsWithPunc = currentMergedRaw.endsWith('.') || 
+                                currentMergedRaw.endsWith('!') || 
+                                currentMergedRaw.endsWith('?');
             
             bool hasLongGap = false;
-            if (lastChunkEnd != null && (caption.offset - lastChunkEnd!).inMilliseconds > 2000) {
+            if (lastChunkEnd != null && (caption.offset - lastChunkEnd).inMilliseconds > 2000) {
               hasLongGap = true;
             }
             
-            if (!endsWithPunc && !hasLongGap && currentMergedRaw!.length < 50) {
+            if (!endsWithPunc && !hasLongGap && currentMergedRaw.length < 50) {
               currentMergedRaw = '$currentMergedRaw $cleanedText';
               currentMergedLrc = '$currentMergedLrc $timeTag $cleanedText';
               lastChunkEnd = caption.offset + caption.duration;

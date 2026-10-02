@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:music_flow_mobile/core/app_colors.dart';
 import 'dart:math' as math;
-import 'dart:ui' as ui;
 import 'package:music_flow_mobile/providers/visualizer_settings_provider.dart';
 
 class VisualizerPainter extends CustomPainter {

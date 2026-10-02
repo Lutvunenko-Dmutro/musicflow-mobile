@@ -41,7 +41,7 @@ void main() {
       // Calculate relative path to core/app_colors.dart
       final parts = file.path.split(Platform.pathSeparator);
       final depth = parts.length - 2; // -1 for 'lib', -1 for filename
-      final prefix = depth == 0 ? '' : List.filled(depth, '..').join('/') + '/';
+      final prefix = depth == 0 ? '' : '${List.filled(depth, '..').join('/')}/';
       final importStmt = "import '${prefix}core/app_colors.dart';\n";
       
       if (!content.contains('app_colors.dart')) {
@@ -55,6 +55,7 @@ void main() {
         }
       }
       file.writeAsStringSync(content);
+      // ignore: avoid_print
       print('Updated ${file.path}');
     }
   }

@@ -46,7 +46,7 @@ class _MainScreenState extends State<MainScreen> {
                     child: IgnorePointer(
                       child: Consumer<AudioProvider>(
                         builder: (context, audioProvider, child) {
-                          if (audioProvider.isPlaying) {
+                          if (audioProvider.isPlaying && audioProvider.showVisualizer) {
                             return const SizedBox(
                               width: double.infinity,
                               height: 50,

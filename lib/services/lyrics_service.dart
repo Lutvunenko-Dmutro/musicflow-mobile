@@ -6,7 +6,6 @@ import 'package:music_flow_mobile/utils/app_logger.dart';
 import 'package:music_flow_mobile/services/youtube_service.dart';
 import 'package:music_flow_mobile/locator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:music_flow_mobile/locator.dart';
 
 class LyricsService {
   static const String _lrclibUrl = 'https://lrclib.net/api/search';
@@ -27,29 +26,56 @@ class LyricsService {
       }
     }
     
-    // Check SharedPreferences cache first
     final prefs = await SharedPreferences.getInstance();
     final cacheKey = 'lyrics_cache_${song.id}';
     final cachedData = prefs.getString(cacheKey);
     
     if (cachedData != null) {
+      if (cachedData == "NOT_FOUND") {
+        AppLogger.info('Lyrics previously not found for ${song.title}, skipping API calls', 'LYRICS');
+        return null;
+      }
       try {
         final decoded = json.decode(cachedData) as Map<String, dynamic>;
-        final mapString = decoded.map((key, value) => MapEntry(key, value.toString()));
-        AppLogger.info('Found cached lyrics for ${song.title}', 'LYRICS');
         
-        // --- BACKGROUND UPDATE ---
-        Future.microtask(() async {
-          final freshLyrics = await _fetchFreshLyrics(song);
-          if (freshLyrics != null && freshLyrics.isNotEmpty) {
-            final freshData = json.encode(freshLyrics);
-            if (freshData != cachedData) {
-              await prefs.setString(cacheKey, freshData);
-              AppLogger.info('Updated lyrics cache in background for ${song.title}', 'LYRICS');
-              onUpdate?.call(freshLyrics);
-            }
+        // Перевіряємо чи є дата останнього оновлення
+        int? lastUpdateMs;
+        if (decoded['_last_update_ms'] != null) {
+          lastUpdateMs = int.tryParse(decoded['_last_update_ms'].toString());
+        }
+        final mapString = <String, String>{};
+        
+        decoded.forEach((key, value) {
+          if (key != '_last_update_ms') {
+            mapString[key] = value.toString();
           }
         });
+        
+        AppLogger.info('Found cached lyrics for ${song.title}', 'LYRICS');
+        
+        // Логіка користувача: якщо текст оновлювався нещодавно (наприклад, менше 7 днів тому), не чіпаємо ютуб/API.
+        // Якщо ж пройшло більше часу — оновлюємо у фоні.
+        final nowMs = DateTime.now().millisecondsSinceEpoch;
+        final sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+        
+        if (lastUpdateMs == null || (nowMs - lastUpdateMs) > sevenDaysMs) {
+          AppLogger.info('Lyrics cache is old, scheduling background update for ${song.title}', 'LYRICS');
+          Future.microtask(() async {
+            final freshLyrics = await _fetchFreshLyrics(song);
+            if (freshLyrics != null && freshLyrics.isNotEmpty) {
+              freshLyrics['_last_update_ms'] = DateTime.now().millisecondsSinceEpoch.toString();
+              final freshData = json.encode(freshLyrics);
+              if (freshData != cachedData) {
+                await prefs.setString(cacheKey, freshData);
+                AppLogger.info('Updated lyrics cache in background for ${song.title}', 'LYRICS');
+                
+                // Видалимо _last_update_ms перед тим як відправити в UI
+                freshLyrics.remove('_last_update_ms');
+                onUpdate?.call(freshLyrics);
+              }
+            }
+          });
+        }
         
         return mapString;
       } catch (e) {
@@ -59,7 +85,12 @@ class LyricsService {
 
     final freshLyrics = await _fetchFreshLyrics(song);
     if (freshLyrics != null && freshLyrics.isNotEmpty) {
+      freshLyrics['_last_update_ms'] = DateTime.now().millisecondsSinceEpoch.toString();
       await prefs.setString(cacheKey, json.encode(freshLyrics));
+      freshLyrics.remove('_last_update_ms');
+    } else {
+      // Cache the negative result so we don't spam the API on every playback
+      await prefs.setString(cacheKey, "NOT_FOUND");
     }
     return freshLyrics;
   }

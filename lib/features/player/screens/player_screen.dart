@@ -8,6 +8,8 @@ import 'package:music_flow_mobile/features/player/widgets/player_controls.dart';
 import 'package:music_flow_mobile/features/player/widgets/visualizer_settings_sheet.dart';
 import 'package:music_flow_mobile/features/player/screens/queue_screen.dart';
 import 'package:music_flow_mobile/features/lyrics/screens/lyrics_screen.dart';
+import 'package:music_flow_mobile/features/lyrics/widgets/inline_lyrics.dart';
+import 'package:music_flow_mobile/features/settings/screens/equalizer_screen.dart';
 
 class PlayerScreen extends StatelessWidget {
   const PlayerScreen({super.key});
@@ -56,22 +58,52 @@ class PlayerScreen extends StatelessWidget {
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert, size: 28),
             onSelected: (value) {
-              if (value == 'visualizer') {
+              if (value == 'visualizer_settings') {
                 showModalBottomSheet(
                   context: context,
                   backgroundColor: Colors.transparent,
                   isScrollControlled: true,
                   builder: (context) => const VisualizerSettingsSheet(),
                 );
+              } else if (value == 'toggle_visualizer') {
+                audioProvider.toggleVisualizer();
+              } else if (value == 'toggle_lyrics') {
+                audioProvider.toggleInlineLyrics();
               } else if (value == 'sleep_timer') {
                 _showSleepTimerDialog(context, audioProvider);
               } else if (value == 'equalizer') {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Еквалайзер на стадії розробки')));
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const EqualizerScreen()));
               }
             },
             itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+              PopupMenuItem<String>(
+                value: 'toggle_lyrics',
+                child: Row(
+                  children: [
+                    Icon(
+                      audioProvider.showInlineLyrics ? Icons.lyrics : Icons.lyrics_outlined, 
+                      size: 20
+                    ),
+                    const SizedBox(width: 12),
+                    Text(audioProvider.showInlineLyrics ? 'Приховати міні-караоке' : 'Показати міні-караоке'),
+                  ],
+                ),
+              ),
+              PopupMenuItem<String>(
+                value: 'toggle_visualizer',
+                child: Row(
+                  children: [
+                    Icon(
+                      audioProvider.showVisualizer ? Icons.graphic_eq : Icons.graphic_eq_outlined, 
+                      size: 20
+                    ),
+                    const SizedBox(width: 12),
+                    Text(audioProvider.showVisualizer ? 'Приховати візуалізатор' : 'Показати візуалізатор'),
+                  ],
+                ),
+              ),
               const PopupMenuItem<String>(
-                value: 'visualizer',
+                value: 'visualizer_settings',
                 child: Row(
                   children: [
                     Icon(Icons.tune, size: 20),
@@ -105,7 +137,13 @@ class PlayerScreen extends StatelessWidget {
         ],
       ),
       extendBodyBehindAppBar: true,
-      body: Container(
+      body: GestureDetector(
+        onVerticalDragEnd: (details) {
+          if (details.primaryVelocity != null && details.primaryVelocity! > 300) {
+            Navigator.pop(context);
+          }
+        },
+        child: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
@@ -117,43 +155,109 @@ class PlayerScreen extends StatelessWidget {
             ],
           ),
         ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                PlayerHeader(song: song),
+        child: OrientationBuilder(
+          builder: (context, orientation) {
+            final isLandscape = orientation == Orientation.landscape;
 
-                // Visualizer or Error
-                SizedBox(
-                  height: 60,
-                  width: double.infinity,
-                  child: audioProvider.playbackError != null
-                      ? Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.wifi_off, color: Colors.redAccent, size: 24),
-                              const SizedBox(height: 8),
-                              Text(
-                                audioProvider.playbackError!,
-                                style: const TextStyle(color: Colors.redAccent, fontSize: 14),
-                                textAlign: TextAlign.center,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
+            if (isLandscape) {
+              return SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
+                  child: Row(
+                    children: [
+                      // Left side: Cover art and title
+                      Expanded(
+                        flex: 1,
+                        child: PlayerHeader(song: song),
+                      ),
+                      const SizedBox(width: 32),
+                      // Right side: Lyrics, visualizer, controls
+                      Expanded(
+                        flex: 1,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            if (audioProvider.showInlineLyrics) const InlineLyrics(),
+                            if (audioProvider.showVisualizer)
+                              Flexible(
+                                child: SizedBox(
+                                  height: 60,
+                                  width: double.infinity,
+                                  child: audioProvider.playbackError != null
+                                      ? Center(
+                                          child: Column(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              const Icon(Icons.wifi_off, color: Colors.redAccent, size: 24),
+                                              const SizedBox(height: 8),
+                                              Text(
+                                                audioProvider.playbackError!,
+                                                style: const TextStyle(color: Colors.redAccent, fontSize: 14),
+                                                textAlign: TextAlign.center,
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ],
+                                          ),
+                                        )
+                                      : AudioVisualizer(isPlaying: audioProvider.isPlaying),
+                                ),
                               ),
-                            ],
-                          ),
-                        )
-                      : AudioVisualizer(isPlaying: audioProvider.isPlaying),
+                            PlayerControls(song: song),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
+              );
+            }
 
-                PlayerControls(song: song),
-              ],
-            ),
-          ),
+            // Portrait Mode
+            return SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Expanded(
+                      flex: 7,
+                      child: PlayerHeader(song: song),
+                    ),
+                    if (audioProvider.showInlineLyrics) const InlineLyrics(),
+                    if (audioProvider.showVisualizer)
+                      Flexible(
+                        child: SizedBox(
+                          height: 60,
+                          width: double.infinity,
+                          child: audioProvider.playbackError != null
+                              ? Center(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.wifi_off, color: Colors.redAccent, size: 24),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        audioProvider.playbackError!,
+                                        style: const TextStyle(color: Colors.redAccent, fontSize: 14),
+                                        textAlign: TextAlign.center,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              : AudioVisualizer(isPlaying: audioProvider.isPlaying),
+                        ),
+                      ),
+                    PlayerControls(song: song),
+                  ],
+                ),
+              ),
+            );
+          }
         ),
+      ),
       ),
     );
   }

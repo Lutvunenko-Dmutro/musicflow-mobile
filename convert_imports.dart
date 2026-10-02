@@ -25,7 +25,7 @@ void main() {
       
       // Convert to package path
       // Extract everything after 'lib\' or 'lib/'
-      final libIndex = absolutePath.indexOf('lib' + Platform.pathSeparator);
+      final libIndex = absolutePath.indexOf('lib${Platform.pathSeparator}');
       if (libIndex != -1) {
         final packagePath = absolutePath.substring(libIndex + 4).replaceAll('\\', '/');
         return "import 'package:music_flow_mobile/$packagePath';";
@@ -36,6 +36,7 @@ void main() {
 
     if (content != newContent) {
       file.writeAsStringSync(newContent);
+      // ignore: avoid_print
       print('Updated imports in ${file.path}');
     }
   }
