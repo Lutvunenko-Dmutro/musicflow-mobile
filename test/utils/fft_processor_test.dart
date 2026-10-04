@@ -20,6 +20,31 @@ void main() {
       }
     });
 
+    test('processHardwareFft ignores DC bias in byte 0', () {
+      // Byte 0 has maximum DC offset, while rest is silence (0)
+      final dcBytes = List<int>.filled(256, 0);
+      dcBytes[0] = 255;
+      final result = FftProcessor.processHardwareFft(dcBytes, 60);
+
+      // Bass bars should remain close to floor, not pegged to ceiling
+      expect(result[0], lessThan(0.15));
+      expect(result[1], lessThan(0.15));
+    });
+
+    test('processHardwareFft produces smoothly differentiated red bars', () {
+      // Create a localized bass peak in bin 1 & 2
+      final fftBytes = List<int>.filled(512, 0);
+      fftBytes[2] = 100; // Bin 1 real
+      fftBytes[3] = 60;  // Bin 1 imag
+      fftBytes[4] = 80;  // Bin 2 real
+      fftBytes[5] = 50;  // Bin 2 imag
+
+      final result = FftProcessor.processHardwareFft(fftBytes, 60);
+
+      // Bars 0, 1, 2 must not be strictly identical (no 3 flat bars)
+      expect(result[0] != result[1] || result[1] != result[2], isTrue);
+    });
+
     test('processHardwareFft handles empty or short byte arrays gracefully', () {
       final shortBytes = [1, 2];
       final result = FftProcessor.processHardwareFft(shortBytes, 60);
