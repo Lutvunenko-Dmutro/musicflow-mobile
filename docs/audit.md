@@ -96,12 +96,13 @@ final dirPath = await DownloadService.getMusicDirectory();
 
 ---
 
-#### 7. Visualizer permission запитується при кожному старті
+#### 7. Visualizer permission запитується при кожному старті [✅ ВИПРАВЛЕНО]
 ```dart
-// audio_visualizer.dart — Permission.microphone.request() щоразу
+// audio_visualizer.dart
+static bool? _cachedMicPermission;
 ```
-**Ризик:** Низька (UX). Дратує користувача.  
-**Рішення:** Кешувати результат в SharedPreferences.
+Результат статусу дозволу кешується у статичній змінній та `SharedPreferences`. Запит викликається тільки один раз, при наступних треках чи паузах перевірка миттєва.  
+**Статус:** ✅ Виправлено у `AudioVisualizer`.
 
 ---
 
@@ -152,7 +153,7 @@ final dirPath = await DownloadService.getMusicDirectory();
 
 ### Бажано
 4. Перенести `debugPrint` → `AppLogger` скрізь
-5. Кешувати microphone permission
+5. ~~Кешувати microphone permission~~ ✅ Виправлено
 6. Retry при YouTube timeout (3 спроби)
 
 ### Коли буде час

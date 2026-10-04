@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:music_flow_mobile/utils/fft_processor.dart';
 import 'package:music_flow_mobile/utils/visualizer_physics.dart';
 import 'package:music_flow_mobile/features/player/widgets/visualizer_painter.dart';
@@ -28,6 +29,9 @@ class AudioVisualizer extends StatefulWidget {
 }
 
 class _AudioVisualizerState extends State<AudioVisualizer> with SingleTickerProviderStateMixin, WidgetsBindingObserver {
+  static bool? _cachedMicPermission;
+  static bool _hasRequestedPermission = false;
+
   late List<double> _currentHeights;
   late List<double> _targetHeights;
   
@@ -72,13 +76,28 @@ class _AudioVisualizerState extends State<AudioVisualizer> with SingleTickerProv
   }
 
   Future<void> _startListening() async {
-    // Check permissions
-    var status = await Permission.microphone.status;
-    if (!status.isGranted) {
-      status = await Permission.microphone.request();
+    // Перевіряємо дозвіл лише якщо статус ще не відомий або не наданий
+    if (_cachedMicPermission != true) {
+      final prefs = await SharedPreferences.getInstance();
+      if (prefs.getBool('mic_permission_granted') == true) {
+        _cachedMicPermission = true;
+      } else {
+        var status = await Permission.microphone.status;
+        if (status.isGranted) {
+          _cachedMicPermission = true;
+          await prefs.setBool('mic_permission_granted', true);
+        } else if (!_hasRequestedPermission && !status.isPermanentlyDenied) {
+          _hasRequestedPermission = true;
+          status = await Permission.microphone.request();
+          _cachedMicPermission = status.isGranted;
+          if (status.isGranted) {
+            await prefs.setBool('mic_permission_granted', true);
+          }
+        }
+      }
     }
 
-    if (status.isGranted) {
+    if (_cachedMicPermission == true) {
       if (!mounted) return;
       final provider = context.read<AudioProvider>();
       

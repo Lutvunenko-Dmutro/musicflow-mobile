@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart' as p;
@@ -161,5 +162,19 @@ CREATE TABLE local_songs_cache (
     } catch (e) {
       AppLogger.error('Failed to clear history', e, null, 'DATABASE');
     }
+  }
+
+  Future<int> getDatabaseSizeBytes() async {
+    try {
+      final dbFolder = await getDatabasesPath();
+      final path = p.join(dbFolder, 'music_flow_v3.db');
+      final file = File(path);
+      if (await file.exists()) {
+        return await file.length();
+      }
+    } catch (e) {
+      AppLogger.warning('Failed to get database size: $e', 'DATABASE');
+    }
+    return 0;
   }
 }

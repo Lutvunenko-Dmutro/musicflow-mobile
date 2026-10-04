@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:music_flow_mobile/core/widgets/custom_card.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:music_flow_mobile/services/database_service.dart';
 import 'package:music_flow_mobile/locator.dart';
-import 'package:music_flow_mobile/utils/app_logger.dart';
+import 'package:music_flow_mobile/features/settings/widgets/cache_info_card.dart';
 import 'package:provider/provider.dart';
 import 'package:music_flow_mobile/providers/audio_provider.dart';
 
@@ -62,34 +61,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('✅ Історію очищено!')),
-      );
-    }
-  }
-
-  Future<void> _clearCache() async {
-    final tempDir = await getTemporaryDirectory();
-    if (tempDir.existsSync()) {
-      tempDir.listSync().forEach((file) {
-        try { 
-          file.deleteSync(recursive: true); 
-        } catch (e) {
-          AppLogger.warning('Failed to delete cache file ${file.path}: $e', 'SETTINGS');
-        }
-      });
-    }
-    
-    // Clear SharedPreferences lyrics cache
-    final prefs = await SharedPreferences.getInstance();
-    final keys = prefs.getKeys();
-    for (final key in keys) {
-      if (key.startsWith('lyrics_cache_')) {
-        await prefs.remove(key);
-      }
-    }
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('✅ Кеш успішно очищено!')),
       );
     }
   }
@@ -164,6 +135,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           const SizedBox(height: 16),
+          const CacheInfoCard(),
+          const SizedBox(height: 16),
           CustomCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -203,12 +176,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   subtitle: const Text('Видалити всі записи з вкладки "Історія"'),
                   trailing: const Icon(Icons.history, color: Colors.orange, size: 20),
                   onTap: _clearHistory,
-                ),
-                ListTile(
-                  title: const Text('Очистити кеш візуалізатора та тимчасові файли'),
-                  subtitle: const Text('Звільнити місце в пам\'яті пристрою'),
-                  trailing: const Icon(Icons.delete_outline, color: Colors.red, size: 20),
-                  onTap: _clearCache,
                 ),
               ],
             ),
