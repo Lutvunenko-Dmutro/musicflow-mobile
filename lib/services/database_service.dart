@@ -23,7 +23,7 @@ class DatabaseService extends ChangeNotifier {
 
     return await openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -32,7 +32,7 @@ class DatabaseService extends ChangeNotifier {
   Future _upgradeDB(Database db, int oldVersion, int newVersion) async {
     if (oldVersion < 2) {
       await db.execute('''
-CREATE TABLE local_songs_cache (
+CREATE TABLE IF NOT EXISTS local_songs_cache (
   id TEXT PRIMARY KEY,
   title TEXT NOT NULL,
   author TEXT NOT NULL,
@@ -44,6 +44,7 @@ CREATE TABLE local_songs_cache (
 )
 ''');
     }
+    // Версія 3 синхронізує внутрішню версію SQLite з назвою файлу music_flow_v3.db
   }
 
   Future _createDB(Database db, int version) async {

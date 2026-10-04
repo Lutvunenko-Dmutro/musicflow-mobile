@@ -4,6 +4,8 @@ import 'package:just_audio/just_audio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:music_flow_mobile/providers/equalizer_presets_data.dart';
 
+import 'package:music_flow_mobile/utils/app_logger.dart';
+
 class EqualizerProvider extends ChangeNotifier {
   final AndroidEqualizer equalizer1;
   final AndroidEqualizer equalizer2;
@@ -43,18 +45,21 @@ class EqualizerProvider extends ChangeNotifier {
     required this.equalizer1,
     required this.equalizer2,
   }) {
-    // Initialize mock gains from prefs early so UI works immediately
     _bandGains = List.filled(5, 0.0);
-    _loadSettingsEarly();
-    if (Platform.isAndroid) {
-      _initParameters();
-    }
+    _init();
   }
 
   double _virtualizer = 0.0;
   double get virtualizer => _virtualizer;
 
-  Future<void> _loadSettingsEarly() async {
+  Future<void> _init() async {
+    await _loadSettings();
+    if (Platform.isAndroid) {
+      await _initParameters();
+    }
+  }
+
+  Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     _isEnabled = prefs.getBool('eq_enabled') ?? false;
     _bassBoost = prefs.getDouble('eq_bass') ?? 0.0;
@@ -67,12 +72,11 @@ class EqualizerProvider extends ChangeNotifier {
 
   Future<void> _initParameters() async {
     try {
-      debugPrint('🎵 [EQ] Initializing equalizer parameters...');
+      AppLogger.info('Initializing equalizer parameters...', 'EQ');
       _params1 = await equalizer1.parameters;
       _params2 = await equalizer2.parameters;
       if (_params1 != null) {
-        debugPrint('🎵 [EQ] Parameters received. Bands count: ${_params1!.bands.length}');
-        // Adjust array size if real device has more/less bands
+        AppLogger.info('Parameters received. Bands count: ${_params1!.bands.length}', 'EQ');
         final actualLength = _params1!.bands.length;
         if (_bandGains.length != actualLength) {
           final oldGains = List<double>.from(_bandGains);
@@ -82,12 +86,12 @@ class EqualizerProvider extends ChangeNotifier {
           }
         }
       } else {
-        debugPrint('⚠️ [EQ] Parameters are null from just_audio!');
+        AppLogger.warning('Parameters are null from just_audio!', 'EQ');
       }
-      await _loadSettings();
+      await _applyAllSettingsToHardware();
       notifyListeners();
     } catch (e) {
-      debugPrint('❌ [EQ] Equalizer init failed: $e');
+      AppLogger.error('Equalizer init failed: $e', e, null, 'EQ');
     }
   }
 
@@ -97,24 +101,16 @@ class EqualizerProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> _loadSettings() async {
-    debugPrint('🎵 [EQ] Loading settings...');
-    final prefs = await SharedPreferences.getInstance();
-    _isEnabled = prefs.getBool('eq_enabled') ?? false;
-    _bassBoost = prefs.getDouble('eq_bass') ?? 0.0;
-    _virtualizer = prefs.getDouble('eq_virt') ?? 0.0;
-    
+  Future<void> _applyAllSettingsToHardware() async {
     await _applyEnabled();
     await _applyBassBoost();
     await _applyVirtualizer();
 
     if (_params1 != null && _params2 != null) {
       for (int i = 0; i < _params1!.bands.length; i++) {
-        final gain = prefs.getDouble('eq_band_$i') ?? 0.0;
-        _bandGains[i] = gain;
-        _params1!.bands[i].setGain(gain);
-        _params2!.bands[i].setGain(gain);
-        debugPrint('🎵 [EQ] Loaded band $i gain: $gain dB');
+        final gain = i < _bandGains.length ? _bandGains[i] : 0.0;
+        await _params1!.bands[i].setGain(gain);
+        await _params2!.bands[i].setGain(gain);
       }
     }
   }
@@ -129,17 +125,14 @@ class EqualizerProvider extends ChangeNotifier {
   
   Future<void> _applyEnabled() async {
     try {
-      debugPrint('🎵 [EQ] Applying enabled state: $_isEnabled, virtualizer: $_virtualizer');
       await equalizer1.setEnabled(_isEnabled);
       await equalizer2.setEnabled(_isEnabled);
-      debugPrint('🎵 [EQ] Successfully applied enabled state');
     } catch (e) {
-      debugPrint('❌ [EQ] Could not apply enabled: $e');
+      AppLogger.warning('Could not apply enabled state: $e', 'EQ');
     }
   }
 
   Future<void> setBassBoost(double value) async {
-    debugPrint('🎵 [EQ] setBassBoost called: $value');
     _bassBoost = value;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setDouble('eq_bass', value);
@@ -149,7 +142,6 @@ class EqualizerProvider extends ChangeNotifier {
 
   Future<void> _applyBassBoost() async {
     if (_params1 == null || _params2 == null) {
-      debugPrint('⚠️ [EQ] _applyBassBoost skipped because params are null');
       return;
     }
     try {
@@ -157,8 +149,6 @@ class EqualizerProvider extends ChangeNotifier {
       final minD = _params1!.minDecibels;
       final bassGain = _bassBoost * maxD * 0.5; 
       final virtGain = _virtualizer * maxD * 0.4;
-      
-      debugPrint('🎵 [EQ] Applying software effects -> bassGain: $bassGain, virtGain: $virtGain');
 
       for (int i = 0; i < _params1!.bands.length; i++) {
         double currentGain = _bandGains[i];
@@ -171,12 +161,11 @@ class EqualizerProvider extends ChangeNotifier {
         await _params2!.bands[i].setGain(finalGain);
       }
     } catch (e) {
-      debugPrint('❌ [EQ] Could not apply software effects: $e');
+      AppLogger.warning('Could not apply software effects: $e', 'EQ');
     }
   }
 
   Future<void> setVirtualizer(double value) async {
-    debugPrint('🎵 [EQ] setVirtualizer called: $value');
     _virtualizer = value;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setDouble('eq_virt', value);
@@ -200,7 +189,7 @@ class EqualizerProvider extends ChangeNotifier {
       await _params1!.bands[bandIndex].setGain(gain);
       await _params2!.bands[bandIndex].setGain(gain);
     } catch (e) {
-      debugPrint('Could not apply band gain: $e');
+      AppLogger.warning('Could not apply band gain: $e', 'EQ');
     }
   }
   

@@ -51,23 +51,25 @@ playNextAction: () async {
 
 ---
 
-#### 3. `EqualizerProvider` — подвійне завантаження SharedPreferences
+#### 3. `EqualizerProvider` — подвійне завантаження SharedPreferences [✅ ВИПРАВЛЕНО]
 ```
-EqualizerProvider() → _loadSettingsEarly() → SharedPreferences.getInstance()
-потім → _initParameters() → _loadSettings() → SharedPreferences.getInstance()
+EqualizerProvider() → _init() → _loadSettings() (одне читання SharedPreferences)
+після цього _initParameters() застосовує вже завантажені значення до заліза через _applyAllSettingsToHardware()
 ```
-**Ризик:** Низька. Два паралельних читання prefs при старті. Можлива десинхронізація якщо між ними хтось запише.  
-**Де:** `equalizer_provider.dart` → конструктор.
+* Усунено подвійне асинхронне читання `SharedPreferences.getInstance()`.
+* Замінено `debugPrint` на системний `AppLogger`.
+**Статус:** ✅ Виправлено у `equalizer_provider.dart`.
 
 ---
 
-#### 4. `DatabaseService` — версія БД vs назва файлу
+#### 4. `DatabaseService` — версія БД vs назва файлу [✅ ВИПРАВЛЕНО]
 ```dart
-_initDB('music_flow_v3.db')  // назва файлу — v3
-version: 2,                  // але version — 2
+_initDB('music_flow_v3.db')
+version: 3, // тепер синхронізовано з назвою файлу
 ```
-**Ризик:** Низька, але може заплутати. При наступній міграції легко помилитись.  
-**Де:** `database_service.dart` → рядки 15, 25.
+* Версію схеми в `openDatabase` оновлено до `version: 3`.
+* Додано `CREATE TABLE IF NOT EXISTS` та коментар про версії для безпеки міграцій.
+**Статус:** ✅ Виправлено у `database_service.dart`.
 
 ---
 
