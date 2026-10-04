@@ -1,6 +1,8 @@
 import 'dart:math';
 import 'package:music_flow_mobile/utils/fft_tuning.dart';
 
+// 🔒 CALIBRATED & LOCKED: Цей алгоритм і коефіцієнти відкалібровані та ідеально протестовані на пристрої.
+// НЕ ЗМІНЮВАТИ без прямого запиту користувача!
 class HardwareFftProcessor {
   static List<double> _prevHwHeights = [];
 
