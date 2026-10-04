@@ -4,7 +4,14 @@ import 'package:music_flow_mobile/models/song_model.dart';
 import 'package:music_flow_mobile/utils/app_logger.dart';
 
 class YoutubeService {
-  final YoutubeExplode _yt = YoutubeExplode();
+  YoutubeExplode _yt = YoutubeExplode();
+
+  void _resetClient() {
+    try {
+      _yt.close();
+    } catch (_) {}
+    _yt = YoutubeExplode();
+  }
 
   /// Helper to execute network operations with retry and exponential backoff
   Future<T> _retryWithBackoff<T>(
@@ -22,9 +29,11 @@ class YoutubeService {
         return await operation();
       } catch (e, st) {
         if (attempt >= maxAttempts) {
+          _resetClient();
           AppLogger.error('Failed $operationName after $attempt attempts: $e', e, st, 'YOUTUBE');
           rethrow;
         }
+        _resetClient();
         AppLogger.warning(
           '$operationName failed (attempt $attempt/$maxAttempts): $e. Retrying in ${delay.inMilliseconds}ms...',
           'YOUTUBE',
