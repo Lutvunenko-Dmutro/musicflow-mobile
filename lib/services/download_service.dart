@@ -1,77 +1,24 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:music_flow_mobile/main.dart';
-import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:http/http.dart' as http;
 import 'package:music_flow_mobile/models/song_model.dart';
+import 'package:music_flow_mobile/models/download_info.dart';
 import 'package:music_flow_mobile/providers/local_library_provider.dart';
 import 'package:music_flow_mobile/utils/media_metadata_helper.dart';
 import 'package:music_flow_mobile/services/youtube_service.dart';
+import 'package:music_flow_mobile/services/download_path_resolver.dart';
+import 'package:music_flow_mobile/services/download_media_scanner.dart';
 import 'package:music_flow_mobile/utils/app_logger.dart';
-
 import 'package:music_flow_mobile/locator.dart';
 
-class DownloadInfo {
-  final double progress;
-  final String speedText;
-  DownloadInfo(this.progress, this.speedText);
-}
+export 'package:music_flow_mobile/models/download_info.dart';
 
 class DownloadService {
   late final YoutubeService _ytService = locator<YoutubeService>();
-  static const MethodChannel _scannerChannel = MethodChannel('com.example.music_flow_mobile/media_scanner');
 
-  DownloadService();
+  static Future<String> getMusicDirectory() => DownloadPathResolver.getMusicDirectory();
 
-  /// Отримати надійну директорію для збереження та читання аудіофайлів
-  static Future<String> getMusicDirectory() async {
-    final prefs = await SharedPreferences.getInstance();
-    final customPath = prefs.getString('download_path');
-    
-    if (customPath != null &&
-        customPath.isNotEmpty &&
-        customPath != 'За замовчуванням (Внутрішня пам\'ять)') {
-      final customDir = Directory(customPath);
-      if (customDir.existsSync()) return customPath;
-    }
-
-    // 1. Стандартна системна папка Music на Android
-    const defaultPath = '/storage/emulated/0/Music';
-    final defaultDir = Directory(defaultPath);
-    if (defaultDir.existsSync()) {
-      return defaultPath;
-    }
-
-    // 2. Якщо стандартний шлях недоступний (інший профіль, планшет або SD-карта)
-    if (Platform.isAndroid) {
-      try {
-        final extDirs = await getExternalStorageDirectories(type: StorageDirectory.music);
-        if (extDirs != null && extDirs.isNotEmpty) {
-          return extDirs.first.path;
-        }
-        final extDir = await getExternalStorageDirectory();
-        if (extDir != null) {
-          final musicDir = Directory(p.join(extDir.path, 'Music'));
-          if (!musicDir.existsSync()) musicDir.createSync(recursive: true);
-          return musicDir.path;
-        }
-      } catch (e) {
-        AppLogger.warning('Не вдалося отримати external music storage: $e', 'DOWNLOAD');
-      }
-    }
-
-    // 3. Fallback у документи додатку
-    final docsDir = await getApplicationDocumentsDirectory();
-    final fallbackDir = Directory(p.join(docsDir.path, 'Music'));
-    if (!fallbackDir.existsSync()) fallbackDir.createSync(recursive: true);
-    return fallbackDir.path;
-  }
-
-  // Observable for progress
   final ValueNotifier<Map<String, DownloadInfo>> downloadProgress = ValueNotifier({});
 
   Future<void> downloadSong(SongModel song, {Future<bool> Function()? onFileExists}) async {
@@ -99,7 +46,7 @@ class DownloadService {
       AppLogger.download('Target path: $m4aPath');
       await _writeStreamToFile(song.id, streamInfo, file, contentLength);
 
-      final coverBytes = await _downloadAndCropCover(song);
+      final coverBytes = await DownloadMediaScanner.downloadAndCropCover(song);
       if (coverBytes != null) {
         await MediaMetadataHelper.embedTags(
           filePath: m4aPath,
@@ -109,7 +56,7 @@ class DownloadService {
         );
       }
 
-      await _scanFileToMediaStore(m4aPath, song, coverBytes);
+      await DownloadMediaScanner.scanFileToMediaStore(m4aPath, song, coverBytes);
 
       final localSong = song.copyWith(
         isLocal: true,
@@ -198,46 +145,6 @@ class DownloadService {
     }
     await sink.close();
     AppLogger.success('File saved!', 'DOWNLOAD');
-  }
-
-  Future<Uint8List?> _downloadAndCropCover(SongModel song) async {
-    Uint8List? coverBytes = song.coverBytes;
-    try {
-      if (coverBytes == null && song.coverUrl.isNotEmpty) {
-        final response = await http.get(Uri.parse(song.coverUrl));
-        if (response.statusCode == 200) {
-          coverBytes = response.bodyBytes;
-        }
-      }
-    } catch (e) {
-      AppLogger.warning('Failed to download cover: $e', 'DOWNLOAD');
-    }
-    return MediaMetadataHelper.cropCoverArtToSquare(coverBytes);
-  }
-
-  Future<void> _scanFileToMediaStore(
-    String m4aPath,
-    SongModel song,
-    Uint8List? coverBytes,
-  ) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    try {
-      final coverBase64 = coverBytes?.map((b) => b).toList();
-      await _scannerChannel.invokeMethod('scanFileWithCover', {
-        'path': m4aPath,
-        'title': song.title,
-        'artist': song.author,
-        'coverBytes': coverBase64,
-      });
-      AppLogger.success('Media scanner triggered with cover art.', 'DOWNLOAD');
-    } catch (e) {
-      AppLogger.warning('scanFileWithCover failed ($e), trying plain scan', 'DOWNLOAD');
-      try {
-        await _scannerChannel.invokeMethod('scanFile', {'path': m4aPath});
-      } catch (e2) {
-        AppLogger.error('Plain scanFile also failed', e2, null, 'DOWNLOAD');
-      }
-    }
   }
 
   void _handleDownloadError(SongModel song, dynamic e, StackTrace stack) {

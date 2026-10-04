@@ -1,20 +1,17 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:music_flow_mobile/models/song_model.dart';
+import 'package:music_flow_mobile/models/sort_option.dart';
 import 'package:music_flow_mobile/providers/audio_provider.dart';
 import 'package:music_flow_mobile/providers/local_library_provider.dart';
 import 'package:music_flow_mobile/features/library/widgets/library_list_item.dart';
 import 'package:music_flow_mobile/features/library/widgets/library_app_bar.dart';
+import 'package:music_flow_mobile/features/library/utils/library_actions_helper.dart';
 import 'package:music_flow_mobile/utils/library_sorter.dart';
 import 'package:music_flow_mobile/locator.dart';
 
-enum SortOption {
-  title,
-  author,
-  dateAdded,
-}
+export 'package:music_flow_mobile/models/sort_option.dart';
 
 class LibraryScreen extends StatefulWidget {
   const LibraryScreen({super.key});
@@ -34,7 +31,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
   void initState() {
     super.initState();
     _loadPrefs();
-    _onProviderUpdate(); // Initial load
+    _onProviderUpdate();
     locator<LocalLibraryProvider>().addListener(_onProviderUpdate);
   }
 
@@ -156,29 +153,13 @@ class _LibraryScreenState extends State<LibraryScreen> {
 
   Future<void> _confirmDeleteSelected(BuildContext context) async {
     final audioProvider = context.read<AudioProvider>();
-    final libProvider = locator<LocalLibraryProvider>();
-
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Видалити пісні?'),
-        content: Text('Ви впевнені, що хочете видалити ${_selectedIds.length} пісень?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Скасувати', style: TextStyle(color: Colors.grey)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Видалити', style: TextStyle(color: Colors.redAccent)),
-          ),
-        ],
-      ),
+    final confirm = await LibraryActionsHelper.confirmDeleteDialog(
+      context,
+      _selectedIds.length,
     );
 
-    if (confirm == true && mounted) {
+    if (confirm && mounted) {
       final idsToDelete = List<String>.from(_selectedIds);
-      
       setState(() {
         _deletingIds.addAll(idsToDelete);
         _selectedIds.clear();
@@ -186,25 +167,17 @@ class _LibraryScreenState extends State<LibraryScreen> {
       
       await Future.delayed(const Duration(milliseconds: 300));
       
-      for (final id in idsToDelete) {
-        if (audioProvider.currentSong?.id == id) {
-          await audioProvider.stop();
-        }
-        
-        final song = _songs.firstWhere((s) => s.id == id, orElse: () => _songs.first);
-        if (song.id == id && song.localPath != null) {
-          final file = File(song.localPath!);
-          if (await file.exists()) {
-            await file.delete();
-          }
-        }
-        
-        libProvider.removeSong(id);
-      }
+      await LibraryActionsHelper.deleteSongs(
+        audioProvider: audioProvider,
+        idsToDelete: idsToDelete,
+        songs: _songs,
+      );
       
-      setState(() {
-        _deletingIds.removeAll(idsToDelete);
-      });
+      if (mounted) {
+        setState(() {
+          _deletingIds.removeAll(idsToDelete);
+        });
+      }
     }
   }
 }

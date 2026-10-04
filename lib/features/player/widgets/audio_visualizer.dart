@@ -1,12 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:music_flow_mobile/utils/fft_processor.dart';
 import 'package:music_flow_mobile/utils/visualizer_physics.dart';
 import 'package:music_flow_mobile/features/player/widgets/visualizer_painter.dart';
+import 'package:music_flow_mobile/features/player/utils/visualizer_permission_helper.dart';
 import 'package:music_flow_mobile/providers/visualizer_settings_provider.dart';
 import 'package:music_flow_mobile/providers/audio_provider.dart';
 
@@ -29,12 +28,8 @@ class AudioVisualizer extends StatefulWidget {
 }
 
 class _AudioVisualizerState extends State<AudioVisualizer> with SingleTickerProviderStateMixin, WidgetsBindingObserver {
-  static bool? _cachedMicPermission;
-  static bool _hasRequestedPermission = false;
-
   late List<double> _currentHeights;
   late List<double> _targetHeights;
-  
   late List<double> _dotHeights;
   late List<double> _dotVelocities;
 
@@ -76,28 +71,9 @@ class _AudioVisualizerState extends State<AudioVisualizer> with SingleTickerProv
   }
 
   Future<void> _startListening() async {
-    // Перевіряємо дозвіл лише якщо статус ще не відомий або не наданий
-    if (_cachedMicPermission != true) {
-      final prefs = await SharedPreferences.getInstance();
-      if (prefs.getBool('mic_permission_granted') == true) {
-        _cachedMicPermission = true;
-      } else {
-        var status = await Permission.microphone.status;
-        if (status.isGranted) {
-          _cachedMicPermission = true;
-          await prefs.setBool('mic_permission_granted', true);
-        } else if (!_hasRequestedPermission && !status.isPermanentlyDenied) {
-          _hasRequestedPermission = true;
-          status = await Permission.microphone.request();
-          _cachedMicPermission = status.isGranted;
-          if (status.isGranted) {
-            await prefs.setBool('mic_permission_granted', true);
-          }
-        }
-      }
-    }
+    final hasPermission = await VisualizerPermissionHelper.checkOrRequestMicPermission();
 
-    if (_cachedMicPermission == true) {
+    if (hasPermission) {
       if (!mounted) return;
       final provider = context.read<AudioProvider>();
       
@@ -123,7 +99,6 @@ class _AudioVisualizerState extends State<AudioVisualizer> with SingleTickerProv
     _visualizerSubscription?.cancel();
     _visualizerSubscription = null;
     
-    // Плавно опускаємо смужки до нуля
     if (mounted) {
       _targetHeights = List.filled(widget.barCount, 0.05);
       Future.delayed(const Duration(milliseconds: 1500), () {
@@ -154,15 +129,12 @@ class _AudioVisualizerState extends State<AudioVisualizer> with SingleTickerProv
   void _processWaveform(List<int> raw) {
     if (!mounted) return;
     if (_settings.core == VisualizerCore.hardware) {
-      // Hardware mode: Android sends raw FFT bytes (packed real/imag pairs).
-      // We skip our own FFT and map magnitudes directly to bars.
       _targetHeights = FftProcessor.processHardwareFft(
         raw,
         widget.barCount,
         amplitudeBoost: _settings.amplitudeBoost,
       );
     } else {
-      // Software mode: time-domain waveform → our own FFT (fftea)
       _targetHeights = FftProcessor.process(
         raw,
         widget.barCount,

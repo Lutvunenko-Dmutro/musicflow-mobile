@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:music_flow_mobile/providers/visualizer_settings_provider.dart';
 import 'package:music_flow_mobile/features/player/widgets/visualizer_slider_setting.dart';
 import 'package:music_flow_mobile/features/player/widgets/visualizer_style_chip.dart';
+import 'package:music_flow_mobile/features/player/widgets/visualizer_core_chip.dart';
 
 class VisualizerSettingsSheet extends StatelessWidget {
   const VisualizerSettingsSheet({super.key});
@@ -31,7 +32,6 @@ class VisualizerSettingsSheet extends StatelessWidget {
               return Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Drag Handle
                   Container(
                     width: 40,
                     height: 4,
@@ -41,7 +41,6 @@ class VisualizerSettingsSheet extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -65,7 +64,6 @@ class VisualizerSettingsSheet extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 24),
-                  
                   VisualizerSliderSetting(
                     icon: Icons.height,
                     label: 'Амплітуда (Висота)',
@@ -156,14 +154,14 @@ class VisualizerSettingsSheet extends StatelessWidget {
                         scrollDirection: Axis.horizontal,
                         child: Row(
                           children: [
-                            _CoreChip(
+                            VisualizerCoreChip(
                               label: 'Software (FFT)',
                               icon: Icons.psychology,
                               selected: settings.core == VisualizerCore.software,
                               onTap: () => settings.setCore(VisualizerCore.software),
                             ),
                             const SizedBox(width: 8),
-                            _CoreChip(
+                            VisualizerCoreChip(
                               label: 'Hardware',
                               icon: Icons.developer_board,
                               selected: settings.core == VisualizerCore.hardware,
@@ -179,57 +177,6 @@ class VisualizerSettingsSheet extends StatelessWidget {
               );
             },
           ),
-        ),
-      ),
-    );
-  }
-
-}
-
-class _CoreChip extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _CoreChip({
-    required this.label,
-    required this.icon,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: selected
-              ? Theme.of(context).primaryColor.withValues(alpha: 0.25)
-              : Colors.white.withValues(alpha: 0.07),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: selected ? Theme.of(context).primaryColor : Colors.white24,
-            width: 1.5,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 16, color: selected ? Theme.of(context).primaryColor : Colors.white54),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 13,
-                color: selected ? Colors.white : Colors.white60,
-                fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
-              ),
-            ),
-          ],
         ),
       ),
     );

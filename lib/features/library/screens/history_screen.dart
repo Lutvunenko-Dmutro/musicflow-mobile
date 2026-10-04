@@ -1,14 +1,11 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:music_flow_mobile/models/history_model.dart';
 import 'package:music_flow_mobile/services/database_service.dart';
 import 'package:music_flow_mobile/providers/audio_provider.dart';
 import 'package:music_flow_mobile/models/song_model.dart';
-import 'package:music_flow_mobile/providers/local_library_provider.dart';
 import 'package:music_flow_mobile/locator.dart';
-import 'package:music_flow_mobile/core/widgets/song_download_button.dart';
-import 'package:music_flow_mobile/features/player/widgets/smart_cover.dart';
+import 'package:music_flow_mobile/features/library/widgets/history_list_item.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -44,27 +41,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
     }
   }
 
-  Widget _buildCover(HistoryModel historyItem) {
-    // Convert HistoryModel to SongModel to use SmartCover
-    final song = SongModel(
-      id: historyItem.id,
-      title: historyItem.title,
-      author: historyItem.author,
-      duration: Duration(milliseconds: historyItem.durationMs),
-      coverUrl: historyItem.coverUrl,
-      coverBytes: historyItem.coverBytes,
-    );
-    return SmartCover(
-      song: song,
-      size: 50,
-      borderRadius: 8.0,
-    );
-  }
-
   void _playSong(HistoryModel historyItem, int index) {
     final audioProvider = context.read<AudioProvider>();
-    
-    // We must convert HistoryModel back to SongModel
     final songsToPlay = _history.map((h) {
       return SongModel(
         id: h.id,
@@ -79,29 +57,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
     }).toList();
 
     audioProvider.setQueue(songsToPlay, initialIndex: index);
-  }
-  
-  bool _isDownloaded(HistoryModel item) {
-    if (item.id.startsWith('/')) {
-      return File(item.id).existsSync();
-    }
-    
-    final libProvider = locator<LocalLibraryProvider>();
-    for (var song in libProvider.songs) {
-      if (song.localPath != null && (song.localPath!.contains(item.id) || song.title == item.title)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  String _formatDate(DateTime date) {
-    final now = DateTime.now();
-    final diff = now.difference(date);
-    if (diff.inDays > 0) return '${diff.inDays} дн. тому';
-    if (diff.inHours > 0) return '${diff.inHours} год. тому';
-    if (diff.inMinutes > 0) return '${diff.inMinutes} хв. тому';
-    return 'Щойно';
   }
 
   @override
@@ -118,8 +73,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   itemCount: _history.length,
                   itemBuilder: (context, index) {
                     final item = _history[index];
-                    final bool isDownloaded = _isDownloaded(item);
-                    
                     return Dismissible(
                       key: Key(item.id),
                       direction: DismissDirection.endToStart,
@@ -132,69 +85,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       onDismissed: (direction) async {
                         await locator<DatabaseService>().removeFromHistory(item.id);
                       },
-                      child: ListTile(
-                        leading: ClipRRect(
-                          borderRadius: BorderRadius.circular(8.0),
-                          child: _buildCover(item),
-                        ),
-                        title: Text(
-                          item.title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        subtitle: Row(
-                          children: [
-                            Icon(
-                              isDownloaded ? Icons.offline_pin : Icons.cloud_outlined,
-                              size: 14,
-                              color: isDownloaded ? Colors.greenAccent : Colors.grey,
-                            ),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                '${item.author} • ${_formatDate(item.lastPlayedAt)}',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(color: Colors.grey[400], fontSize: 12),
-                              ),
-                            ),
-                          ],
-                        ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (!isDownloaded && !item.id.startsWith('/'))
-                              SongDownloadButton(
-                                song: SongModel(
-                                  id: item.id,
-                                  title: item.title,
-                                  author: item.author,
-                                  coverUrl: item.coverUrl,
-                                  duration: Duration(milliseconds: item.durationMs),
-                                  isLocal: false,
-                                ),
-                              ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).primaryColor.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.play_arrow, size: 14, color: Colors.white70),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    '${item.playCount}',
-                                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
+                      child: HistoryListItem(
+                        item: item,
                         onTap: () => _playSong(item, index),
                       ),
                     );

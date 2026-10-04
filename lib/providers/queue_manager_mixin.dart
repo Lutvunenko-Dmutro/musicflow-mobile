@@ -2,11 +2,10 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:music_flow_mobile/models/song_model.dart';
-import 'package:music_flow_mobile/locator.dart';
-import 'package:music_flow_mobile/services/youtube_service.dart';
-import 'package:music_flow_mobile/utils/app_logger.dart';
+import 'package:music_flow_mobile/models/repeat_mode.dart';
+import 'package:music_flow_mobile/providers/auto_continue_helper.dart';
 
-enum RepeatMode { off, all, one }
+export 'package:music_flow_mobile/models/repeat_mode.dart';
 
 mixin QueueManagerMixin on ChangeNotifier {
   List<SongModel> _queue = [];
@@ -16,7 +15,7 @@ mixin QueueManagerMixin on ChangeNotifier {
   bool _isPlayingNext = true;
   bool _isFetchingAutoContinue = false;
 
-  bool get hasNext => true; // Always has next due to auto-continue
+  bool get hasNext => true;
   bool get hasPrevious => _queue.isNotEmpty && (_currentIndex > 0 || _repeatMode == RepeatMode.all || _isShuffleModeEnabled);
   bool get isShuffleModeEnabled => _isShuffleModeEnabled;
   RepeatMode get repeatMode => _repeatMode;
@@ -25,7 +24,6 @@ mixin QueueManagerMixin on ChangeNotifier {
   bool get isPlayingNext => _isPlayingNext;
   bool get isFetchingAutoContinue => _isFetchingAutoContinue;
   
-  // These must be implemented by the class mixing this in
   AudioPlayer get player;
   Future<void> playSong(SongModel song);
 
@@ -93,29 +91,21 @@ mixin QueueManagerMixin on ChangeNotifier {
     notifyListeners();
 
     try {
-      final ytService = locator<YoutubeService>();
       final currentSong = _queue[_currentIndex];
-      
-      AppLogger.info('Triggering auto-continue for author: ${currentSong.author}', 'QUEUE');
-      
-      final results = await ytService.searchSongs(currentSong.author);
-      
       final queueIds = _queue.map((s) => s.id).toSet();
-      final newSongs = results.where((s) => !queueIds.contains(s.id)).toList();
+      final newSongs = await AutoContinueHelper.fetchSimilarSongs(
+        currentSong: currentSong,
+        existingQueueIds: queueIds,
+      );
       
       if (newSongs.isNotEmpty) {
         _queue.addAll(newSongs);
         _currentIndex++;
         await playSong(_queue[_currentIndex]);
       } else {
-        // Fallback to stop if nothing found
         player.stop();
         player.seek(Duration.zero);
       }
-    } catch (e) {
-      AppLogger.error('Failed auto-continue', e, null, 'QUEUE');
-      player.stop();
-      player.seek(Duration.zero);
     } finally {
       _isFetchingAutoContinue = false;
       notifyListeners();
@@ -191,7 +181,6 @@ mixin QueueManagerMixin on ChangeNotifier {
     if (index < _currentIndex) {
       _currentIndex--;
     } else if (index == _currentIndex) {
-      // If we removed the currently playing song
       if (_queue.isEmpty) {
         _currentIndex = -1;
         player.stop();
