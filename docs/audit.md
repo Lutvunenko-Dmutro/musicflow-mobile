@@ -27,29 +27,27 @@
 
 ### Критичні вразливості
 
-#### 1. YouTube URL не рефрешиться
+#### 1. YouTube URL не рефрешиться [✅ ВИПРАВЛЕНО]
 ```
-YoutubeService.getAudioStreamUrl() → повертає пряме URL
-just_audio відтворює по цьому URL
-YouTube URL живуть ~6 годин
-→ Після паузи >6 год → 403 Forbidden, трек не грає
+YoutubeService.getAudioStreamUrl() → повертає пряме URL (дійсне 6 годин)
+PlaybackManager: перевіряє query-параметр expire перед запуском
+Якщо URL прострочено або виникає помилка 403 → автоматично оновлює лінк та повторює спробу.
+AudioProvider: при resume() перевіряє expire і безшовно підхоплює відтворення з збереженої позиції.
 ```
-**Ризик:** Висока. Зачіпає всіх YouTube-треків після тривалої паузи.  
-**Де:** `youtube_service.dart` → `getAudioStreamUrl()`, `playback_manager.dart` → `preparePlayback()`  
-**Рішення:** Зберігати `videoId`, при помилці відтворення — автоматично рефрешити URL і retry.
+**Статус:** ✅ Виправлено у `PlaybackManager`, `AudioProvider`, `MusicAudioHandler`.
 
 ---
 
-#### 2. `_isAutoChangingSong` — race condition
+#### 2. `_isAutoChangingSong` — race condition [✅ ВИПРАВЛЕНО]
 ```dart
-// audio_provider.dart, рядок 113–117
-_isAutoChangingSong = true;
-playNext(); // async! await не стоїть
-_isAutoChangingSong = false; // скидається одразу, до завершення playNext()
+// audio_provider.dart + crossfade_manager_mixin.dart
+playNextAction: () async {
+  _isAutoChangingSong = true;
+  await playNext(); // Тепер очікується повне завантаження наступного треку
+  _isAutoChangingSong = false;
+}
 ```
-**Ризик:** Середня. Якщо `playNext()` займає час (YouTube трек), `cancelCrossfade()` може спрацювати передчасно.  
-**Де:** `audio_provider.dart` → `startCrossfade` → `playNextAction` callback.  
-**Рішення:** Зробити callback `async` і `await playNext()`.
+**Статус:** ✅ Виправлено — `startCrossfade` та `playNextAction` зроблені асинхронними (`await playNext()`).
 
 ---
 
@@ -144,8 +142,8 @@ dirPath = '/storage/emulated/0/Music'; // хардкод Android шляху
 ## 🎯 Пріоритетний план фіксів
 
 ### Обов'язково (до релізу)
-1. **YouTube URL refresh** — при 403 автоматично refetch і retry
-2. **Race condition** `_isAutoChangingSong` — `await playNext()`
+1. ~~**YouTube URL refresh** — при 403 автоматично refetch і retry~~ ✅ Виправлено
+2. ~~**Race condition** `_isAutoChangingSong` — `await playNext()`~~ ✅ Виправлено
 3. **Download path** — замінити хардкод на `path_provider`
 
 ### Бажано

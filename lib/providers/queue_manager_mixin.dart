@@ -46,6 +46,12 @@ mixin QueueManagerMixin on ChangeNotifier {
     _currentIndex = 0;
   }
 
+  void updateCurrentSongInQueue(SongModel updatedSong) {
+    if (_currentIndex >= 0 && _currentIndex < _queue.length) {
+      _queue[_currentIndex] = updatedSong;
+    }
+  }
+
   void handleSongCompleted() {
     if (_repeatMode == RepeatMode.one) {
       player.seek(Duration.zero);
@@ -55,7 +61,7 @@ mixin QueueManagerMixin on ChangeNotifier {
     playNext();
   }
 
-  void playNext() {
+  Future<void> playNext() async {
     _isPlayingNext = true;
     if (_queue.isEmpty) return;
     
@@ -65,16 +71,16 @@ mixin QueueManagerMixin on ChangeNotifier {
         nextIndex = Random().nextInt(_queue.length);
       } while (nextIndex == _currentIndex);
       _currentIndex = nextIndex;
-      playSong(_queue[_currentIndex]);
+      await playSong(_queue[_currentIndex]);
     } else {
       if (_currentIndex < _queue.length - 1) {
         _currentIndex++;
-        playSong(_queue[_currentIndex]);
+        await playSong(_queue[_currentIndex]);
       } else if (_repeatMode == RepeatMode.all) {
         _currentIndex = 0;
-        playSong(_queue[_currentIndex]);
+        await playSong(_queue[_currentIndex]);
       } else {
-        _triggerAutoContinue();
+        await _triggerAutoContinue();
       }
     }
   }
@@ -100,7 +106,7 @@ mixin QueueManagerMixin on ChangeNotifier {
       if (newSongs.isNotEmpty) {
         _queue.addAll(newSongs);
         _currentIndex++;
-        playSong(_queue[_currentIndex]);
+        await playSong(_queue[_currentIndex]);
       } else {
         // Fallback to stop if nothing found
         player.stop();
@@ -116,12 +122,12 @@ mixin QueueManagerMixin on ChangeNotifier {
     }
   }
 
-  void playPrevious() {
+  Future<void> playPrevious() async {
     _isPlayingNext = false;
     if (_queue.isEmpty) return;
     
     if (player.position.inSeconds > 3) {
-      player.seek(Duration.zero);
+      await player.seek(Duration.zero);
       return;
     }
 
@@ -131,16 +137,16 @@ mixin QueueManagerMixin on ChangeNotifier {
         prevIndex = Random().nextInt(_queue.length);
       } while (prevIndex == _currentIndex);
       _currentIndex = prevIndex;
-      playSong(_queue[_currentIndex]);
+      await playSong(_queue[_currentIndex]);
     } else {
       if (_currentIndex > 0) {
         _currentIndex--;
-        playSong(_queue[_currentIndex]);
+        await playSong(_queue[_currentIndex]);
       } else if (_repeatMode == RepeatMode.all) {
         _currentIndex = _queue.length - 1;
-        playSong(_queue[_currentIndex]);
+        await playSong(_queue[_currentIndex]);
       } else {
-        player.seek(Duration.zero);
+        await player.seek(Duration.zero);
       }
     }
   }

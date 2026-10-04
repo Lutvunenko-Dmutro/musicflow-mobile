@@ -98,6 +98,13 @@ class AppLogger {
     print('$_grey${_bold}📊 [${_time()}] [FFT]$_reset$_grey $message$_reset');
   }
 
+  /// 🔀 Плавний перехід (Crossfade)
+  static void crossfade(String message) {
+    if (!_verbose) return;
+    if (!_shouldShow('cf:$message')) return;
+    print('$_magenta${_bold}🔀 [${_time()}] [CROSSFADE]$_reset$_magenta $message$_reset');
+  }
+
   /// 🔵 Debug — тільки для розробки, вимикати в релізі
   static void debug(String message, [String? tag]) {
     assert(() {

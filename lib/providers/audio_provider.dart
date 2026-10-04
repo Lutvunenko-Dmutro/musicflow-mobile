@@ -99,6 +99,11 @@ class AudioProvider with ChangeNotifier, QueueManagerMixin, LyricsManagerMixin, 
       if (player == p) notifyListeners();
     });
 
+    p.playbackEventStream.listen(
+      (event) {},
+      onError: (Object e, StackTrace st) => _handlePlaybackStreamError(e, p),
+    );
+
     p.positionStream.listen((pos) {
       if (player != p) return;
       final dur = p.duration;
@@ -110,9 +115,9 @@ class AudioProvider with ChangeNotifier, QueueManagerMixin, LyricsManagerMixin, 
               onPlayerChanged: (newPlayer) {
                 _audioHandler?.updatePlayer(newPlayer);
               },
-              playNextAction: () {
+              playNextAction: () async {
                 _isAutoChangingSong = true;
-                playNext(); // This will load the next song into the new player
+                await playNext(); // Await asynchronous loading of the next song
                 _isAutoChangingSong = false;
               },
             );
@@ -133,6 +138,7 @@ class AudioProvider with ChangeNotifier, QueueManagerMixin, LyricsManagerMixin, 
         androidNotificationIcon: 'drawable/ic_stat_music_note',
       ),
     );
+    _audioHandler!.onPlay = resume;
     _audioHandler!.onSkipToNext = playNext;
     _audioHandler!.onSkipToPrevious = playPrevious;
   }
@@ -152,6 +158,7 @@ class AudioProvider with ChangeNotifier, QueueManagerMixin, LyricsManagerMixin, 
     AppLogger.audio('ID    : ${song.id}');
     AppLogger.audio('Local : ${song.isLocal} (Path: ${song.localPath})');
     
+    _streamRetryCount = 0;
     _isLoading = true;
     _currentSong = song;
     resetLyricsState();
@@ -181,6 +188,7 @@ class AudioProvider with ChangeNotifier, QueueManagerMixin, LyricsManagerMixin, 
         audioHandler: _audioHandler!,
         ytService: _ytService,
       );
+      updateCurrentSongInQueue(_currentSong!);
       
       // Log the successful play to the history database
       locator<DatabaseService>().logPlay(_currentSong!);
@@ -197,7 +205,65 @@ class AudioProvider with ChangeNotifier, QueueManagerMixin, LyricsManagerMixin, 
     }
   }
 
+  int _streamRetryCount = 0;
 
+  void _handlePlaybackStreamError(Object e, AudioPlayer p) async {
+    if (player != p) return;
+    final song = _currentSong;
+    if (song != null && !song.isLocal && _streamRetryCount < 2) {
+      _streamRetryCount++;
+      AppLogger.warning('Playback stream error ($e). Auto-recovering URL...', 'AUDIO');
+      await _refreshAndResume(song);
+    } else {
+      _streamRetryCount = 0;
+      AppLogger.error('Playback stream error: $e', e, null, 'AUDIO');
+    }
+  }
+
+  Future<void> _refreshAndResume(SongModel song) async {
+    final pos = player.position;
+    _isLoading = true;
+    notifyListeners();
+    try {
+      _currentSong = await PlaybackManager.preparePlayback(
+        song: song.copyWith(streamUrl: null),
+        player: player,
+        audioHandler: _audioHandler!,
+        ytService: _ytService,
+        initialPosition: pos,
+      );
+      updateCurrentSongInQueue(_currentSong!);
+      _streamRetryCount = 0;
+    } catch (e, st) {
+      handleAudioPlaybackError(e, st, song, (msg) => _playbackError = msg);
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  @override
+  Future<void> resume() async {
+    final song = _currentSong;
+    if (song != null && !song.isLocal && song.streamUrl != null) {
+      if (PlaybackManager.isYoutubeUrlExpired(song.streamUrl!)) {
+        AppLogger.info('YouTube stream URL is expired upon resume. Refreshing...', 'AUDIO');
+        await _refreshAndResume(song);
+        return;
+      }
+    }
+
+    try {
+      await super.resume();
+    } catch (e) {
+      AppLogger.warning('Failed to resume ($e). Refreshing YouTube stream...', 'AUDIO');
+      if (song != null && !song.isLocal) {
+        await _refreshAndResume(song);
+      } else {
+        rethrow;
+      }
+    }
+  }
 
   @override
   void dispose() {

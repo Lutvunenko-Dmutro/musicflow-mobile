@@ -56,8 +56,18 @@ class MusicAudioHandler extends BaseAudioHandler {
     });
   }
 
+  void Function()? onPlay;
+  void Function()? onSkipToNext;
+  void Function()? onSkipToPrevious;
+
   @override
-  Future<void> play() => _player.play();
+  Future<void> play() async {
+    if (onPlay != null) {
+      onPlay!();
+    } else {
+      await _player.play();
+    }
+  }
 
   @override
   Future<void> pause() => _player.pause();
@@ -76,9 +86,6 @@ class MusicAudioHandler extends BaseAudioHandler {
     await stop();
     await super.onTaskRemoved();
   }
-
-  void Function()? onSkipToNext;
-  void Function()? onSkipToPrevious;
 
   @override
   Future<void> skipToNext() async {

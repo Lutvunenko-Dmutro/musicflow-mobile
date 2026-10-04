@@ -30,11 +30,43 @@ class PlaybackManager {
     }
   }
 
+  static bool isYoutubeUrlExpired(String url) {
+    try {
+      final uri = Uri.parse(url);
+      final expireStr = uri.queryParameters['expire'];
+      if (expireStr == null) return false;
+      final expireUnix = int.tryParse(expireStr);
+      if (expireUnix == null) return false;
+      final expireTime = DateTime.fromMillisecondsSinceEpoch(expireUnix * 1000);
+      return DateTime.now().isAfter(expireTime.subtract(const Duration(minutes: 5)));
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static Future<Duration?> _setPlayerUri(
+    AudioPlayer player,
+    String url,
+    Duration? initialPosition,
+  ) {
+    return player.setAudioSource(
+      AudioSource.uri(
+        Uri.parse(url),
+        headers: {
+          'User-Agent':
+              'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        },
+      ),
+      initialPosition: initialPosition,
+    );
+  }
+
   static Future<SongModel> preparePlayback({
     required SongModel song,
     required AudioPlayer player,
     required MusicAudioHandler audioHandler,
     required YoutubeService ytService,
+    Duration? initialPosition,
   }) async {
     await ensureDefaultArtPrepared();
     final prefs = await SharedPreferences.getInstance();
@@ -65,6 +97,7 @@ class PlaybackManager {
       AppLogger.audio('Source: Local Storage');
       final duration = await player.setAudioSource(
         AudioSource.file(updatedSong.localPath!),
+        initialPosition: initialPosition,
       );
 
       Uri? localArtUri = _defaultArtUri;
@@ -103,8 +136,9 @@ class PlaybackManager {
       AppLogger.audio('Source: Internet (YouTube)');
       String? audioUrl = song.streamUrl;
       
-      if (audioUrl == null) {
-        AppLogger.info('Fetching stream URL from YoutubeService...', 'AUDIO');
+      // Якщо посилання відсутнє або термін його дії закінчився (>6 годин)
+      if (audioUrl == null || isYoutubeUrlExpired(audioUrl)) {
+        AppLogger.info('Fetching fresh stream URL from YoutubeService...', 'AUDIO');
         audioUrl = await ytService.getAudioStreamUrl(song.id);
         AppLogger.success('Stream URL fetched.', 'AUDIO');
         updatedSong = updatedSong.copyWith(streamUrl: audioUrl);
@@ -132,14 +166,16 @@ class PlaybackManager {
           }
         }
 
-        final duration = await player.setAudioSource(
-          AudioSource.uri(
-            Uri.parse(audioUrl),
-            headers: {
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-            },
-          ),
-        );
+        Duration? duration;
+        try {
+          duration = await _setPlayerUri(player, audioUrl, initialPosition);
+        } catch (e) {
+          AppLogger.warning('Stream error ($e), attempting refresh with new YouTube URL...', 'AUDIO');
+          audioUrl = await ytService.getAudioStreamUrl(song.id);
+          if (audioUrl == null) rethrow;
+          updatedSong = updatedSong.copyWith(streamUrl: audioUrl);
+          duration = await _setPlayerUri(player, audioUrl, initialPosition);
+        }
 
         if (showNotification) {
           await audioHandler.updateMediaItem(MediaItem(

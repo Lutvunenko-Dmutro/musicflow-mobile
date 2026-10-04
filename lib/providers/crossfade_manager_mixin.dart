@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:music_flow_mobile/utils/app_logger.dart';
 
 mixin CrossfadeManagerMixin on ChangeNotifier {
   bool _usePlayer1 = true;
@@ -18,13 +19,13 @@ mixin CrossfadeManagerMixin on ChangeNotifier {
   
   bool get isCrossfading => _isFadingOut || _isFadingIn;
 
-  void startCrossfade({
+  Future<void> startCrossfade({
     required Function(AudioPlayer) onPlayerChanged,
-    required Function() playNextAction,
-  }) {
+    required FutureOr<void> Function() playNextAction,
+  }) async {
     if (_isFadingOut) return;
     
-    debugPrint('🎵 [CROSSFADE] startCrossfade triggered!');
+    AppLogger.crossfade('startCrossfade triggered!');
     final oldPlayer = currentPlayer;
     _usePlayer1 = !_usePlayer1;
     final newPlayer = currentPlayer;
@@ -54,19 +55,19 @@ mixin CrossfadeManagerMixin on ChangeNotifier {
     // Make sure new player starts at 0 volume so it can fade in later
     newPlayer.setVolume(0.0);
     _needsFadeIn = true;
-    debugPrint('🎵 [CROSSFADE] Set new player volume to 0.0, _needsFadeIn = true');
+    AppLogger.crossfade('Set new player volume to 0.0, _needsFadeIn = true');
     
     // This will trigger the asynchronous loading of the next song.
     // We shouldn't start fading it in until it actually starts playing!
-    playNextAction();
+    await playNextAction();
   }
 
   void startFadeInIfNeeded(AudioPlayer p) {
-    debugPrint('🎵 [CROSSFADE] startFadeInIfNeeded called. _needsFadeIn: $_needsFadeIn, isCurrent: ${currentPlayer == p}');
+    AppLogger.crossfade('startFadeInIfNeeded called. _needsFadeIn: $_needsFadeIn, isCurrent: ${currentPlayer == p}');
     if (!_needsFadeIn || currentPlayer != p) return;
     _needsFadeIn = false;
     
-    debugPrint('🎵 [CROSSFADE] Starting fade-in timer!');
+    AppLogger.crossfade('Starting fade-in timer!');
     _fadeInTimer?.cancel();
     _isFadingIn = true;
     
@@ -80,7 +81,7 @@ mixin CrossfadeManagerMixin on ChangeNotifier {
       if (newVol >= 1.0) {
         newPlayer.setVolume(1.0);
         _isFadingIn = false;
-        debugPrint('🎵 [CROSSFADE] Fade in complete!');
+        AppLogger.crossfade('Fade in complete!');
         timer.cancel();
       } else {
         newPlayer.setVolume(newVol);
@@ -89,7 +90,7 @@ mixin CrossfadeManagerMixin on ChangeNotifier {
   }
 
   void cancelCrossfade() {
-    debugPrint('🎵 [CROSSFADE] cancelCrossfade called!');
+    AppLogger.crossfade('cancelCrossfade called!');
     _fadeOutTimer?.cancel();
     _fadeInTimer?.cancel();
     _isFadingOut = false;
