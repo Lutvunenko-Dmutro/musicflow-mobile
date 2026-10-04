@@ -164,6 +164,17 @@ CREATE TABLE local_songs_cache (
     }
   }
 
+  Future<int> getHistoryCount() async {
+    try {
+      final db = await database;
+      final res = await db.rawQuery('SELECT COUNT(*) as count FROM history');
+      return Sqflite.firstIntValue(res) ?? 0;
+    } catch (e) {
+      AppLogger.warning('Failed to get history count: $e', 'DATABASE');
+      return 0;
+    }
+  }
+
   Future<int> getDatabaseSizeBytes() async {
     try {
       final dbFolder = await getDatabasesPath();

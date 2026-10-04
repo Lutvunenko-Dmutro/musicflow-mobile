@@ -20,6 +20,7 @@ class _CacheInfoCardState extends State<CacheInfoCard> {
   int _lyricsBytes = 0;
   int _lyricsCount = 0;
   int _dbBytes = 0;
+  int _historyCount = 0;
   bool _isLoading = false;
 
   int get _totalBytes => _tempBytes + _lyricsBytes + _dbBytes;
@@ -76,10 +77,13 @@ class _CacheInfoCardState extends State<CacheInfoCard> {
     }
 
     int dbBytes = 0;
+    int historyCount = 0;
     try {
-      dbBytes = await locator<DatabaseService>().getDatabaseSizeBytes();
+      final dbService = locator<DatabaseService>();
+      dbBytes = await dbService.getDatabaseSizeBytes();
+      historyCount = await dbService.getHistoryCount();
     } catch (e) {
-      AppLogger.warning('Не вдалося вирахувати розмір БД: $e', 'SETTINGS');
+      AppLogger.warning('Не вдалося вирахувати розмір БД/історії: $e', 'SETTINGS');
     }
 
     if (mounted) {
@@ -89,6 +93,7 @@ class _CacheInfoCardState extends State<CacheInfoCard> {
         _lyricsBytes = lyricsBytes;
         _lyricsCount = lyricsCount;
         _dbBytes = dbBytes;
+        _historyCount = historyCount;
         _isLoading = false;
       });
     }
@@ -180,10 +185,26 @@ class _CacheInfoCardState extends State<CacheInfoCard> {
     }
   }
 
+  Future<void> _clearHistory() async {
+    final confirmed = await _confirmAction(
+      title: 'Очистити історію?',
+      message: 'Це видалить усі записи з вкладки "Історія". Самі завантажені пісні та кеш залишаться недоторканими.',
+    );
+    if (!confirmed) return;
+
+    try {
+      await locator<DatabaseService>().clearHistory();
+      await _calculateCacheSize();
+      _showFeedback('✅ Історію прослуховувань очищено!');
+    } catch (e) {
+      AppLogger.error('Помилка очищення історії: $e', e, null, 'SETTINGS');
+    }
+  }
+
   Future<void> _clearAll() async {
     final confirmed = await _confirmAction(
       title: 'Очистити весь кеш?',
-      message: 'Будуть очищені тимчасові файли обкладинок, збережені тексти пісень та індекс тегів. Всі завантажені пісні залишаться на пристрої.',
+      message: 'Будуть очищені тимчасові файли обкладинок, збережені тексти пісень та індекс тегів. Всі завантажені пісні та історія залишаться на пристрої.',
     );
     if (!confirmed) return;
 
@@ -235,7 +256,7 @@ class _CacheInfoCardState extends State<CacheInfoCard> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
-                'Пам\'ять та кеш',
+                'Сховище та дані',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               IconButton(
@@ -290,13 +311,23 @@ class _CacheInfoCardState extends State<CacheInfoCard> {
             clearTooltip: 'Скинути індекс тегів пісень',
             isZero: _dbBytes == 0,
           ),
+          const SizedBox(height: 10),
+          _buildRow(
+            icon: Icons.history,
+            title: 'Історія прослуховувань',
+            subtitle: '$_historyCount треків у вкладці "Історія"',
+            sizeText: '$_historyCount шт.',
+            onClear: _clearHistory,
+            clearTooltip: 'Видалити тільки історію прослуховувань',
+            isZero: _historyCount == 0,
+          ),
           const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
               icon: const Icon(Icons.delete_sweep_outlined, color: Colors.redAccent, size: 18),
               label: const Text(
-                'Очистити весь кеш разом',
+                'Очистити весь тимчасовий кеш',
                 style: TextStyle(color: Colors.redAccent),
               ),
               style: OutlinedButton.styleFrom(

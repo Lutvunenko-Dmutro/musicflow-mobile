@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:music_flow_mobile/core/widgets/custom_card.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:music_flow_mobile/services/database_service.dart';
-import 'package:music_flow_mobile/locator.dart';
 import 'package:music_flow_mobile/features/settings/widgets/cache_info_card.dart';
 import 'package:provider/provider.dart';
 import 'package:music_flow_mobile/providers/audio_provider.dart';
@@ -56,14 +54,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
-  Future<void> _clearHistory() async {
-    await locator<DatabaseService>().clearHistory();
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('✅ Історію очищено!')),
-      );
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -108,7 +98,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 16),
           const SizedBox(height: 16),
           CustomCard(
             child: Column(
@@ -170,12 +159,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   subtitle: Text(_downloadPath, maxLines: 2, overflow: TextOverflow.ellipsis),
                   trailing: const Icon(Icons.folder, size: 20),
                   onTap: _pickDirectory,
-                ),
-                ListTile(
-                  title: const Text('Очистити історію пошуку та відтворення'),
-                  subtitle: const Text('Видалити всі записи з вкладки "Історія"'),
-                  trailing: const Icon(Icons.history, color: Colors.orange, size: 20),
-                  onTap: _clearHistory,
                 ),
               ],
             ),
