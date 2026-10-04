@@ -79,10 +79,43 @@ class SongListItem extends StatelessWidget {
                 );
               },
             ),
-          IconButton(
-            icon: Icon(Icons.play_arrow, color: Theme.of(context).primaryColor),
-            onPressed: onPlay ?? onTap ?? () {
-              context.read<AudioProvider>().playSong(song);
+          Consumer<AudioProvider>(
+            builder: (context, audio, child) {
+              final isThisSong = audio.currentSong?.id == song.id;
+              if (isThisSong && audio.isLoading) {
+                return const Padding(
+                  padding: EdgeInsets.all(12.0),
+                  child: SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2.5),
+                  ),
+                );
+              }
+              final isThisPlaying = isThisSong && audio.isPlaying;
+              return IconButton(
+                icon: Icon(
+                  isThisPlaying ? Icons.pause : Icons.play_arrow,
+                  color: Theme.of(context).primaryColor,
+                ),
+                onPressed: () {
+                  if (isThisSong) {
+                    if (isThisPlaying) {
+                      audio.pause();
+                    } else {
+                      audio.resume();
+                    }
+                  } else {
+                    if (onPlay != null) {
+                      onPlay!();
+                    } else if (onTap != null) {
+                      onTap!();
+                    } else {
+                      audio.playSong(song);
+                    }
+                  }
+                },
+              );
             },
           ),
           SongDownloadButton(song: song),

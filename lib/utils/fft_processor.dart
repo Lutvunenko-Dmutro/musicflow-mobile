@@ -25,7 +25,7 @@ class FftProcessor {
     const double hwMaxFreq       = 14000.0; // Верхня частота смуг (Гц)
     const double hwSmoothSide    = 0.25;  // Вага сусідніх смуг при згладжуванні
     const double hwSmoothSelf    = 0.50;  // Вага поточної смуги при згладжуванні
-    const double hwTemporalBlend = 0.55;  // Вага ПОПЕРЕДНЬОГО кадру (0=миттєво, 1=заморожено)
+    const double hwTemporalBlend = 0.72;  // Вага ПОПЕРЕДНЬОГО кадру (плавний плавний перехід без смикання)
     // ╚══════════════════════════════════════════╝
 
     final result = List<double>.filled(numBands, 0.02);

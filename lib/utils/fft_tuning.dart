@@ -4,13 +4,13 @@ class FftTuning {
   //    maxDbOffset = СТЕЛЯ для басів. Для інших кольорів стеля = maxDbOffset + 20*log10(weight)
   //    ВАЖЛИВО: чим МЕНШ НЕГАТИВНЕ maxDbOffset — тим ВИЩА стеля (менше кліпінгу)
   static const double noiseFloor  = -55.0; // Більший діапазон = більше деталей
-  static const double maxDbOffset =   0.0; // 0 dB = повна гучність. Баси б'ють в стелю тільки при максимумі
+  static const double maxDbOffset =   3.0; // +3 dB headroom: смужки не б'ють у стелю при максимальній гучності
 
-  // 2. Множники для кожного кольору
-  static const double weightRed    = 0.60; // 🟥 Баси
-  static const double weightOrange = 2.5;  // 🟧 Нижня середина
-  static const double weightYellow = 5.0;  // 🟨 Вокал / піаніно
-  static const double weightBlue   = 8.0;  // 🟦 Тарілки
+  // 2. Множники для кожного кольору (відкалібровано без перевантаження)
+  static const double weightRed    = 0.55; // 🟥 Баси
+  static const double weightOrange = 1.8;  // 🟧 Нижня середина
+  static const double weightYellow = 2.8;  // 🟨 Вокал / піаніно
+  static const double weightBlue   = 4.2;  // 🟦 Тарілки
   
   // 3. Різкість (Punch) для КОЖНОГО кольору (чим вище, тим різкіше падає смужка)
   static const double punchRed    = 1.2; // трохи плавніший підйом для басів
