@@ -94,7 +94,37 @@ class _CacheInfoCardState extends State<CacheInfoCard> {
     }
   }
 
+  Future<bool> _confirmAction({
+    required String title,
+    required String message,
+  }) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Скасувати', style: TextStyle(color: Colors.grey)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Очистити', style: TextStyle(color: Colors.redAccent)),
+          ),
+        ],
+      ),
+    );
+    return result ?? false;
+  }
+
   Future<void> _clearTempFiles() async {
+    final confirmed = await _confirmAction(
+      title: 'Очистити обкладинки?',
+      message: 'Це видалить тимчасові файли обкладинок. Самі аудіофайли пісень залишаться недоторканими.',
+    );
+    if (!confirmed) return;
+
     try {
       final tempDir = await getTemporaryDirectory();
       if (tempDir.existsSync()) {
@@ -112,6 +142,12 @@ class _CacheInfoCardState extends State<CacheInfoCard> {
   }
 
   Future<void> _clearLyricsCache() async {
+    final confirmed = await _confirmAction(
+      title: 'Очистити тексти пісень?',
+      message: 'Це видалить закешовані тексти. Вони завантажаться заново при відкритті пісень з інтернету.',
+    );
+    if (!confirmed) return;
+
     try {
       final prefs = await SharedPreferences.getInstance();
       final keys = prefs.getKeys().toList();
@@ -128,6 +164,12 @@ class _CacheInfoCardState extends State<CacheInfoCard> {
   }
 
   Future<void> _clearDatabaseCache() async {
+    final confirmed = await _confirmAction(
+      title: 'Скинути індекс тегів?',
+      message: 'Це очистить локальний кеш тегів. Плеєр просто пересканує файли при наступному вході в бібліотеку. Самі пісні не видаляються.',
+    );
+    if (!confirmed) return;
+
     try {
       final db = await locator<DatabaseService>().database;
       await db.delete('local_songs_cache');
@@ -139,6 +181,12 @@ class _CacheInfoCardState extends State<CacheInfoCard> {
   }
 
   Future<void> _clearAll() async {
+    final confirmed = await _confirmAction(
+      title: 'Очистити весь кеш?',
+      message: 'Будуть очищені тимчасові файли обкладинок, збережені тексти пісень та індекс тегів. Всі завантажені пісні залишаться на пристрої.',
+    );
+    if (!confirmed) return;
+
     try {
       final tempDir = await getTemporaryDirectory();
       if (tempDir.existsSync()) {
