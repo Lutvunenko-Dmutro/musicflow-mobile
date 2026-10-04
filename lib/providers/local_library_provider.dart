@@ -107,27 +107,32 @@ class LocalLibraryProvider extends ChangeNotifier {
       if (unCachedPaths.isNotEmpty) {
         Future.microtask(() async {
           for (int i = 0; i < unCachedPaths.length; i++) {
+            final path = unCachedPaths[i];
             try {
-              final path = unCachedPaths[i];
               final tag = await AudioTags.read(path);
-              if (tag != null) {
-                final idx = _songs.indexWhere((s) => s.localPath == path);
-                if (idx != -1) {
+              final idx = _songs.indexWhere((s) => s.localPath == path);
+              if (idx != -1) {
+                if (tag != null) {
                   final updatedSong = _songs[idx].copyWith(
                     title: (tag.title?.isNotEmpty == true) ? tag.title! : _songs[idx].title,
                     author: (tag.trackArtist?.isNotEmpty == true) ? tag.trackArtist! : _songs[idx].author,
                     coverBytes: tag.pictures.isNotEmpty ? tag.pictures.first.bytes : null,
                   );
                   _songs[idx] = updatedSong;
-                  
-                  // Save to cache
                   await dbService.cacheLocalSong(updatedSong);
-                  
                   notifyListeners();
+                } else {
+                  // Кешуємо модель за назвою файлу, щоб не перечитувати знову
+                  await dbService.cacheLocalSong(_songs[idx]);
                 }
               }
             } catch (e) {
-              AppLogger.warning('Failed to read ID3 tag for ${unCachedPaths[i]}: $e', 'LIBRARY');
+              AppLogger.warning('Failed to read ID3 tag for $path: $e', 'LIBRARY');
+              final idx = _songs.indexWhere((s) => s.localPath == path);
+              if (idx != -1) {
+                // Кешуємо фолбек, щоб пошкоджені файли не викликали паніку Rust щоразу
+                await dbService.cacheLocalSong(_songs[idx]);
+              }
             }
             
             // Yield to event loop to keep UI smooth
