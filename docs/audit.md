@@ -86,15 +86,14 @@ final dirPath = await DownloadService.getMusicDirectory();
 
 ---
 
-#### 6. Відсутній retry на мережеві помилки YouTube
+#### 6. Відсутній retry на мережеві помилки YouTube [✅ ВИПРАВЛЕНО]
 ```dart
 // youtube_service.dart
-} catch (e) {
-  rethrow; // просто кидає помилку вгору без retry
-}
+Future<T> _retryWithBackoff<T>(Future<T> Function() operation, ...)
 ```
-**Ризик:** Середня. При тимчасовій мережевій помилці (timeout, 429) — трек просто не грає.  
-**Рішення:** Додати 3 спроби з затримкою (exponential backoff).
+* Додано універсальний хелпер `_retryWithBackoff` (3 спроби з експоненційною затримкою: 500мс → 1000мс → 2000мс).
+* Огорнуто методи `searchSongs`, `getAudioStreamInfo` та `resolveLink`.
+**Статус:** ✅ Виправлено у `youtube_service.dart`.
 
 ---
 
@@ -156,7 +155,7 @@ static bool? _cachedMicPermission;
 ### Бажано
 4. Перенести `debugPrint` → `AppLogger` скрізь
 5. ~~Кешувати microphone permission~~ ✅ Виправлено
-6. Retry при YouTube timeout (3 спроби)
+6. ~~**Retry при YouTube timeout (3 спроби)**~~ ✅ Виправлено
 
 ### Коли буде час
 7. Розбити `MainActivity.kt` на окремі класи

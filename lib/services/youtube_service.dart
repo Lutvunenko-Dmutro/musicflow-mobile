@@ -6,9 +6,38 @@ import 'package:music_flow_mobile/utils/app_logger.dart';
 class YoutubeService {
   final YoutubeExplode _yt = YoutubeExplode();
 
+  /// Helper to execute network operations with retry and exponential backoff
+  Future<T> _retryWithBackoff<T>(
+    Future<T> Function() operation, {
+    int maxAttempts = 3,
+    Duration initialDelay = const Duration(milliseconds: 500),
+    String operationName = 'YouTube operation',
+  }) async {
+    int attempt = 0;
+    Duration delay = initialDelay;
+
+    while (true) {
+      attempt++;
+      try {
+        return await operation();
+      } catch (e, st) {
+        if (attempt >= maxAttempts) {
+          AppLogger.error('Failed $operationName after $attempt attempts: $e', e, st, 'YOUTUBE');
+          rethrow;
+        }
+        AppLogger.warning(
+          '$operationName failed (attempt $attempt/$maxAttempts): $e. Retrying in ${delay.inMilliseconds}ms...',
+          'YOUTUBE',
+        );
+        await Future.delayed(delay);
+        delay *= 2;
+      }
+    }
+  }
+
   /// Search for songs/videos based on query
   Future<List<SongModel>> searchSongs(String query) async {
-    try {
+    return _retryWithBackoff(() async {
       final searchResults = await _yt.search.search(query);
       
       return searchResults.map((video) {
@@ -20,15 +49,12 @@ class YoutubeService {
           coverUrl: video.thumbnails.highResUrl,
         );
       }).toList();
-    } catch (e) {
-      AppLogger.error('Error searching songs', e, null, 'YOUTUBE');
-      rethrow;
-    }
+    }, operationName: 'searchSongs("$query")');
   }
 
   /// Get the actual stream info for downloading
   Future<dynamic> getAudioStreamInfo(String videoId) async {
-    try {
+    return _retryWithBackoff(() async {
       final prefs = await SharedPreferences.getInstance();
       final highQuality = prefs.getBool('high_quality') ?? true;
       
@@ -46,10 +72,7 @@ class YoutubeService {
       } else {
         return audioStreams[audioStreams.length ~/ 2]; // Mid quality
       }
-    } catch (e) {
-      AppLogger.error('Error getting audio stream info', e, null, 'YOUTUBE');
-      rethrow;
-    }
+    }, operationName: 'getAudioStreamInfo($videoId)');
   }
 
   /// Get the actual byte stream using youtube_explode_dart's internal client to avoid 403
@@ -70,7 +93,7 @@ class YoutubeService {
 
   /// Resolve a specific link (video or playlist)
   Future<List<SongModel>> resolveLink(String url) async {
-    try {
+    return _retryWithBackoff(() async {
       if (PlaylistId.validatePlaylistId(url)) {
         final playlist = await _yt.playlists.get(url);
         final videos = await _yt.playlists.getVideos(playlist.id).toList();
@@ -96,10 +119,7 @@ class YoutubeService {
           )
         ];
       }
-    } catch (e) {
-      AppLogger.error('Error resolving link', e, null, 'YOUTUBE');
-      rethrow;
-    }
+    }, operationName: 'resolveLink("$url")');
   }
 
   Future<Map<String, String>?> getYoutubeCaptions(String videoId) async {
