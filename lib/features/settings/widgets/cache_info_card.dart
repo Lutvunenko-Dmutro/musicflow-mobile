@@ -94,7 +94,51 @@ class _CacheInfoCardState extends State<CacheInfoCard> {
     }
   }
 
-  Future<void> _clearCache() async {
+  Future<void> _clearTempFiles() async {
+    try {
+      final tempDir = await getTemporaryDirectory();
+      if (tempDir.existsSync()) {
+        for (final entity in tempDir.listSync()) {
+          try {
+            entity.deleteSync(recursive: true);
+          } catch (_) {}
+        }
+      }
+      await _calculateCacheSize();
+      _showFeedback('✅ Тимчасові обкладинки та файли очищено!');
+    } catch (e) {
+      AppLogger.error('Помилка очищення temp: $e', e, null, 'SETTINGS');
+    }
+  }
+
+  Future<void> _clearLyricsCache() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final keys = prefs.getKeys().toList();
+      for (final key in keys) {
+        if (key.startsWith('lyrics_cache_')) {
+          await prefs.remove(key);
+        }
+      }
+      await _calculateCacheSize();
+      _showFeedback('✅ Збережені тексти пісень очищено!');
+    } catch (e) {
+      AppLogger.error('Помилка очищення lyrics: $e', e, null, 'SETTINGS');
+    }
+  }
+
+  Future<void> _clearDatabaseCache() async {
+    try {
+      final db = await locator<DatabaseService>().database;
+      await db.delete('local_songs_cache');
+      await _calculateCacheSize();
+      _showFeedback('✅ Кеш метаданих локальних пісень очищено!');
+    } catch (e) {
+      AppLogger.error('Помилка очищення DB кешу: $e', e, null, 'SETTINGS');
+    }
+  }
+
+  Future<void> _clearAll() async {
     try {
       final tempDir = await getTemporaryDirectory();
       if (tempDir.existsSync()) {
@@ -113,19 +157,24 @@ class _CacheInfoCardState extends State<CacheInfoCard> {
         }
       }
 
-      await _calculateCacheSize();
+      final db = await locator<DatabaseService>().database;
+      await db.delete('local_songs_cache');
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✅ Тимчасовий кеш успішно очищено!'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
+      await _calculateCacheSize();
+      _showFeedback('✅ Весь кеш успішно очищено!');
     } catch (e) {
-      AppLogger.error('Помилка очищення кешу: $e', e, null, 'SETTINGS');
+      AppLogger.error('Помилка повного очищення кешу: $e', e, null, 'SETTINGS');
     }
+  }
+
+  void _showFeedback(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   @override
@@ -166,23 +215,32 @@ class _CacheInfoCardState extends State<CacheInfoCard> {
           const Divider(height: 24),
           _buildRow(
             icon: Icons.image_outlined,
-            title: 'Обкладинки та тимчасові файли',
+            title: 'Обкладинки та файли',
             subtitle: '$_tempFilesCount файлів у temp',
             sizeText: _formatBytes(_tempBytes),
+            onClear: _clearTempFiles,
+            clearTooltip: 'Видалити тільки тимчасові обкладинки',
+            isZero: _tempBytes == 0,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           _buildRow(
             icon: Icons.lyrics_outlined,
-            title: 'Кеш текстів пісень (LRC)',
-            subtitle: '$_lyricsCount текстів збережено',
+            title: 'Тексти пісень (LRC)',
+            subtitle: '$_lyricsCount закешовано',
             sizeText: _formatBytes(_lyricsBytes),
+            onClear: _clearLyricsCache,
+            clearTooltip: 'Видалити тільки збережені тексти',
+            isZero: _lyricsBytes == 0,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           _buildRow(
             icon: Icons.storage_outlined,
-            title: 'База даних (SQLite)',
-            subtitle: 'Історія, збережені пресети',
+            title: 'Кеш тегів бази даних',
+            subtitle: 'Індекс локальних пісень',
             sizeText: _formatBytes(_dbBytes),
+            onClear: _clearDatabaseCache,
+            clearTooltip: 'Скинути індекс тегів пісень',
+            isZero: _dbBytes == 0,
           ),
           const SizedBox(height: 16),
           SizedBox(
@@ -190,14 +248,14 @@ class _CacheInfoCardState extends State<CacheInfoCard> {
             child: OutlinedButton.icon(
               icon: const Icon(Icons.delete_sweep_outlined, color: Colors.redAccent, size: 18),
               label: const Text(
-                'Очистити тимчасовий кеш',
+                'Очистити весь кеш разом',
                 style: TextStyle(color: Colors.redAccent),
               ),
               style: OutlinedButton.styleFrom(
                 side: const BorderSide(color: Colors.redAccent),
                 padding: const EdgeInsets.symmetric(vertical: 12),
               ),
-              onPressed: _clearCache,
+              onPressed: _totalBytes == 0 ? null : _clearAll,
             ),
           ),
         ],
@@ -210,6 +268,9 @@ class _CacheInfoCardState extends State<CacheInfoCard> {
     required String title,
     required String subtitle,
     required String sizeText,
+    required VoidCallback onClear,
+    required String clearTooltip,
+    required bool isZero,
   }) {
     return Row(
       children: [
@@ -227,6 +288,16 @@ class _CacheInfoCardState extends State<CacheInfoCard> {
         Text(
           sizeText,
           style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(width: 4),
+        IconButton(
+          icon: Icon(
+            Icons.delete_outline,
+            size: 20,
+            color: isZero ? Colors.grey.withValues(alpha: 0.3) : Colors.redAccent.withValues(alpha: 0.8),
+          ),
+          tooltip: clearTooltip,
+          onPressed: isZero ? null : onClear,
         ),
       ],
     );
