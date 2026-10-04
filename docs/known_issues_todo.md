@@ -2,50 +2,48 @@
 
 ## 🔴 Критичні баги
 
-_Наразі немає підтверджених критичних_
+_Наразі всі відомі критичні баги та race conditions успішно ліквідовано._
 
-## 🟡 Активні задачі
+---
+
+## 🟢 Виправлено в останніх релізах
+
+- [x] **YouTube URL refresh:** Автоматичний перезапит стріму при 403 або закінченні 6-годинного терміну дії з безшовним збереженням поточної позиції треку.
+- [x] **Мережева стійкість YouTube:** Додано Exponential Backoff (3 спроби з наростаючим інтервалом 500ms → 1000ms → 2000ms).
+- [x] **Race condition у перемиканні пісень:** Додано систему унікальних маркерів запиту `_playRequestId`, усунено винятки `Loading interrupted`.
+- [x] **Кешування пошкоджених ID3 тегів:** Файли з битими тегами більше не викликають паніку Rust бібліотеки `audiotags` при повторних запусках.
+- [x] **Тюнінг візуалізатора:** Додано запас гучності +3dB headroom (`FftTuning`), темпоральне згладжування `hwTemporalBlend: 0.72` для апаратного ядра.
+- [x] **Синхронізація субтитрів:** Випереджальний зсув 350 мс для автогенерованих субтитрів YouTube ASR.
+- [x] **Індикатор завантаження треку:** Реактивний спінер у списку пісень на час резолву потоку.
+- [x] **Рефакторинг Native коду:** `MainActivity.kt` розділено на `VisualizerHandler.kt` та `MediaScannerHandler.kt`.
+- [x] **Керування кешем:** Детальний аналіз розміру пам'яті (обкладинки, тексти LRC, SQLite, історія) та безпечне роздільне видалення.
+- [x] **Кешування дозволів мікрофона:** Дозвіл запитується лише один раз і зберігається в `SharedPreferences`.
+- [x] **Автоматичне тестування:** Створено набір з 12 юніт-тестів на ключову бізнес-логіку.
+
+---
+
+## 🟡 Активні задачі та ідеї для майбутнього
 
 ### Візуалізатор
-- [ ] FFT ваги потребують подальшого тюнінгу — різні жанри музики дають різний баланс
-- [ ] Hardware ядро: `hwTemporalBlend` і `hwBoost` підібрані приблизно, потребують тестування на різних треках
-- [ ] Розглянути: зберігати `FftTuning` значення в SharedPreferences щоб можна було тюнити in-app
+- [ ] Розглянути можливість збереження кастомних значень `FftTuning` у `SharedPreferences` для налаштування користувачем з UI.
+- [ ] Експериментальне ML-based детектування ударних (Beat detection) для акцентування низьких частот.
 
-### Відтворення
-- [ ] Crossfade: після затишшя (sleep → next) музика інколи не стартує автоматично
-  - **Причина:** `startCrossfade` перевіряє `remaining <= 3000ms`, але при ручному перемиканні цей шлях може не спрацювати
-  - **Де дивитись:** `crossfade_manager_mixin.dart` → `startCrossfade()` та `playback_controls_mixin.dart` → `_checkCrossfade()`
+### Відтворення та медіатека
+- [ ] Плейлисти: повний CRUD + імпорт файлів формату `.m3u`.
+- [ ] Last.fm / ListenBrainz скроблінг прослуханих композицій.
+- [ ] Gapless playback режим (безперервне відтворення треків концептуальних альбомів).
+- [ ] Підтримка Android Auto через інтеграцію з `audio_service`.
 
-### YouTube
-- [ ] YouTube URL іноді закінчуються (~6 год) — треба механізм refresh без re-search
-- [ ] Обробка 429 (rate limit) від YouTube
-
-## 🟢 Ідеї для майбутнього
-
-- [ ] Ядро візуалізатора: **ML-based** (Class C beats detection для punch на бочку)
-- [ ] Еквалайзер: підключити Android native EQ замість кастомного (більш точний)
-- [ ] Плейлисти: CRUD + import M3U
-- [ ] Last.fm scrobbling
-- [ ] Режим Gapless playback (без пауз між треками одного альбому)
-- [ ] CarPlay / Android Auto підтримка (через `audio_service`)
-
-## 📝 Технічний борг
-
-| Файл | Проблема |
-|---|---|
-| `MainActivity.kt` | Весь native код в одному файлі — варто розбити на класи |
-| `youtube_service.dart` | Немає retry на network помилки |
-| `fft_tuning.dart` | Константи хардкодовані — зробити їх редагованими in-app |
-| `audio_visualizer.dart` | `Permission.microphone.request()` при кожному старті — кешувати |
+---
 
 ## 🔧 Де що шукати при дебагу
 
 | Симптом | Де дивитись |
 |---|---|
-| Музика не грає | `playback_controls_mixin.dart` → `_playCurrentSong()` |
-| Візуалізатор не рухається | `audio_visualizer.dart` → `_startListening()`, перевір `sessionId` |
-| YouTube не знаходить | `youtube_service.dart` → перевір fork, можливо оновився YouTube |
+| Музика не грає | `playback_controls_mixin.dart` → `playSong()`, `playback_manager.dart` |
+| Візуалізатор не рухається | `audio_visualizer.dart` → `_startListening()`, `VisualizerHandler.kt` |
+| YouTube помилка / 403 | `youtube_service.dart` → `_retryWithBackoff()`, `playback_manager.dart` |
 | Crossfade не спрацьовує | `crossfade_manager_mixin.dart` → `startCrossfade()` |
-| EQ не застосовується | `equalizer_provider.dart` → `_applyBand()`, перевір sessionId |
-| Тексти не завантажуються | `lyrics_service.dart` → порядок пошуку |
-| База даних | `database_service.dart` → перевір migration версій |
+| Еквалайзер | `equalizer_provider.dart` → `_applyAllSettingsToHardware()` |
+| Тексти пісень | `lyrics_service.dart` → порядок пошуку (Local → Cache → LRCLIB → YouTube) |
+| База даних | `database_service.dart` → схема `music_flow_v3.db` версія 3 |
