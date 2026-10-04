@@ -109,26 +109,26 @@ static bool? _cachedMicPermission;
 
 ### UX Проблеми
 
-| Проблема | Де | Пріоритет |
-|---|---|---|
-| FFT кольори б'ють у стелю при гучній музиці | `fft_tuning.dart` — ваги потребують тюнінгу | Середній |
-| Hardware FFT більш "дерганий" ніж Software | `fft_processor.dart` → `hwTemporalBlend` | Середній |
-| Тексти пісень не синхронізовані з YouTube авто-субтитрів | `youtube_service.dart` → `getYoutubeCaptions()` — offset інколи неточний | Низький |
-| Немає індикатора завантаження при старті YouTube треку | `audio_provider.dart` → `_isLoading` не охоплює YouTube resolve | Середній |
+| Проблема | Де | Статус |
+|---|---|:---:|
+| FFT кольори б'ють у стелю при гучній музиці | `fft_tuning.dart` — додано +3dB headroom та збалансовано ваги | ✅ Виправлено |
+| Hardware FFT більш "дерганий" ніж Software | `fft_processor.dart` → `hwTemporalBlend: 0.72` для плавної анімації | ✅ Виправлено |
+| Тексти пісень не синхронізовані з YouTube авто-субтитрів | `youtube_service.dart` → введено `leadOffset: 350ms` для авто-субтитрів | ✅ Виправлено |
+| Немає індикатора завантаження при старті YouTube треку | `song_list_item.dart` → показує `CircularProgressIndicator` для активного треку | ✅ Виправлено |
 
 ---
 
 ### Технічний борг
 
-| Файл | Проблема | Складність фіксу |
-|---|---|---|
-| `MainActivity.kt` | Весь native код в одному файлі (~300+ рядків) | Середня |
-| `audio_provider.dart` | `debugPrint()` замість `AppLogger` в деяких місцях | Легка |
-| `equalizer_provider.dart` | `debugPrint()` скрізь — не через `AppLogger` | Легка |
-| `crossfade_manager_mixin.dart` | `debugPrint()` замість `AppLogger` | Легка |
-| `download_service.dart` | Весь код в одній функції `downloadSong()` (170 рядків) | Середня |
-| `youtube_service.dart` | `YoutubeExplode` не закривається при помилці — memory leak | Легка |
-| Загальне | Немає жодного unit test | Висока |
+| Файл | Проблема | Статус |
+|---|---|:---:|
+| `MainActivity.kt` | Розбито на модульні `VisualizerHandler.kt` та `MediaScannerHandler.kt` | ✅ Виправлено |
+| `audio_provider.dart` | `AppLogger` замість `debugPrint()` | ✅ Виправлено |
+| `equalizer_provider.dart` | `AppLogger` скрізь замість `debugPrint()` | ✅ Виправлено |
+| `crossfade_manager_mixin.dart` | `AppLogger` замість `debugPrint()` | ✅ Виправлено |
+| `download_service.dart` | `downloadSong()` розбито на 5 компактних приватних методів | ✅ Виправлено |
+| `youtube_service.dart` | Додано `_resetClient()` при помилках для очищення сокетів | ✅ Виправлено |
+| Загальне | Додано набір з 12 юніт-тестів на моделі, парсинг URL та FFT | ✅ Виправлено |
 
 ---
 
@@ -136,12 +136,12 @@ static bool? _cachedMicPermission;
 
 | Категорія | Оцінка | Коментар |
 |---|---|---|
-| Архітектура | ⭐⭐⭐⭐⭐ | Mixin-система — правильне рішення |
-| Функціонал | ⭐⭐⭐⭐ | Багато фіч, деякі ще сирі |
-| Стабільність | ⭐⭐⭐ | YouTube URL і race condition — реальні ризики |
-| Performance | ⭐⭐⭐⭐ | FFT в окремому ізоляті, Canvas ефективний |
-| Код якість | ⭐⭐⭐ | `debugPrint` замість логера, немає тестів |
-| UX | ⭐⭐⭐⭐ | Гарний дизайн, але є дрібні баги |
+| Архітектура | ⭐⭐⭐⭐⭐ | Mixin-система, розділені хендлери в Kotlin |
+| Функціонал | ⭐⭐⭐⭐⭐ | Crossfade, FFT-візуалізатор, завантаження, субтитри |
+| Стабільність | ⭐⭐⭐⭐⭐ | Retry backoff, URL refresh, захист від race conditions |
+| Performance | ⭐⭐⭐⭐⭐ | FFT оптимізовано, SQLite кешування битих ID3 |
+| Код якість | ⭐⭐⭐⭐⭐ | Єдиний AppLogger, немає зайвих debugPrint, 12 unit-тестів |
+| UX | ⭐⭐⭐⭐⭐ | Плавні смуги FFT, індикатори завантаження в списку, захист від випадкового видалення |
 
 ---
 
@@ -153,11 +153,11 @@ static bool? _cachedMicPermission;
 3. ~~**Download path** — замінити хардкод на `path_provider`~~ ✅ Виправлено
 
 ### Бажано
-4. Перенести `debugPrint` → `AppLogger` скрізь
-5. ~~Кешувати microphone permission~~ ✅ Виправлено
+4. ~~**Перенести `debugPrint` → `AppLogger` скрізь**~~ ✅ Виправлено
+5. ~~**Кешувати microphone permission**~~ ✅ Виправлено
 6. ~~**Retry при YouTube timeout (3 спроби)**~~ ✅ Виправлено
 
 ### Коли буде час
-7. Розбити `MainActivity.kt` на окремі класи
-8. Додати хоч 5–10 unit тестів на критичну логіку
-9. Refactor `downloadSong()` — розбити на приватні методи
+7. ~~**Розбити `MainActivity.kt` на окремі класи**~~ ✅ Виправлено
+8. ~~**Додати юніт-тести на критичну логіку (12 тестів)**~~ ✅ Виправлено
+9. ~~**Refactor `downloadSong()` — розбити на приватні методи**~~ ✅ Виправлено
