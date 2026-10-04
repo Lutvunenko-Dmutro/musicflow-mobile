@@ -71,12 +71,16 @@ version: 2,                  // але version — 2
 
 ---
 
-#### 5. `DownloadService` — хардкод шляху
+#### 5. `DownloadService` — хардкод шляху [✅ ВИПРАВЛЕНО]
 ```dart
-dirPath = '/storage/emulated/0/Music'; // хардкод Android шляху
+// download_service.dart + local_library_provider.dart
+final dirPath = await DownloadService.getMusicDirectory();
 ```
-**Ризик:** Середня. Не працює на пристроях з нестандартними шляхами або SD картою без правильного grant.  
-**Рішення:** Використовувати `getExternalStorageDirectory()` або `path_provider`.
+* Перевіряє користувацький вибір у `SharedPreferences`.
+* Якщо замовчування: перевіряє системний шлях `/storage/emulated/0/Music`.
+* Якщо недоступний (планшет, SD-карта, інший профіль): використовує `path_provider` (`getExternalStorageDirectories(type: StorageDirectory.music)`).
+* Fallback: автоматично створює та використовує папку в документах додатку.
+**Статус:** ✅ Виправлено у `DownloadService` та `LocalLibraryProvider`.
 
 ---
 
@@ -144,7 +148,7 @@ dirPath = '/storage/emulated/0/Music'; // хардкод Android шляху
 ### Обов'язково (до релізу)
 1. ~~**YouTube URL refresh** — при 403 автоматично refetch і retry~~ ✅ Виправлено
 2. ~~**Race condition** `_isAutoChangingSong` — `await playNext()`~~ ✅ Виправлено
-3. **Download path** — замінити хардкод на `path_provider`
+3. ~~**Download path** — замінити хардкод на `path_provider`~~ ✅ Виправлено
 
 ### Бажано
 4. Перенести `debugPrint` → `AppLogger` скрізь

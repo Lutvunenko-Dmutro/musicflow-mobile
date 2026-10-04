@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:music_flow_mobile/main.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:music_flow_mobile/models/song_model.dart';
@@ -26,6 +27,50 @@ class DownloadService {
 
   DownloadService();
 
+  /// Отримати надійну директорію для збереження та читання аудіофайлів
+  static Future<String> getMusicDirectory() async {
+    final prefs = await SharedPreferences.getInstance();
+    final customPath = prefs.getString('download_path');
+    
+    if (customPath != null &&
+        customPath.isNotEmpty &&
+        customPath != 'За замовчуванням (Внутрішня пам\'ять)') {
+      final customDir = Directory(customPath);
+      if (customDir.existsSync()) return customPath;
+    }
+
+    // 1. Стандартна системна папка Music на Android
+    const defaultPath = '/storage/emulated/0/Music';
+    final defaultDir = Directory(defaultPath);
+    if (defaultDir.existsSync()) {
+      return defaultPath;
+    }
+
+    // 2. Якщо стандартний шлях недоступний (інший профіль, планшет або SD-карта)
+    if (Platform.isAndroid) {
+      try {
+        final extDirs = await getExternalStorageDirectories(type: StorageDirectory.music);
+        if (extDirs != null && extDirs.isNotEmpty) {
+          return extDirs.first.path;
+        }
+        final extDir = await getExternalStorageDirectory();
+        if (extDir != null) {
+          final musicDir = Directory(p.join(extDir.path, 'Music'));
+          if (!musicDir.existsSync()) musicDir.createSync(recursive: true);
+          return musicDir.path;
+        }
+      } catch (e) {
+        AppLogger.warning('Не вдалося отримати external music storage: $e', 'DOWNLOAD');
+      }
+    }
+
+    // 3. Fallback у документи додатку
+    final docsDir = await getApplicationDocumentsDirectory();
+    final fallbackDir = Directory(p.join(docsDir.path, 'Music'));
+    if (!fallbackDir.existsSync()) fallbackDir.createSync(recursive: true);
+    return fallbackDir.path;
+  }
+
   // Observable for progress
   final ValueNotifier<Map<String, DownloadInfo>> downloadProgress = ValueNotifier({});
 
@@ -46,15 +91,7 @@ class DownloadService {
       AppLogger.download('Stream info fetched. Size: $contentLength bytes');
 
       // 3. Prepare File Path
-      final prefs = await SharedPreferences.getInstance();
-      String? customPath = prefs.getString('download_path');
-      
-      String dirPath;
-      if (customPath != null && customPath.isNotEmpty && customPath != 'За замовчуванням (Внутрішня пам\'ять)') {
-        dirPath = customPath;
-      } else {
-        dirPath = '/storage/emulated/0/Music';
-      }
+      final dirPath = await getMusicDirectory();
       
       final safeTitle = song.title.replaceAll(RegExp(r'[\\/:*?"<>|]'), '');
       final m4aPath = p.join(dirPath, '$safeTitle.m4a');
