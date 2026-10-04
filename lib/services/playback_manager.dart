@@ -170,6 +170,7 @@ class PlaybackManager {
         try {
           duration = await _setPlayerUri(player, audioUrl, initialPosition);
         } catch (e) {
+          if (e.toString().contains('Loading interrupted')) rethrow;
           AppLogger.warning('Stream error ($e), attempting refresh with new YouTube URL...', 'AUDIO');
           audioUrl = await ytService.getAudioStreamUrl(song.id);
           if (audioUrl == null) rethrow;

@@ -6,8 +6,12 @@ import 'package:music_flow_mobile/locator.dart';
 import 'package:music_flow_mobile/utils/app_logger.dart';
 
 void handleAudioPlaybackError(dynamic e, StackTrace stacktrace, SongModel song, Function(String) setErrorCallback) {
-  AppLogger.error('Exception while playing', e, stacktrace, 'AUDIO');
   final errorMsg = e.toString().replaceAll('Exception: ', '');
+  if (errorMsg.contains('Loading interrupted')) {
+    AppLogger.info('Завантаження аудіо скасовано або перервано іншою дією', 'AUDIO');
+    return;
+  }
+  AppLogger.error('Exception while playing', e, stacktrace, 'AUDIO');
   
   if (errorMsg.contains('Локальний файл не знайдено')) {
     final ctx = navigatorKey.currentContext;

@@ -41,6 +41,7 @@ class AudioProvider with ChangeNotifier, QueueManagerMixin, LyricsManagerMixin, 
   AudioPlayer get player => currentPlayer;
 
   bool _isAutoChangingSong = false;
+  int _playRequestId = 0;
 
   final YoutubeService _ytService = locator<YoutubeService>();
   SongModel? _currentSong;
@@ -150,6 +151,8 @@ class AudioProvider with ChangeNotifier, QueueManagerMixin, LyricsManagerMixin, 
 
   @override
   Future<void> playSong(SongModel song) async {
+    final int requestId = ++_playRequestId;
+
     if (!_isAutoChangingSong) {
       cancelCrossfade();
     }
@@ -181,13 +184,19 @@ class AudioProvider with ChangeNotifier, QueueManagerMixin, LyricsManagerMixin, 
       await _initFuture;
     }
 
+    if (requestId != _playRequestId) return;
+
     try {
-      _currentSong = await PlaybackManager.preparePlayback(
+      final preparedSong = await PlaybackManager.preparePlayback(
         song: song,
         player: player,
         audioHandler: _audioHandler!,
         ytService: _ytService,
       );
+
+      if (requestId != _playRequestId) return;
+
+      _currentSong = preparedSong;
       updateCurrentSongInQueue(_currentSong!);
       
       // Log the successful play to the history database
@@ -197,11 +206,18 @@ class AudioProvider with ChangeNotifier, QueueManagerMixin, LyricsManagerMixin, 
       equalizerProvider.initIfNeeded();
       
     } catch (e, stacktrace) {
+      if (requestId != _playRequestId) return;
+      if (e.toString().contains('Loading interrupted')) {
+        AppLogger.info('Завантаження треку було скасовано або перервано', 'AUDIO');
+        return;
+      }
       handleAudioPlaybackError(e, stacktrace, song, (msg) => _playbackError = msg);
     } finally {
-      AppLogger.separator();
-      _isLoading = false;
-      notifyListeners();
+      if (requestId == _playRequestId) {
+        AppLogger.separator();
+        _isLoading = false;
+        notifyListeners();
+      }
     }
   }
 
@@ -221,24 +237,34 @@ class AudioProvider with ChangeNotifier, QueueManagerMixin, LyricsManagerMixin, 
   }
 
   Future<void> _refreshAndResume(SongModel song) async {
+    final int requestId = ++_playRequestId;
     final pos = player.position;
     _isLoading = true;
     notifyListeners();
     try {
-      _currentSong = await PlaybackManager.preparePlayback(
+      final preparedSong = await PlaybackManager.preparePlayback(
         song: song.copyWith(streamUrl: null),
         player: player,
         audioHandler: _audioHandler!,
         ytService: _ytService,
         initialPosition: pos,
       );
+      if (requestId != _playRequestId) return;
+      _currentSong = preparedSong;
       updateCurrentSongInQueue(_currentSong!);
       _streamRetryCount = 0;
     } catch (e, st) {
+      if (requestId != _playRequestId) return;
+      if (e.toString().contains('Loading interrupted')) {
+        AppLogger.info('Оновлення потоку перервано іншим запитом', 'AUDIO');
+        return;
+      }
       handleAudioPlaybackError(e, st, song, (msg) => _playbackError = msg);
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      if (requestId == _playRequestId) {
+        _isLoading = false;
+        notifyListeners();
+      }
     }
   }
 
@@ -263,6 +289,12 @@ class AudioProvider with ChangeNotifier, QueueManagerMixin, LyricsManagerMixin, 
         rethrow;
       }
     }
+  }
+
+  @override
+  Future<void> stop() async {
+    _playRequestId++;
+    await super.stop();
   }
 
   @override
