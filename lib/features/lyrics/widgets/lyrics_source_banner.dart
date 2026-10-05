@@ -71,25 +71,27 @@ class LyricsSourceBanner extends StatelessWidget {
                       Row(
                         children: [
                           Text(
-                            'Джерело: $src',
-                            style: const TextStyle(
+                            isKaraoke ? 'Синхронізовано ⏱️' : 'Статичний текст 📄',
+                            style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
-                              color: AppColors.primary,
+                              color: isKaraoke ? Colors.amberAccent : Colors.white70,
                             ),
                           ),
-                          const SizedBox(width: 6),
-                          const Text('•', style: TextStyle(color: Colors.white38, fontSize: 11)),
-                          const SizedBox(width: 6),
-                          Flexible(
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withValues(alpha: 0.18),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: AppColors.primary.withValues(alpha: 0.35)),
+                            ),
                             child: Text(
-                              isKaraoke ? 'Синхронізоване ⏱️' : 'Статичний текст 📄',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w500,
-                                color: isKaraoke ? Colors.amberAccent : Colors.white70,
+                              src,
+                              style: const TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primary,
                               ),
                             ),
                           ),
@@ -101,8 +103,8 @@ class LyricsSourceBanner extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w400,
                           color: Colors.white70,
                         ),
                       ),
