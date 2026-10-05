@@ -14,7 +14,6 @@ class UpdateSettingsCard extends StatefulWidget {
 class _UpdateSettingsCardState extends State<UpdateSettingsCard> {
   bool _isChecking = false;
   String _installedVersion = UpdateService.currentVersion;
-  int _installedBuild = UpdateService.currentBuildNumber;
 
   @override
   void initState() {
@@ -27,7 +26,6 @@ class _UpdateSettingsCardState extends State<UpdateSettingsCard> {
     if (mounted) {
       setState(() {
         _installedVersion = ver.version;
-        _installedBuild = ver.buildNumber;
       });
     }
   }
@@ -116,7 +114,7 @@ class _UpdateSettingsCardState extends State<UpdateSettingsCard> {
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(6)),
                   child: Text(
-                    'v$_installedVersion ($_installedBuild)',
+                    'v$_installedVersion',
                     style: const TextStyle(fontSize: 11, color: Colors.white70),
                   ),
                 ),
