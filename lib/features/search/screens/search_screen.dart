@@ -20,6 +20,7 @@ class _SearchScreenState extends State<SearchScreen> {
   List<SongModel> _results = [];
   List<SongModel> _localResults = [];
   bool _isSearching = false;
+  bool _musicOnly = true;
 
   void _search() async {
     final query = _searchController.text.trim();
@@ -48,10 +49,15 @@ class _SearchScreenState extends State<SearchScreen> {
     // Then search YouTube
     try {
       List<SongModel> results;
-      if (query.startsWith('http')) {
+      final isUrl = query.startsWith('http://') ||
+          query.startsWith('https://') ||
+          query.startsWith('www.youtube.com') ||
+          query.startsWith('youtu.be');
+
+      if (isUrl) {
         results = await _ytService.resolveLink(query);
       } else {
-        results = await _ytService.searchSongs(query);
+        results = await _ytService.searchSongs(query, musicOnly: _musicOnly);
       }
 
       if (mounted) {
@@ -127,6 +133,15 @@ class _SearchScreenState extends State<SearchScreen> {
             SearchInputCard(
               controller: _searchController,
               onSearch: _search,
+              musicOnly: _musicOnly,
+              onMusicOnlyChanged: (val) {
+                setState(() {
+                  _musicOnly = val;
+                });
+                if (_searchController.text.trim().isNotEmpty) {
+                  _search();
+                }
+              },
             ),
 
             const SizedBox(height: 16),

@@ -5,15 +5,21 @@ import 'package:music_flow_mobile/core/widgets/custom_card.dart';
 class SearchInputCard extends StatelessWidget {
   final TextEditingController controller;
   final VoidCallback onSearch;
+  final bool musicOnly;
+  final ValueChanged<bool> onMusicOnlyChanged;
 
   const SearchInputCard({
     super.key,
     required this.controller,
     required this.onSearch,
+    required this.musicOnly,
+    required this.onMusicOnlyChanged,
   });
 
   @override
   Widget build(BuildContext context) {
+    final primary = Theme.of(context).primaryColor;
+
     return CustomCard(
       child: Column(
         children: [
@@ -48,7 +54,7 @@ class SearchInputCard extends StatelessWidget {
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Theme.of(context).primaryColor),
+                      borderSide: BorderSide(color: primary),
                     ),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   ),
@@ -78,6 +84,30 @@ class SearchInputCard extends StatelessWidget {
                   ),
                   elevation: 0,
                 ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              FilterChip(
+                label: const Text('Тільки музика', style: TextStyle(fontSize: 12)),
+                avatar: Icon(
+                  Icons.music_note_rounded,
+                  size: 15,
+                  color: musicOnly ? primary : Colors.grey[400],
+                ),
+                selected: musicOnly,
+                selectedColor: primary.withValues(alpha: 0.2),
+                checkmarkColor: primary,
+                backgroundColor: Colors.white.withValues(alpha: 0.05),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(
+                    color: musicOnly ? primary.withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.1),
+                  ),
+                ),
+                onSelected: onMusicOnlyChanged,
               ),
             ],
           ),

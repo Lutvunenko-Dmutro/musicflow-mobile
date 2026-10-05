@@ -2,6 +2,7 @@ import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:music_flow_mobile/models/song_model.dart';
 import 'package:music_flow_mobile/services/youtube_caption_service.dart';
+import 'package:music_flow_mobile/utils/music_search_filter.dart';
 import 'package:music_flow_mobile/utils/app_logger.dart';
 
 class YoutubeService {
@@ -44,18 +45,68 @@ class YoutubeService {
     }
   }
 
-  Future<List<SongModel>> searchSongs(String query) async {
+  Future<List<SongModel>> searchSongs(String query, {bool musicOnly = true}) async {
     return _retryWithBackoff(() async {
-      final searchResults = await _yt.search.search(query);
-      return searchResults.map((video) {
-        return SongModel(
-          id: video.id.value,
-          title: video.title,
-          author: video.author,
-          duration: video.duration ?? Duration.zero,
-          coverUrl: video.thumbnails.highResUrl,
-        );
-      }).toList();
+      final searchResults = await _yt.search.searchContent(query);
+      final songs = <SongModel>[];
+
+      for (final item in searchResults) {
+        if (item is SearchVideo) {
+          final duration = MusicSearchFilter.parseDuration(item.duration);
+          if (musicOnly &&
+              !MusicSearchFilter.isMusic(
+                title: item.title,
+                author: item.author,
+                duration: duration,
+                isLive: item.isLive,
+              )) {
+            continue;
+          }
+
+          songs.add(
+            SongModel(
+              id: item.id.value,
+              title: item.title,
+              author: item.author,
+              duration: duration,
+              coverUrl: ThumbnailSet(item.id.value).highResUrl,
+            ),
+          );
+        }
+      }
+
+      // If strict filter yielded few results, fallback to search with query + audio
+      if (musicOnly && songs.length < 3) {
+        try {
+          final audioResults = await _yt.search.searchContent('$query audio');
+          for (final item in audioResults) {
+            if (item is SearchVideo) {
+              final duration = MusicSearchFilter.parseDuration(item.duration);
+              if (!MusicSearchFilter.isMusic(
+                title: item.title,
+                author: item.author,
+                duration: duration,
+                isLive: item.isLive,
+              )) {
+                continue;
+              }
+              if (!songs.any((s) => s.id == item.id.value)) {
+                songs.add(
+                  SongModel(
+                    id: item.id.value,
+                    title: item.title,
+                    author: item.author,
+                    duration: duration,
+                    coverUrl: ThumbnailSet(item.id.value).highResUrl,
+                  ),
+                );
+              }
+            }
+          }
+        } catch (_) {}
+      }
+
+      return songs;
     }, operationName: 'searchSongs("$query")');
   }
 

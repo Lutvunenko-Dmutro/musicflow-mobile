@@ -23,8 +23,8 @@ class MiniPlayer extends StatelessWidget {
         Navigator.push(
           context,
           PageRouteBuilder(
-            transitionDuration: const Duration(milliseconds: 300),
-            reverseTransitionDuration: const Duration(milliseconds: 260),
+            transitionDuration: const Duration(milliseconds: 380),
+            reverseTransitionDuration: const Duration(milliseconds: 300),
             pageBuilder: (context, animation, secondaryAnimation) => const PlayerScreen(),
             transitionsBuilder: (context, animation, secondaryAnimation, child) {
               final curved = CurvedAnimation(
@@ -34,13 +34,10 @@ class MiniPlayer extends StatelessWidget {
               );
               return SlideTransition(
                 position: Tween<Offset>(
-                  begin: const Offset(0.0, 0.12),
+                  begin: const Offset(0.0, 1.0),
                   end: Offset.zero,
                 ).animate(curved),
-                child: FadeTransition(
-                  opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
-                  child: child,
-                ),
+                child: child,
               );
             },
           ),
