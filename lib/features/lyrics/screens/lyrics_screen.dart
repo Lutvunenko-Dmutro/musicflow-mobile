@@ -4,6 +4,7 @@ import 'package:music_flow_mobile/providers/audio_provider.dart';
 import 'package:music_flow_mobile/models/lyrics_line.dart';
 import 'package:music_flow_mobile/utils/lyrics_parser.dart';
 import 'package:music_flow_mobile/features/lyrics/widgets/lyrics_list_view.dart';
+import 'package:music_flow_mobile/features/lyrics/widgets/lyrics_search_sheet.dart';
 
 class LyricsScreen extends StatefulWidget {
   const LyricsScreen({super.key});
@@ -54,12 +55,18 @@ class _LyricsScreenState extends State<LyricsScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
+          if (song != null)
+            IconButton(
+              icon: const Icon(Icons.search_rounded),
+              tooltip: 'Знайти інше караоке',
+              onPressed: () => LyricsSearchSheet.show(context, song: song),
+            ),
           if (audioProvider.availableLyrics != null && audioProvider.availableLyrics!.length > 1)
             PopupMenuButton<String>(
               icon: const Icon(Icons.translate),
               tooltip: 'Вибрати версію тексту',
               onSelected: (key) {
-                audioProvider.changeLyricsTrack(key);
+                audioProvider.changeLyricsTrack(key, songId: song?.id);
               },
               itemBuilder: (context) {
                 return audioProvider.availableLyrics!.keys.map((key) {

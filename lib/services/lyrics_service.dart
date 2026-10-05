@@ -83,46 +83,84 @@ class LyricsService {
     return freshLyrics;
   }
 
-  Future<Map<String, String>?> _fetchFreshLyrics(SongModel song) async {
-    Map<String, String>? finalResult;
+  Future<String?> getPreferredLyricsKey(String songId) async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('preferred_lyrics_$songId');
+  }
 
+  Future<void> savePreferredLyricsKey(String songId, String key) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('preferred_lyrics_$songId', key);
+  }
+
+  Future<void> saveCustomLyrics(SongModel song, String label, String text) async {
+    final prefs = await SharedPreferences.getInstance();
+    final cacheKey = 'lyrics_cache_${song.id}';
+    final cachedData = prefs.getString(cacheKey);
+    final map = <String, String>{};
+    if (cachedData != null && cachedData != "NOT_FOUND") {
+      try {
+        final decoded = json.decode(cachedData) as Map<String, dynamic>;
+        decoded.forEach((k, v) {
+          if (k != '_last_update_ms') map[k] = v.toString();
+        });
+      } catch (_) {}
+    }
+    map[label] = text;
+    map['_last_update_ms'] = DateTime.now().millisecondsSinceEpoch.toString();
+    await prefs.setString(cacheKey, json.encode(map));
+    await savePreferredLyricsKey(song.id, label);
+  }
+
+  Future<Map<String, String>?> _fetchFreshLyrics(SongModel song) async {
+    final results = <String, String>{};
+
+    // 1. First priority: LRCLIB (dedicated high quality synchronized LRC karaoke)
+    try {
+      final lrclibResult = await OnlineLyricsClient.fetchFromLrclib(song.author, song.title);
+      if (lrclibResult != null && lrclibResult.isNotEmpty) {
+        results['Караоке (LRCLIB)'] = lrclibResult;
+      }
+    } catch (_) {}
+
+    // 2. YouTube captions (if online video)
     final ytService = locator<YoutubeService>();
     if (song.id.length == 11 && !song.id.contains('/')) {
-      final captions = await ytService.getYoutubeCaptions(song.id);
-      if (captions != null && captions.isNotEmpty) {
-        AppLogger.info('Found YouTube captions for ${song.title}', 'LYRICS');
-        finalResult = captions;
-      }
-    }
-
-    if (finalResult == null) {
-      final lrclibResult = await OnlineLyricsClient.fetchFromLrclib(song.author, song.title);
-      if (lrclibResult != null) finalResult = {'Караоке (Lrclib)': lrclibResult};
-    }
-
-    if (finalResult == null) {
-      final ovhResult = await OnlineLyricsClient.fetchFromOvh(song.author, song.title);
-      if (ovhResult != null) finalResult = {'Текст (Lyrics.ovh)': ovhResult};
-    }
-
-    if (finalResult == null && song.isLocal) {
       try {
-        AppLogger.info('Trying ultimate fallback: searching YouTube for ${song.title}...', 'LYRICS');
+        final captions = await ytService.getYoutubeCaptions(song.id);
+        if (captions != null && captions.isNotEmpty) {
+          for (final entry in captions.entries) {
+            final key = entry.key.contains('Auto') ? 'YouTube (авто)' : 'YouTube (${entry.key})';
+            results[key] = entry.value;
+          }
+        }
+      } catch (_) {}
+    }
+
+    // 3. Fallback: lyrics.ovh plain lyrics if nothing found
+    if (results.isEmpty) {
+      try {
+        final ovhResult = await OnlineLyricsClient.fetchFromOvh(song.author, song.title);
+        if (ovhResult != null) results['Текст (Lyrics.ovh)'] = ovhResult;
+      } catch (_) {}
+    }
+
+    // 4. Local song ultimate fallback to YouTube search
+    if (results.isEmpty && song.isLocal) {
+      try {
         final searchResults = await ytService.searchSongs('${song.author} ${song.title}');
         if (searchResults.isNotEmpty) {
           final firstVideo = searchResults.first;
           final captions = await ytService.getYoutubeCaptions(firstVideo.id);
           if (captions != null && captions.isNotEmpty) {
-            AppLogger.info('Found ultimate fallback captions from YouTube video: ${firstVideo.title}', 'LYRICS');
-            finalResult = captions;
+            results.addAll(captions);
           }
         }
       } catch (e) {
-        AppLogger.error('Ultimate fallback failed', e, null, 'LYRICS');
         if (e.toString().contains('SocketException')) rethrow;
       }
     }
 
-    return finalResult;
+    return results.isNotEmpty ? results : null;
   }
 }

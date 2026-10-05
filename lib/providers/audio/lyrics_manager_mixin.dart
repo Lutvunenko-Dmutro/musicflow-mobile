@@ -31,23 +31,19 @@ mixin LyricsManagerMixin on ChangeNotifier {
   void loadLyricsForSong(SongModel song, SongModel? Function() getCurrentSong) {
     _lyricsService.getLyrics(
       song,
-      onUpdate: (freshLyrics) {
+      onUpdate: (freshLyrics) async {
         if (getCurrentSong()?.id == song.id) {
           _availableLyrics = freshLyrics;
-          if (_selectedLyricsKey == null || !freshLyrics.containsKey(_selectedLyricsKey)) {
-            _selectedLyricsKey = freshLyrics.keys.first;
-          }
+          await _selectBestTrack(song.id, freshLyrics);
           notifyListeners();
         }
       },
-    ).then((lyricsMap) {
+    ).then((lyricsMap) async {
       if (getCurrentSong()?.id == song.id) {
         _isLyricsLoading = false;
         if (lyricsMap != null && lyricsMap.isNotEmpty) {
           _availableLyrics = lyricsMap;
-          if (_selectedLyricsKey == null || !lyricsMap.containsKey(_selectedLyricsKey)) {
-            _selectedLyricsKey = lyricsMap.keys.first;
-          }
+          await _selectBestTrack(song.id, lyricsMap);
         }
         notifyListeners();
       }
@@ -64,10 +60,36 @@ mixin LyricsManagerMixin on ChangeNotifier {
     });
   }
 
-  void changeLyricsTrack(String key) {
+  Future<void> _selectBestTrack(String songId, Map<String, String> map) async {
+    final savedKey = await _lyricsService.getPreferredLyricsKey(songId);
+    if (savedKey != null && map.containsKey(savedKey)) {
+      _selectedLyricsKey = savedKey;
+      return;
+    }
+    // Prefer synchronized karaoke track if available
+    final karaokeKey = map.keys.firstWhere(
+      (k) => k.contains('Караоке'),
+      orElse: () => map.keys.first,
+    );
+    _selectedLyricsKey = karaokeKey;
+  }
+
+  void changeLyricsTrack(String key, {String? songId}) {
     if (_availableLyrics != null && _availableLyrics!.containsKey(key)) {
       _selectedLyricsKey = key;
+      if (songId != null) {
+        _lyricsService.savePreferredLyricsKey(songId, key);
+      }
       notifyListeners();
     }
+  }
+
+  Future<void> setCustomLyrics(SongModel song, String label, String text) async {
+    final updated = Map<String, String>.from(_availableLyrics ?? {});
+    updated[label] = text;
+    _availableLyrics = updated;
+    _selectedLyricsKey = label;
+    await _lyricsService.saveCustomLyrics(song, label, text);
+    notifyListeners();
   }
 }

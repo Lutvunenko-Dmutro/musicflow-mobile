@@ -3,6 +3,7 @@ import 'package:music_flow_mobile/providers/audio_provider.dart';
 import 'package:music_flow_mobile/features/player/widgets/visualizer/visualizer_settings_sheet.dart';
 import 'package:music_flow_mobile/features/settings/screens/equalizer_screen.dart';
 import 'package:music_flow_mobile/features/player/widgets/sleep_timer_dialog.dart';
+import 'package:music_flow_mobile/features/lyrics/widgets/lyrics_search_sheet.dart';
 
 class PlayerPopupMenu extends StatelessWidget {
   final AudioProvider audioProvider;
@@ -25,6 +26,11 @@ class PlayerPopupMenu extends StatelessWidget {
           audioProvider.toggleVisualizer();
         } else if (value == 'toggle_lyrics') {
           audioProvider.toggleInlineLyrics();
+        } else if (value == 'search_lyrics') {
+          final song = audioProvider.currentSong;
+          if (song != null) {
+            LyricsSearchSheet.show(context, song: song);
+          }
         } else if (value == 'sleep_timer') {
           showDialog(
             context: context,
@@ -35,6 +41,16 @@ class PlayerPopupMenu extends StatelessWidget {
         }
       },
       itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+        const PopupMenuItem<String>(
+          value: 'search_lyrics',
+          child: Row(
+            children: [
+              Icon(Icons.manage_search_rounded, size: 20),
+              SizedBox(width: 12),
+              Text('Знайти інше караоке'),
+            ],
+          ),
+        ),
         PopupMenuItem<String>(
           value: 'toggle_lyrics',
           child: Row(

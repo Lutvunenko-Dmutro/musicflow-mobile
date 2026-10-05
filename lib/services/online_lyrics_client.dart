@@ -1,10 +1,14 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:music_flow_mobile/models/lrclib_search_result.dart';
 import 'package:music_flow_mobile/utils/app_logger.dart';
 
 class OnlineLyricsClient {
   static const String _lrclibUrl = 'https://lrclib.net/api/search';
   static const String _ovhUrl = 'https://api.lyrics.ovh/v1';
+  static const Map<String, String> _headers = {
+    'User-Agent': 'MusicFlow/1.0 (https://github.com/music-flow)',
+  };
 
   static Future<String?> fetchFromOvh(String artist, String title) async {
     final cleanTitle = title
@@ -17,7 +21,7 @@ class OnlineLyricsClient {
 
     try {
       AppLogger.info('Fetching lyrics from OVH fallback $url', 'LYRICS');
-      final response = await http.get(url).timeout(const Duration(seconds: 10));
+      final response = await http.get(url, headers: _headers).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -44,7 +48,7 @@ class OnlineLyricsClient {
 
     try {
       AppLogger.info('Fetching lyrics from $url', 'LYRICS');
-      final response = await http.get(url).timeout(const Duration(seconds: 10));
+      final response = await http.get(url, headers: _headers).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
@@ -68,5 +72,28 @@ class OnlineLyricsClient {
       if (e.toString().contains('SocketException')) rethrow;
     }
     return null;
+  }
+
+  static Future<List<LrclibSearchResult>> searchLrclib(String query) async {
+    final cleanQuery = query
+        .replaceAll(RegExp(r'\(.*?\)'), '')
+        .replaceAll(RegExp(r'\[.*?\]'), '')
+        .trim();
+    final effectiveQuery = cleanQuery.isNotEmpty ? cleanQuery : query;
+    final url = Uri.parse('$_lrclibUrl?q=${Uri.encodeComponent(effectiveQuery)}');
+
+    try {
+      AppLogger.info('Searching LRCLIB for: $query', 'LYRICS');
+      final response = await http.get(url, headers: _headers).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data.map((item) => LrclibSearchResult.fromJson(item as Map<String, dynamic>)).toList();
+      }
+    } catch (e) {
+      AppLogger.error('Failed to search LRCLIB', e, null, 'LYRICS');
+      if (e.toString().contains('SocketException')) rethrow;
+    }
+    return [];
   }
 }
