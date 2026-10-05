@@ -13,19 +13,33 @@ class LyricsVersionMenu extends StatelessWidget {
     required this.song,
   });
 
+  IconData _getSourceIcon(String key) {
+    final lower = key.toLowerCase();
+    if (lower.contains('youtube')) return Icons.play_circle_filled_rounded;
+    if (lower.contains('lrclib')) return Icons.mic_external_on_rounded;
+    if (lower.contains('ovh')) return Icons.language_rounded;
+    return Icons.lyrics_rounded;
+  }
+
+  Color _getSourceColor(String key, Color primary) {
+    final lower = key.toLowerCase();
+    if (lower.contains('youtube')) return Colors.redAccent;
+    if (lower.contains('lrclib')) return primary;
+    if (lower.contains('ovh')) return Colors.lightBlueAccent;
+    return primary;
+  }
+
   @override
   Widget build(BuildContext context) {
     final available = audioProvider.availableLyrics;
-    if (available == null || available.isEmpty) {
-      return const SizedBox.shrink();
-    }
+    if (available == null || available.isEmpty) return const SizedBox.shrink();
 
     final primary = Theme.of(context).primaryColor;
     final isDisabled = audioProvider.isLyricsDisabledForCurrentSong;
 
     return PopupMenuButton<String>(
       icon: const Icon(Icons.translate),
-      tooltip: 'Вибрати версію або вимкнути',
+      tooltip: 'Вибрати версію тексту або вимкнути',
       onSelected: (key) {
         audioProvider.changeLyricsTrack(key, songId: song?.id);
         final msg = key == LyricsManagerMixin.disabledLyricsKey
@@ -49,6 +63,8 @@ class LyricsVersionMenu extends StatelessWidget {
                   color: isDisabled ? Colors.amber : Colors.grey,
                 ),
                 const SizedBox(width: 8),
+                const Icon(Icons.subtitles_off_rounded, size: 16, color: Colors.amber),
+                const SizedBox(width: 6),
                 const Expanded(
                   child: Text('Без субтитрів (Вимкнено)', style: TextStyle(fontWeight: FontWeight.w600)),
                 ),
@@ -62,6 +78,10 @@ class LyricsVersionMenu extends StatelessWidget {
         items.addAll(
           available.keys.map((key) {
             final isSelected = !isDisabled && key == audioProvider.selectedLyricsKey;
+            final isKaraoke = key.contains('Караоке') || (available[key] != null && RegExp(r'\[\d+:\d+').hasMatch(available[key]!));
+            final icon = _getSourceIcon(key);
+            final color = _getSourceColor(key, primary);
+
             return PopupMenuItem<String>(
               value: key,
               child: Row(
@@ -72,6 +92,8 @@ class LyricsVersionMenu extends StatelessWidget {
                     color: isSelected ? primary : Colors.grey,
                   ),
                   const SizedBox(width: 8),
+                  Icon(icon, size: 16, color: color),
+                  const SizedBox(width: 6),
                   Expanded(
                     child: Text(
                       key,
@@ -81,6 +103,18 @@ class LyricsVersionMenu extends StatelessWidget {
                       ),
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: (isKaraoke ? Colors.greenAccent : Colors.grey).withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      isKaraoke ? '⏱️' : '📄',
+                      style: const TextStyle(fontSize: 10),
                     ),
                   ),
                 ],

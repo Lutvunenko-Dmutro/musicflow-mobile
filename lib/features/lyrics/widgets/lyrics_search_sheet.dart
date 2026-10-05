@@ -16,9 +16,7 @@ class LyricsSearchSheet extends StatefulWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: const Color(0xFF1E1E1E),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (ctx) => LyricsSearchSheet(song: song),
     );
   }
@@ -32,6 +30,7 @@ class _LyricsSearchSheetState extends State<LyricsSearchSheet> {
   List<LrclibSearchResult> _results = [];
   bool _isLoading = false;
   String? _error;
+  int _tab = 0;
 
   @override
   void initState() {
@@ -50,12 +49,7 @@ class _LyricsSearchSheetState extends State<LyricsSearchSheet> {
   Future<void> _performSearch() async {
     final query = _controller.text.trim();
     if (query.isEmpty) return;
-
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
-
+    setState(() { _isLoading = true; _error = null; });
     try {
       final res = await OnlineLyricsClient.searchLrclib(query);
       if (mounted) setState(() { _results = res; _isLoading = false; });
@@ -66,22 +60,39 @@ class _LyricsSearchSheetState extends State<LyricsSearchSheet> {
 
   void _selectAndSave(LrclibSearchResult item) async {
     final provider = context.read<AudioProvider>();
-    final tag = item.isKaraoke ? 'Караоке' : 'Текст';
-    await provider.setCustomLyrics(widget.song, '$tag (${item.artistName} - ${item.trackName})', item.bestLyrics);
-
+    final tag = item.isKaraoke ? 'Караоке [LRCLIB]' : 'Текст [LRCLIB]';
+    await provider.setCustomLyrics(widget.song, '$tag: ${item.artistName} - ${item.trackName}', item.bestLyrics);
     if (mounted) {
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Збережено караоке: ${item.trackName}'),
+        content: Text('Збережено караоке з LRCLIB: ${item.artistName} - ${item.trackName}'),
         backgroundColor: Theme.of(context).primaryColor,
         behavior: SnackBarBehavior.floating,
       ));
     }
   }
 
+  Widget _buildChip(int idx, String txt, Color pri) {
+    final sel = _tab == idx;
+    return GestureDetector(
+      onTap: () => setState(() => _tab = idx),
+      child: Container(
+        margin: const EdgeInsets.only(right: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: sel ? pri.withValues(alpha: 0.25) : Colors.white.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: sel ? pri : Colors.white12),
+        ),
+        child: Text(txt, style: TextStyle(fontSize: 11, fontWeight: sel ? FontWeight.bold : FontWeight.normal, color: sel ? pri : Colors.white70)),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final primary = Theme.of(context).primaryColor;
+    final pri = Theme.of(context).primaryColor;
+    final kCount = _results.where((r) => r.isKaraoke).length;
 
     return Container(
       constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.85),
@@ -91,52 +102,45 @@ class _LyricsSearchSheetState extends State<LyricsSearchSheet> {
         children: [
           Container(width: 36, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2))),
           const SizedBox(height: 12),
-          const Row(children: [
-            Icon(Icons.manage_search_rounded, size: 22, color: Colors.white),
-            SizedBox(width: 8),
-            Text('Пошук та збереження караоке', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          Row(children: [
+            Container(padding: const EdgeInsets.all(6), decoration: BoxDecoration(color: pri.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)), child: Icon(Icons.manage_search_rounded, size: 20, color: pri)),
+            const SizedBox(width: 10),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const Text('Пошук караоке в базі LRCLIB', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              Text('${widget.song.author} • ${widget.song.title}', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, color: Colors.white54)),
+            ])),
           ]),
           const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _controller,
-                  style: const TextStyle(fontSize: 14),
-                  decoration: InputDecoration(
-                    hintText: 'Введіть назву або виконавця...',
-                    filled: true,
-                    fillColor: Colors.black.withValues(alpha: 0.3),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  onSubmitted: (_) => _performSearch(),
-                ),
+          Row(children: [
+            Expanded(child: TextField(
+              controller: _controller,
+              style: const TextStyle(fontSize: 14),
+              decoration: InputDecoration(
+                hintText: 'Виконавець або назва...',
+                filled: true,
+                fillColor: Colors.black.withValues(alpha: 0.3),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
-              const SizedBox(width: 8),
-              ElevatedButton(
-                onPressed: _isLoading ? null : _performSearch,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                child: _isLoading
-                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : const Text('Пошук', style: TextStyle(fontWeight: FontWeight.bold)),
-              ),
-            ],
-          ),
-          if (_isLoading)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(2),
-                child: LinearProgressIndicator(minHeight: 3, backgroundColor: primary.withValues(alpha: 0.2), valueColor: AlwaysStoppedAnimation<Color>(primary)),
-              ),
+              onSubmitted: (_) => _performSearch(),
+            )),
+            const SizedBox(width: 8),
+            ElevatedButton(
+              onPressed: _isLoading ? null : _performSearch,
+              style: ElevatedButton.styleFrom(backgroundColor: pri, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+              child: _isLoading ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text('Пошук', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
-          const SizedBox(height: 12),
+          ]),
+          if (_isLoading) Padding(padding: const EdgeInsets.only(top: 8), child: ClipRRect(borderRadius: BorderRadius.circular(2), child: LinearProgressIndicator(minHeight: 3, backgroundColor: pri.withValues(alpha: 0.2), valueColor: AlwaysStoppedAnimation<Color>(pri)))),
+          if (_results.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Row(children: [
+              _buildChip(0, 'Всі (${_results.length})', pri),
+              _buildChip(1, '⏱️ Караоке ($kCount)', pri),
+              _buildChip(2, '📄 Текст (${_results.length - kCount})', pri),
+            ]),
+          ],
+          const SizedBox(height: 10),
           Expanded(child: _buildBody()),
         ],
       ),
@@ -145,28 +149,15 @@ class _LyricsSearchSheetState extends State<LyricsSearchSheet> {
 
   Widget _buildBody() {
     if (_isLoading && _results.isEmpty) {
-      return const Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CircularProgressIndicator(),
-            SizedBox(height: 12),
-            Text('Шукаємо караоке в базі LRCLIB...', style: TextStyle(color: Colors.white70, fontSize: 13)),
-          ],
-        ),
-      );
+      return const Center(child: Column(mainAxisSize: MainAxisSize.min, children: [CircularProgressIndicator(), SizedBox(height: 12), Text('Шукаємо караоке в базі LRCLIB...', style: TextStyle(color: Colors.white70, fontSize: 13))]));
     }
     if (_error != null) return Center(child: Text(_error!, style: const TextStyle(color: Colors.redAccent)));
-    if (_results.isEmpty) {
-      return const Center(child: Text('Нічого не знайдено. Спробуйте змінити запит.', style: TextStyle(color: Colors.grey)));
-    }
+    if (_results.isEmpty) return const Center(child: Text('Нічого не знайдено. Спробуйте змінити запит.', style: TextStyle(color: Colors.grey)));
 
+    final list = _tab == 1 ? _results.where((r) => r.isKaraoke).toList() : (_tab == 2 ? _results.where((r) => !r.isKaraoke).toList() : _results);
     return ListView.builder(
-      itemCount: _results.length,
-      itemBuilder: (context, i) => LyricsResultCard(
-        item: _results[i],
-        onSelect: () => _selectAndSave(_results[i]),
-      ),
+      itemCount: list.length,
+      itemBuilder: (context, i) => LyricsResultCard(item: list[i], onSelect: () => _selectAndSave(list[i])),
     );
   }
 }
