@@ -26,6 +26,21 @@ class PlayerPopupMenu extends StatelessWidget {
           audioProvider.toggleVisualizer();
         } else if (value == 'toggle_lyrics') {
           audioProvider.toggleInlineLyrics();
+        } else if (value == 'toggle_song_lyrics') {
+          final song = audioProvider.currentSong;
+          if (song != null) {
+            if (audioProvider.isLyricsDisabledForCurrentSong) {
+              audioProvider.enableLyricsForSong(song.id);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Субтитри увімкнено для цієї пісні'), behavior: SnackBarBehavior.floating),
+              );
+            } else {
+              audioProvider.disableLyricsForSong(song.id);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Збережено: цю пісню залишено без субтитрів'), behavior: SnackBarBehavior.floating),
+              );
+            }
+          }
         } else if (value == 'search_lyrics') {
           final song = audioProvider.currentSong;
           if (song != null) {
@@ -51,6 +66,25 @@ class PlayerPopupMenu extends StatelessWidget {
             ],
           ),
         ),
+        if (audioProvider.availableLyrics != null && audioProvider.availableLyrics!.isNotEmpty)
+          PopupMenuItem<String>(
+            value: 'toggle_song_lyrics',
+            child: Row(
+              children: [
+                Icon(
+                  audioProvider.isLyricsDisabledForCurrentSong ? Icons.subtitles_off_rounded : Icons.subtitles_rounded,
+                  size: 20,
+                  color: audioProvider.isLyricsDisabledForCurrentSong ? Colors.amber : null,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  audioProvider.isLyricsDisabledForCurrentSong
+                      ? 'Увімкнути субтитри для пісні'
+                      : 'Без субтитрів для цієї пісні',
+                ),
+              ],
+            ),
+          ),
         PopupMenuItem<String>(
           value: 'toggle_lyrics',
           child: Row(

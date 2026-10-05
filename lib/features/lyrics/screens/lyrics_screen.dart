@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:music_flow_mobile/providers/audio_provider.dart';
 import 'package:music_flow_mobile/models/lyrics_line.dart';
+import 'package:music_flow_mobile/models/song_model.dart';
 import 'package:music_flow_mobile/utils/lyrics_parser.dart';
 import 'package:music_flow_mobile/features/lyrics/widgets/lyrics_list_view.dart';
 import 'package:music_flow_mobile/features/lyrics/widgets/lyrics_search_sheet.dart';
+import 'package:music_flow_mobile/features/lyrics/widgets/lyrics_version_menu.dart';
 
 class LyricsScreen extends StatefulWidget {
   const LyricsScreen({super.key});
@@ -18,16 +20,6 @@ class _LyricsScreenState extends State<LyricsScreen> {
   bool _isKaraoke = false;
   String? _lastParsedLyrics;
 
-  @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-  }
-
   void _parseLyricsStr(String? lyricsText) {
     final result = LyricsParser.parse(lyricsText);
     setState(() {
@@ -35,6 +27,61 @@ class _LyricsScreenState extends State<LyricsScreen> {
       _isKaraoke = result.isKaraoke;
     });
   }
+
+  Widget _buildDisabledView(BuildContext context, AudioProvider provider, SongModel? song) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.subtitles_off_outlined, size: 54, color: Colors.white38),
+          const SizedBox(height: 14),
+          const Text('Субтитри вимкнено для цієї пісні', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 6),
+          const Text('Налаштування збережено для цього треку', style: TextStyle(color: Colors.white38, fontSize: 13)),
+          if (song != null) ...[
+            const SizedBox(height: 20),
+            ElevatedButton.icon(
+              onPressed: () => provider.enableLyricsForSong(song.id),
+              icon: const Icon(Icons.subtitles, size: 18),
+              label: const Text('Увімкнути субтитри'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).primaryColor,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyView(BuildContext context, AudioProvider provider, SongModel? song) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.lyrics_outlined, size: 48, color: Colors.white24),
+          const SizedBox(height: 12),
+          Text(provider.lyricsErrorMsg ?? 'Текст пісні не знайдено', style: const TextStyle(color: Colors.white54, fontSize: 15)),
+          if (song != null) ...[
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: () => LyricsSearchSheet.show(context, song: song),
+              icon: const Icon(Icons.search, size: 16),
+              label: const Text('Знайти караоке в базі'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.2),
+                foregroundColor: Theme.of(context).primaryColor,
+                elevation: 0,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final audioProvider = context.watch<AudioProvider>();
@@ -42,7 +89,6 @@ class _LyricsScreenState extends State<LyricsScreen> {
     
     if (_lastParsedLyrics != audioProvider.currentLyrics) {
       _lastParsedLyrics = audioProvider.currentLyrics;
-      // Schedule parsing for next frame so we don't setState during build
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _parseLyricsStr(_lastParsedLyrics);
       });
@@ -61,43 +107,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
               tooltip: 'Знайти інше караоке',
               onPressed: () => LyricsSearchSheet.show(context, song: song),
             ),
-          if (audioProvider.availableLyrics != null && audioProvider.availableLyrics!.length > 1)
-            PopupMenuButton<String>(
-              icon: const Icon(Icons.translate),
-              tooltip: 'Вибрати версію тексту',
-              onSelected: (key) {
-                audioProvider.changeLyricsTrack(key, songId: song?.id);
-              },
-              itemBuilder: (context) {
-                return audioProvider.availableLyrics!.keys.map((key) {
-                  final isSelected = key == audioProvider.selectedLyricsKey;
-                  return PopupMenuItem<String>(
-                    value: key,
-                    child: Row(
-                      children: [
-                        Icon(
-                          isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
-                          size: 18,
-                          color: isSelected ? Theme.of(context).primaryColor : Colors.grey,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            key,
-                            style: TextStyle(
-                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                              color: isSelected ? Theme.of(context).primaryColor : null,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }).toList();
-              },
-            ),
+          LyricsVersionMenu(audioProvider: audioProvider, song: song),
         ],
       ),
       extendBodyBehindAppBar: true,
@@ -136,48 +146,21 @@ class _LyricsScreenState extends State<LyricsScreen> {
                     ],
                   ),
                 )
-              : audioProvider.currentLyrics == null
-                  ? Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.lyrics_outlined, size: 48, color: Colors.white24),
-                          const SizedBox(height: 12),
-                          Text(
-                            audioProvider.lyricsErrorMsg ?? 'Текст пісні не знайдено',
-                            style: const TextStyle(color: Colors.white54, fontSize: 15),
-                          ),
-                          if (song != null) ...[
-                            const SizedBox(height: 16),
-                            ElevatedButton.icon(
-                              onPressed: () => LyricsSearchSheet.show(context, song: song),
-                              icon: const Icon(Icons.search, size: 16),
-                              label: const Text('Знайти караоке в базі'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.2),
-                                foregroundColor: Theme.of(context).primaryColor,
-                                elevation: 0,
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                    )
-                  : StreamBuilder<Duration>(
-                  stream: audioProvider.positionStream,
-                  builder: (context, snapshot) {
-                    double currentSec = 0.0;
-                    if (snapshot.hasData) {
-                      currentSec = snapshot.data!.inMilliseconds / 1000.0;
-                    }
-                    
-                    return LyricsListView(
-                      lines: _lines,
-                      isKaraoke: _isKaraoke,
-                      currentSec: currentSec,
-                    );
-                  },
-                ),
+              : audioProvider.isLyricsDisabledForCurrentSong
+                  ? _buildDisabledView(context, audioProvider, song)
+                  : audioProvider.currentLyrics == null
+                      ? _buildEmptyView(context, audioProvider, song)
+                      : StreamBuilder<Duration>(
+                          stream: audioProvider.positionStream,
+                          builder: (context, snapshot) {
+                            final currentSec = (snapshot.data?.inMilliseconds ?? 0) / 1000.0;
+                            return LyricsListView(
+                              lines: _lines,
+                              isKaraoke: _isKaraoke,
+                              currentSec: currentSec,
+                            );
+                          },
+                        ),
         ),
       ),
     );

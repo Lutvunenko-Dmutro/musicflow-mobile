@@ -4,6 +4,8 @@ import 'package:music_flow_mobile/services/lyrics_service.dart';
 import 'package:music_flow_mobile/utils/app_logger.dart';
 
 mixin LyricsManagerMixin on ChangeNotifier {
+  static const String disabledLyricsKey = '__disabled__';
+
   final LyricsService _lyricsService = LyricsService();
   
   Map<String, String>? _availableLyrics;
@@ -13,9 +15,18 @@ mixin LyricsManagerMixin on ChangeNotifier {
 
   Map<String, String>? get availableLyrics => _availableLyrics;
   String? get selectedLyricsKey => _selectedLyricsKey;
-  String? get currentLyrics => _selectedLyricsKey != null && _availableLyrics != null ? _availableLyrics![_selectedLyricsKey!] : null;
+  bool get isLyricsDisabledForCurrentSong => _selectedLyricsKey == disabledLyricsKey;
+
+  String? get currentLyrics {
+    if (_selectedLyricsKey == null || _selectedLyricsKey == disabledLyricsKey || _availableLyrics == null) {
+      return null;
+    }
+    return _availableLyrics![_selectedLyricsKey!];
+  }
+
   bool get isLyricsLoading => _isLyricsLoading;
   String? get lyricsErrorMsg => _lyricsErrorMsg;
+
   bool get hasKaraokeLyrics {
     final lyrics = currentLyrics;
     if (lyrics == null || lyrics.isEmpty) return false;
@@ -68,6 +79,10 @@ mixin LyricsManagerMixin on ChangeNotifier {
 
   Future<void> _selectBestTrack(String songId, Map<String, String> map) async {
     final savedKey = await _lyricsService.getPreferredLyricsKey(songId);
+    if (savedKey == disabledLyricsKey) {
+      _selectedLyricsKey = disabledLyricsKey;
+      return;
+    }
     if (savedKey != null && map.containsKey(savedKey)) {
       _selectedLyricsKey = savedKey;
       return;
@@ -81,12 +96,26 @@ mixin LyricsManagerMixin on ChangeNotifier {
   }
 
   void changeLyricsTrack(String key, {String? songId}) {
-    if (_availableLyrics != null && _availableLyrics!.containsKey(key)) {
+    if (key == disabledLyricsKey || (_availableLyrics != null && _availableLyrics!.containsKey(key))) {
       _selectedLyricsKey = key;
       if (songId != null) {
         _lyricsService.savePreferredLyricsKey(songId, key);
       }
       notifyListeners();
+    }
+  }
+
+  void disableLyricsForSong(String songId) {
+    changeLyricsTrack(disabledLyricsKey, songId: songId);
+  }
+
+  void enableLyricsForSong(String songId) {
+    if (_availableLyrics != null && _availableLyrics!.isNotEmpty) {
+      final karaokeKey = _availableLyrics!.keys.firstWhere(
+        (k) => k.contains('Караоке'),
+        orElse: () => _availableLyrics!.keys.first,
+      );
+      changeLyricsTrack(karaokeKey, songId: songId);
     }
   }
 
