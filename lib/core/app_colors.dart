@@ -23,6 +23,9 @@ class AppColors {
   static const Color surfaceLight = Color(0xFF2C2C2C);
   
   static const Color surfaceMuted = Color(0xFF2A2A2A);
+  static const Color surfaceGlass = Color(0xD9181818);
+  static const Color activeSongHighlight = Color(0x1CE52D27);
+  static const Color cardBorder = Color(0x14FFFFFF);
   static const Color iconMuted = Color(0xFF555555);
 
   // Text Colors

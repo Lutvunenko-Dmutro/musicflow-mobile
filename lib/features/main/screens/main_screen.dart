@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:music_flow_mobile/providers/audio_provider.dart';
 import 'package:music_flow_mobile/features/player/widgets/mini_player.dart';
-import 'package:music_flow_mobile/features/player/widgets/audio_visualizer.dart';
+import 'package:music_flow_mobile/features/player/widgets/visualizer/audio_visualizer.dart';
 import 'package:music_flow_mobile/features/search/screens/search_screen.dart';
 import 'package:music_flow_mobile/features/library/screens/library_screen.dart';
 import 'package:music_flow_mobile/features/library/screens/history_screen.dart';
@@ -18,11 +18,11 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
 
-  final List<Widget> _screens = [
-    const SearchScreen(),
-    const LibraryScreen(),
-    const HistoryScreen(),
-    const SettingsScreen(),
+  final List<Widget> _screens = const [
+    SearchScreen(),
+    LibraryScreen(),
+    HistoryScreen(),
+    SettingsScreen(),
   ];
 
   @override
@@ -38,7 +38,10 @@ class _MainScreenState extends State<MainScreen> {
             Expanded(
               child: Stack(
                 children: [
-                  _screens[_currentIndex],
+                  IndexedStack(
+                    index: _currentIndex,
+                    children: _screens,
+                  ),
                   Positioned(
                     left: 0,
                     right: 0,
@@ -70,28 +73,32 @@ class _MainScreenState extends State<MainScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _currentIndex,
+        onDestinationSelected: (index) {
+          if (_currentIndex != index) {
+            setState(() => _currentIndex = index);
+          }
         },
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Головна',
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.search_outlined),
+            selectedIcon: Icon(Icons.search),
+            label: 'Пошук',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.library_music),
-            label: 'Бібліотека',
+          NavigationDestination(
+            icon: Icon(Icons.library_music_outlined),
+            selectedIcon: Icon(Icons.library_music),
+            label: 'Медіатека',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.history),
+          NavigationDestination(
+            icon: Icon(Icons.history_outlined),
+            selectedIcon: Icon(Icons.history),
             label: 'Історія',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
+          NavigationDestination(
+            icon: Icon(Icons.settings_outlined),
+            selectedIcon: Icon(Icons.settings),
             label: 'Налаштування',
           ),
         ],

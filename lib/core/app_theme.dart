@@ -34,6 +34,24 @@ class AppTheme {
         type: BottomNavigationBarType.fixed,
         elevation: 8,
       ),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: AppColors.surface,
+        elevation: 0,
+        height: 64,
+        indicatorColor: AppColors.primary.withValues(alpha: 0.18),
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const IconThemeData(color: AppColors.primary, size: 24);
+          }
+          return const IconThemeData(color: AppColors.textMuted, size: 22);
+        }),
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const TextStyle(color: AppColors.textPrimary, fontSize: 11, fontWeight: FontWeight.w600);
+          }
+          return const TextStyle(color: AppColors.textMuted, fontSize: 11, fontWeight: FontWeight.normal);
+        }),
+      ),
       sliderTheme: SliderThemeData(
         activeTrackColor: AppColors.primary,
         inactiveTrackColor: Colors.white.withValues(alpha: 0.1),

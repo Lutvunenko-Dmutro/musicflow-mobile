@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:music_flow_mobile/providers/visualizer_settings_provider.dart';
-import 'package:music_flow_mobile/features/player/widgets/visualizer_bars_painter.dart';
-import 'package:music_flow_mobile/features/player/widgets/visualizer_circle_painter.dart';
-import 'package:music_flow_mobile/features/player/widgets/visualizer_wave_painter.dart';
+import 'package:music_flow_mobile/features/player/widgets/visualizer/visualizer_bars_painter.dart';
+import 'package:music_flow_mobile/features/player/widgets/visualizer/visualizer_circle_painter.dart';
+import 'package:music_flow_mobile/features/player/widgets/visualizer/visualizer_wave_painter.dart';
 
 class VisualizerPainter extends CustomPainter {
   final List<double> heights;

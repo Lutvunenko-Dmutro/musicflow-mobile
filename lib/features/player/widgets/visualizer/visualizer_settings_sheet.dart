@@ -3,9 +3,9 @@ import 'package:music_flow_mobile/core/app_colors.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:music_flow_mobile/providers/visualizer_settings_provider.dart';
-import 'package:music_flow_mobile/features/player/widgets/visualizer_slider_setting.dart';
-import 'package:music_flow_mobile/features/player/widgets/visualizer_style_chip.dart';
-import 'package:music_flow_mobile/features/player/widgets/visualizer_core_chip.dart';
+import 'package:music_flow_mobile/features/player/widgets/visualizer/visualizer_slider_setting.dart';
+import 'package:music_flow_mobile/features/player/widgets/visualizer/visualizer_style_chip.dart';
+import 'package:music_flow_mobile/features/player/widgets/visualizer/visualizer_core_chip.dart';
 
 class VisualizerSettingsSheet extends StatelessWidget {
   const VisualizerSettingsSheet({super.key});

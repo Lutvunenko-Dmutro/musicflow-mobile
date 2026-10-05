@@ -4,7 +4,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:provider/provider.dart';
 import 'package:music_flow_mobile/utils/fft_processor.dart';
 import 'package:music_flow_mobile/utils/visualizer_physics.dart';
-import 'package:music_flow_mobile/features/player/widgets/visualizer_painter.dart';
+import 'package:music_flow_mobile/features/player/widgets/visualizer/visualizer_painter.dart';
 import 'package:music_flow_mobile/features/player/utils/visualizer_permission_helper.dart';
 import 'package:music_flow_mobile/providers/visualizer_settings_provider.dart';
 import 'package:music_flow_mobile/providers/audio_provider.dart';

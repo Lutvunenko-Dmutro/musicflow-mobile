@@ -76,15 +76,13 @@ lib/
 │
 ├── models/                      # Моделі даних (SongModel, HistoryModel, тощо)
 │
-├── providers/                   # State management (AudioProvider та його міксини)
+├── providers/                   # State management (AudioProvider, Equalizer, Library)
 │   ├── audio_provider.dart      # Головний провайдер відтворення
-│   ├── crossfade_manager_mixin.dart
-│   ├── queue_manager_mixin.dart
-│   ├── playback_controls_mixin.dart
-│   ├── lyrics_manager_mixin.dart
-│   ├── stream_recovery_mixin.dart
 │   ├── equalizer_provider.dart  # Керування 10-смуговим еквалайзером
-│   └── local_library_provider.dart
+│   ├── local_library_provider.dart
+│   ├── visualizer_settings_provider.dart
+│   ├── audio/                   # Міксини аудіоплеєра (crossfade, queue, recovery, controls)
+│   └── equalizer/               # Сховище налаштувань та пресети еквалайзера
 │
 ├── services/                    # Сервіси бізнес-логіки
 │   ├── playback_manager.dart    # Керування URL, 403 retry, just_audio
@@ -94,7 +92,8 @@ lib/
 │   └── lyrics_service.dart      # Агрегатор пошуку текстів
 │
 ├── features/                    # Екрани та специфічні віджети
-│   ├── player/                  # Плеєр, обкладинка, FFT-візуалізатор
+│   ├── player/                  # Плеєр, обкладинка, черга
+│   │   └── widgets/visualizer/  # Модульний FFT-візуалізатор (паінтери, чіпи, налаштування)
 │   ├── search/                  # YouTube пошук
 │   ├── library/                 # Локальна медіатека
 │   ├── lyrics/                  # Синхронізовані тексти

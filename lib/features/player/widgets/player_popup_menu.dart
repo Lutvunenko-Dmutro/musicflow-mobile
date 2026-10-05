@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:music_flow_mobile/providers/audio_provider.dart';
-import 'package:music_flow_mobile/features/player/widgets/visualizer_settings_sheet.dart';
+import 'package:music_flow_mobile/features/player/widgets/visualizer/visualizer_settings_sheet.dart';
 import 'package:music_flow_mobile/features/settings/screens/equalizer_screen.dart';
 import 'package:music_flow_mobile/features/player/widgets/sleep_timer_dialog.dart';
 

@@ -2,7 +2,7 @@ import 'package:just_audio/just_audio.dart';
 import 'package:music_flow_mobile/models/song_model.dart';
 import 'package:music_flow_mobile/services/native_visualizer_service.dart';
 import 'package:music_flow_mobile/services/audio_handler.dart';
-import 'package:music_flow_mobile/providers/crossfade_manager_mixin.dart';
+import 'package:music_flow_mobile/providers/audio/crossfade_manager_mixin.dart';
 
 mixin PlayerSetupMixin on CrossfadeManagerMixin {
   AudioPlayer get player;

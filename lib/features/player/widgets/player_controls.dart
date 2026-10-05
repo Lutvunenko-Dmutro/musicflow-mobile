@@ -20,146 +20,171 @@ class PlayerControls extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final audioProvider = context.watch<AudioProvider>();
-    
+    final primary = Theme.of(context).primaryColor;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Seek Bar
           StreamBuilder<Duration>(
-              stream: audioProvider.positionStream,
-              builder: (context, snapshot) {
-                final position = snapshot.data ?? Duration.zero;
-                final total = song.duration;
-                
-                double sliderMax = total.inMilliseconds.toDouble();
-                if (sliderMax <= 0.0) sliderMax = 1.0;
-                
-                double sliderValue = position.inMilliseconds.toDouble();
-                if (sliderValue < 0.0) sliderValue = 0.0;
-                if (sliderValue > sliderMax) sliderValue = sliderMax;
+            stream: audioProvider.positionStream,
+            builder: (context, snapshot) {
+              final position = snapshot.data ?? Duration.zero;
+              final total = song.duration;
+              double sliderMax = total.inMilliseconds.toDouble();
+              if (sliderMax <= 0.0) sliderMax = 1.0;
+              double sliderVal = position.inMilliseconds.toDouble().clamp(0.0, sliderMax);
 
-                return Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SliderTheme(
-                      data: SliderThemeData(
-                        trackHeight: 4,
-                        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
-                        overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
-                        activeTrackColor: Theme.of(context).primaryColor,
-                        inactiveTrackColor: Colors.white24,
-                        thumbColor: Colors.white,
-                      ),
-                      child: Slider(
-                        value: sliderValue,
-                        max: sliderMax,
-                        onChanged: (val) {
-                          audioProvider.seek(Duration(milliseconds: val.toInt()));
-                        },
-                      ),
+              return Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SliderTheme(
+                    data: SliderThemeData(
+                      trackHeight: 4,
+                      thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                      overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
+                      activeTrackColor: primary,
+                      inactiveTrackColor: Colors.white24,
+                      thumbColor: Colors.white,
                     ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            _formatDuration(position),
-                            style: TextStyle(color: Colors.grey[400], fontSize: 12),
-                          ),
-                          Text(
-                            _formatDuration(total),
-                            style: TextStyle(color: Colors.grey[400], fontSize: 12),
-                          ),
-                        ],
-                      ),
+                    child: Slider(
+                      value: sliderVal,
+                      max: sliderMax,
+                      onChanged: (val) => audioProvider.seek(Duration(milliseconds: val.toInt())),
                     ),
-                  ],
-                );
-              },
-            ),
-
-          const SizedBox(height: 8),
-
-          // Controls
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              IconButton(
-                  icon: const Icon(Icons.shuffle),
-                  color: audioProvider.isShuffleModeEnabled ? Theme.of(context).primaryColor : Colors.grey[400],
-                  iconSize: 28,
-                  onPressed: () {
-                    audioProvider.toggleShuffle();
-                  },
-                ),
-                IconButton(
-                  icon: const Icon(Icons.skip_previous),
-                  iconSize: 42,
-                  color: audioProvider.hasPrevious ? Colors.white : Colors.grey[700],
-                  onPressed: audioProvider.hasPrevious ? () => audioProvider.playPrevious() : null,
-                ),
-                ScaleTapButton(
-                  onTap: () {
-                    if (audioProvider.isLoading) return;
-                    if (audioProvider.isPlaying) {
-                      audioProvider.pause();
-                    } else {
-                      audioProvider.resume();
-                    }
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Theme.of(context).primaryColor,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 4),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          _formatDuration(position),
+                          style: TextStyle(
+                            color: Colors.grey[400],
+                            fontSize: 12,
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                          ),
+                        ),
+                        Text(
+                          _formatDuration(total),
+                          style: TextStyle(
+                            color: Colors.grey[400],
+                            fontSize: 12,
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                          ),
                         ),
                       ],
                     ),
-                    child: audioProvider.isLoading 
+                  ),
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildModeButton(
+                icon: Icons.shuffle,
+                isActive: audioProvider.isShuffleModeEnabled,
+                onTap: audioProvider.toggleShuffle,
+                primary: primary,
+              ),
+              ScaleTapButton(
+                onTap: audioProvider.hasPrevious ? () => audioProvider.playPrevious() : null,
+                child: Padding(
+                  padding: const EdgeInsets.all(4.0),
+                  child: Icon(
+                    Icons.skip_previous_rounded,
+                    size: 44,
+                    color: audioProvider.hasPrevious ? Colors.white : Colors.grey[700],
+                  ),
+                ),
+              ),
+              ScaleTapButton(
+                onTap: () {
+                  if (audioProvider.isLoading) return;
+                  audioProvider.isPlaying ? audioProvider.pause() : audioProvider.resume();
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: primary,
+                    boxShadow: [
+                      BoxShadow(
+                        color: primary.withValues(alpha: 0.35),
+                        blurRadius: 16,
+                        spreadRadius: 1,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: audioProvider.isLoading
                       ? const SizedBox(
-                          width: 48, 
-                          height: 48, 
-                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3)
+                          width: 48,
+                          height: 48,
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3),
                         )
                       : AnimatedPlayPauseIcon(
                           isPlaying: audioProvider.isPlaying,
                           color: Colors.white,
                           size: 48,
                         ),
+                ),
+              ),
+              ScaleTapButton(
+                onTap: audioProvider.hasNext ? () => audioProvider.playNext() : null,
+                child: Padding(
+                  padding: const EdgeInsets.all(4.0),
+                  child: Icon(
+                    Icons.skip_next_rounded,
+                    size: 44,
+                    color: audioProvider.hasNext ? Colors.white : Colors.grey[700],
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.skip_next),
-                  iconSize: 42,
-                  color: audioProvider.hasNext ? Colors.white : Colors.grey[700],
-                  onPressed: audioProvider.hasNext ? () => audioProvider.playNext() : null,
-                ),
-                IconButton(
-                  icon: Icon(
-                    audioProvider.repeatMode == RepeatMode.one 
-                      ? Icons.repeat_one 
-                      : Icons.repeat,
-                  ),
-                  color: audioProvider.repeatMode != RepeatMode.off 
-                    ? Theme.of(context).primaryColor 
-                    : Colors.grey[400],
-                  iconSize: 28,
-                  onPressed: () {
-                    audioProvider.toggleRepeat();
-                  },
-                ),
-              ],
-            ),
+              ),
+              _buildModeButton(
+                icon: audioProvider.repeatMode == RepeatMode.one ? Icons.repeat_one : Icons.repeat,
+                isActive: audioProvider.repeatMode != RepeatMode.off,
+                onTap: audioProvider.toggleRepeat,
+                primary: primary,
+              ),
+            ],
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildModeButton({
+    required IconData icon,
+    required bool isActive,
+    required VoidCallback? onTap,
+    required Color primary,
+  }) {
+    return ScaleTapButton(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: isActive ? primary : Colors.grey[400], size: 26),
+            const SizedBox(height: 3),
+            Container(
+              width: 4,
+              height: 4,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isActive ? primary : Colors.transparent,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

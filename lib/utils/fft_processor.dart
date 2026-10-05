@@ -170,7 +170,8 @@ class FftProcessor {
         final double blend = isBass
             ? (isRising ? 0.30 : 0.45)
             : (isRising ? 0.38 : 0.55);
-        _prevSwHeights[i] = _prevSwHeights[i] * blend + smoothed[i] * (1.0 - blend);
+        _prevSwHeights[i] =
+            _prevSwHeights[i] * blend + smoothed[i] * (1.0 - blend);
       }
     }
 

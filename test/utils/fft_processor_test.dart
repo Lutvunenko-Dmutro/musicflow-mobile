@@ -17,7 +17,11 @@ void main() {
 
     test('processHardwareFft clamps all output values between 0.0 and 1.0', () {
       final highAmplitudeBytes = List<int>.filled(256, 255);
-      final result = FftProcessor.processHardwareFft(highAmplitudeBytes, 30, amplitudeBoost: 5.0);
+      final result = FftProcessor.processHardwareFft(
+        highAmplitudeBytes,
+        30,
+        amplitudeBoost: 5.0,
+      );
 
       for (final val in result) {
         expect(val, greaterThanOrEqualTo(0.0));
@@ -37,25 +41,31 @@ void main() {
     test('processHardwareFft produces smoothly differentiated red bars', () {
       final fftBytes = List<int>.filled(512, 0);
       fftBytes[2] = 100; // Bin 1 real
-      fftBytes[3] = 60;  // Bin 1 imag
-      fftBytes[4] = 80;  // Bin 2 real
-      fftBytes[5] = 50;  // Bin 2 imag
+      fftBytes[3] = 60; // Bin 1 imag
+      fftBytes[4] = 80; // Bin 2 real
+      fftBytes[5] = 50; // Bin 2 imag
 
       final result = FftProcessor.processHardwareFft(fftBytes, 60);
 
       expect(result[0] != result[1] || result[1] != result[2], isTrue);
     });
 
-    test('processHardwareFft handles empty or short byte arrays gracefully', () {
-      final shortBytes = [1, 2];
-      final result = FftProcessor.processHardwareFft(shortBytes, 60);
+    test(
+      'processHardwareFft handles empty or short byte arrays gracefully',
+      () {
+        final shortBytes = [1, 2];
+        final result = FftProcessor.processHardwareFft(shortBytes, 60);
 
-      expect(result.length, 60);
-      expect(result.first, 0.02);
-    });
+        expect(result.length, 60);
+        expect(result.first, 0.02);
+      },
+    );
 
     test('process software waveform produces valid normalized heights', () {
-      final dummyWaveform = List<int>.generate(1024, (i) => (128 + (50 * sin(2 * pi * i / 32)).toInt()));
+      final dummyWaveform = List<int>.generate(
+        1024,
+        (i) => (128 + (50 * sin(2 * pi * i / 32)).toInt()),
+      );
       final result = FftProcessor.process(dummyWaveform, 60);
 
       expect(result.length, 60);
@@ -66,7 +76,10 @@ void main() {
     });
 
     test('software process scales with amplitudeBoost', () {
-      final waveform = List<int>.generate(1024, (i) => (128 + (60 * sin(2 * pi * i / 16)).toInt()));
+      final waveform = List<int>.generate(
+        1024,
+        (i) => (128 + (60 * sin(2 * pi * i / 16)).toInt()),
+      );
       FftProcessor.resetHistory();
       final lowBoost = FftProcessor.process(waveform, 60, amplitudeBoost: 0.5);
       FftProcessor.resetHistory();
@@ -80,7 +93,10 @@ void main() {
 
     test('software process differentiates mid/vocal frequencies cleanly', () {
       // 1000 Hz sine wave in 44100 Hz sample rate (period ~44.1 samples)
-      final midWave = List<int>.generate(1024, (i) => (128 + (80 * sin(2 * pi * 1000 * i / 44100)).toInt()));
+      final midWave = List<int>.generate(
+        1024,
+        (i) => (128 + (80 * sin(2 * pi * 1000 * i / 44100)).toInt()),
+      );
       FftProcessor.resetHistory();
       final result = FftProcessor.process(midWave, 60);
 

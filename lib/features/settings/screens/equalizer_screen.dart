@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:music_flow_mobile/providers/audio_provider.dart';
 import 'package:music_flow_mobile/providers/equalizer_provider.dart';
-import 'package:music_flow_mobile/features/player/widgets/audio_visualizer.dart';
+import 'package:music_flow_mobile/features/player/widgets/visualizer/audio_visualizer.dart';
 import 'package:music_flow_mobile/features/settings/widgets/equalizer_presets.dart';
 import 'package:music_flow_mobile/features/settings/widgets/equalizer_bands.dart';
 import 'package:music_flow_mobile/features/settings/widgets/equalizer_knobs.dart';

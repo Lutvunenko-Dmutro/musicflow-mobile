@@ -10,17 +10,17 @@ import 'package:music_flow_mobile/utils/app_logger.dart';
 import 'package:music_flow_mobile/locator.dart';
 import 'package:music_flow_mobile/services/database_service.dart';
 import 'package:music_flow_mobile/utils/audio_error_handler.dart';
-import 'package:music_flow_mobile/providers/lyrics_manager_mixin.dart';
-import 'package:music_flow_mobile/providers/crossfade_manager_mixin.dart';
+import 'package:music_flow_mobile/providers/audio/lyrics_manager_mixin.dart';
+import 'package:music_flow_mobile/providers/audio/crossfade_manager_mixin.dart';
 import 'package:music_flow_mobile/providers/equalizer_provider.dart';
-import 'package:music_flow_mobile/providers/queue_manager_mixin.dart';
-import 'package:music_flow_mobile/providers/playback_controls_mixin.dart';
-import 'package:music_flow_mobile/providers/preferences_manager_mixin.dart';
-import 'package:music_flow_mobile/providers/stream_recovery_mixin.dart';
-import 'package:music_flow_mobile/providers/audio_service_initializer.dart';
-import 'package:music_flow_mobile/providers/player_setup_mixin.dart';
+import 'package:music_flow_mobile/providers/audio/queue_manager_mixin.dart';
+import 'package:music_flow_mobile/providers/audio/playback_controls_mixin.dart';
+import 'package:music_flow_mobile/providers/audio/preferences_manager_mixin.dart';
+import 'package:music_flow_mobile/providers/audio/stream_recovery_mixin.dart';
+import 'package:music_flow_mobile/providers/audio/audio_service_initializer.dart';
+import 'package:music_flow_mobile/providers/audio/player_setup_mixin.dart';
 
-export 'queue_manager_mixin.dart';
+export 'audio/queue_manager_mixin.dart';
 
 class AudioProvider with ChangeNotifier, QueueManagerMixin, LyricsManagerMixin, CrossfadeManagerMixin, PlaybackControlsMixin, PreferencesManagerMixin, StreamRecoveryMixin, PlayerSetupMixin {
   final AndroidEqualizer _equalizer1 = AndroidEqualizer();

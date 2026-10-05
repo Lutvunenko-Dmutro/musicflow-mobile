@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:music_flow_mobile/models/song_model.dart';
 import 'package:music_flow_mobile/models/repeat_mode.dart';
-import 'package:music_flow_mobile/providers/auto_continue_helper.dart';
+import 'package:music_flow_mobile/providers/audio/auto_continue_helper.dart';
 
 export 'package:music_flow_mobile/models/repeat_mode.dart';
 

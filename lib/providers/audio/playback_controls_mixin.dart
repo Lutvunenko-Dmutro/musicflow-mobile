@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:music_flow_mobile/models/song_model.dart';
-import 'package:music_flow_mobile/providers/crossfade_manager_mixin.dart';
+import 'package:music_flow_mobile/providers/audio/crossfade_manager_mixin.dart';
 
 mixin PlaybackControlsMixin on ChangeNotifier, CrossfadeManagerMixin {
   Timer? _sleepTimer;

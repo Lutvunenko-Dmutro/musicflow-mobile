@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:music_flow_mobile/providers/equalizer_presets_data.dart';
-import 'package:music_flow_mobile/providers/equalizer_settings_storage.dart';
+import 'package:music_flow_mobile/providers/equalizer/equalizer_presets_data.dart';
+import 'package:music_flow_mobile/providers/equalizer/equalizer_settings_storage.dart';
 import 'package:music_flow_mobile/utils/app_logger.dart';
 
 class EqualizerProvider extends ChangeNotifier {
