@@ -18,10 +18,11 @@ class SearchInputCard extends StatelessWidget {
       child: Column(
         children: [
           const Text(
-            'Посилання на відео або плейліст YouTube',
+            'Пошук треків або посилання з YouTube',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
+              letterSpacing: -0.2,
             ),
           ),
           const SizedBox(height: 16),
@@ -32,8 +33,9 @@ class SearchInputCard extends StatelessWidget {
                   controller: controller,
                   style: const TextStyle(fontSize: 14),
                   decoration: InputDecoration(
-                    hintText: 'https://www.youtube.com/...',
-                    hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
+                    prefixIcon: const Icon(Icons.search_rounded, color: Colors.white60, size: 22),
+                    hintText: 'Введіть назву або посилання...',
+                    hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.35)),
                     filled: true,
                     fillColor: Colors.black.withValues(alpha: 0.3),
                     border: OutlineInputBorder(
@@ -53,8 +55,8 @@ class SearchInputCard extends StatelessWidget {
                   onSubmitted: (_) => onSearch(),
                 ),
               ),
-              const SizedBox(width: 12),
-              ElevatedButton(
+              const SizedBox(width: 10),
+              ElevatedButton.icon(
                 onPressed: () async {
                   final clipboardData = await Clipboard.getData(Clipboard.kTextPlain);
                   if (clipboardData != null && clipboardData.text != null) {
@@ -65,41 +67,43 @@ class SearchInputCard extends StatelessWidget {
                     }
                   }
                 },
+                icon: const Icon(Icons.content_paste_rounded, size: 16),
+                label: const Text('Вставити', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white.withValues(alpha: 0.1),
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                   elevation: 0,
                 ),
-                child: const Text('Вставити', style: TextStyle(fontWeight: FontWeight.bold)),
               ),
             ],
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 28),
           Icon(
-            Icons.music_video,
-            size: 64,
-            color: Colors.white.withValues(alpha: 0.1),
+            Icons.graphic_eq_rounded,
+            size: 56,
+            color: Colors.white.withValues(alpha: 0.15),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 14),
           const Text(
-            'Що завантажуємо?',
+            'Що послухаємо сьогодні?',
             style: TextStyle(
-              fontSize: 20,
+              fontSize: 18,
               fontWeight: FontWeight.bold,
+              letterSpacing: -0.3,
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Вставте посилання на трек, відео або цілий плейліст з YouTube. Music Flow автоматично все розпізнає та завантажить у найкращій якості.',
+            'Знайдіть пісню за назвою чи автором або вставте пряме посилання на трек, відео чи плейліст з YouTube.',
             textAlign: TextAlign.center,
             style: TextStyle(
               color: Colors.grey[400],
-              fontSize: 12,
-              height: 1.5,
+              fontSize: 13,
+              height: 1.45,
             ),
           ),
         ],
