@@ -1,19 +1,11 @@
 // ignore_for_file: avoid_print, unnecessary_brace_in_string_interps
+import 'dart:developer' as developer;
 
-/// 🎨 AppLogger — кольорове логування для Flutter
-/// 
-/// Використання:
-///   AppLogger.info('Пісня завантажена');         // ℹ️ блакитний
-///   AppLogger.success('З\'єднання встановлено'); // ✅ зелений
-///   AppLogger.warning('Немає дозволу');           // ⚠️ жовтий
-///   AppLogger.error('Помилка завантаження', e);  // ❌ червоний
-///   AppLogger.audio('Відтворення: My Song');      // 🎧 фіолетовий
-///   AppLogger.download('Прогрес: 45%');           // ⬇️ синій
-///   AppLogger.visualizer('FFT розмір: 1024');     // 📊 сірий
+/// 🎨 AppLogger — кольорове структуроване логування для Flutter
 class AppLogger {
-  static const bool _verbose = false; // Зміни на true, якщо потрібні детальні логи
+  static const bool _verbose = true; // Увімкнено для повної видимості дій у плеєрі
   
-  // ANSI color codes
+  // ANSI коди кольорів для терміналу
   static const String _reset   = '\x1B[0m';
   static const String _red     = '\x1B[31m';
   static const String _green   = '\x1B[32m';
@@ -24,14 +16,13 @@ class AppLogger {
   static const String _grey    = '\x1B[90m';
   static const String _bold    = '\x1B[1m';
 
-  // Дедуплікація: однакове повідомлення не буде показано частіше ніж раз на 5 секунд
-  static const int _throttleSeconds = 5;
   static final Map<String, DateTime> _lastShown = {};
 
-  static bool _shouldShow(String key) {
+  static bool _shouldShow(String key, int throttleMs) {
+    if (throttleMs <= 0) return true;
     final now = DateTime.now();
     final last = _lastShown[key];
-    if (last == null || now.difference(last).inSeconds >= _throttleSeconds) {
+    if (last == null || now.difference(last).inMilliseconds >= throttleMs) {
       _lastShown[key] = now;
       return true;
     }
@@ -43,83 +34,75 @@ class AppLogger {
     return '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}:${now.second.toString().padLeft(2, '0')}';
   }
 
+  static void _log(String icon, String color, String message, [String? tag, int throttleMs = 0]) {
+    if (!_verbose) return;
+    if (throttleMs > 0 && !_shouldShow('$tag:$message', throttleMs)) return;
+    final t = tag != null ? '[$tag] ' : '';
+    print('$color$_bold$icon [${_time()}] $t$_reset$color$message$_reset');
+    developer.log(message, name: tag ?? 'APP');
+  }
+
   /// ℹ️ Загальна інформація
   static void info(String message, [String? tag]) {
-    if (!_verbose) return;
-    if (!_shouldShow('info:$tag:$message')) return;
-    final t = tag != null ? '[$tag] ' : '';
-    print('$_cyan${_bold}ℹ️  [${_time()}] $t$_reset$_cyan$message$_reset');
+    _log('ℹ️ ', _cyan, message, tag);
   }
 
-  /// ✅ Успішна операція
+  /// ✅ Успішна дія
   static void success(String message, [String? tag]) {
-    if (!_verbose) return;
-    final t = tag != null ? '[$tag] ' : '';
-    print('$_green${_bold}✅ [${_time()}] $t$_reset$_green$message$_reset');
+    _log('✅', _green, message, tag);
   }
 
-  /// ⚠️ Попередження (не критично)
+  /// ⚠️ Попередження
   static void warning(String message, [String? tag]) {
-    if (!_shouldShow('warn:$tag:$message')) return;
-    final t = tag != null ? '[$tag] ' : '';
-    print('$_yellow${_bold}⚠️  [${_time()}] $t$_reset$_yellow$message$_reset');
+    _log('⚠️ ', _yellow, message, tag, 1000);
   }
 
-  /// ❌ Помилка (критично)
+  /// ❌ Помилка
   static void error(String message, [Object? exception, StackTrace? stack, String? tag]) {
     final t = tag != null ? '[$tag] ' : '';
-    print('$_red${_bold}❌ [${_time()}] $t$message$_reset');
+    print('$_red$_bold❌ [${_time()}] $t$message$_reset');
     if (exception != null) {
       print('$_red   EXCEPTION: $exception$_reset');
     }
     if (stack != null) {
       print('$_red   TRACE:\n$stack$_reset');
     }
+    developer.log(message, name: tag ?? 'ERROR', error: exception, stackTrace: stack);
   }
 
-  /// 🎧 Аудіо-плеєр (відтворення, пауза, перемотка)
+  /// 🎧 Аудіо-плеєр (відтворення, зміна треку)
   static void audio(String message) {
-    if (!_verbose) return;
-    if (!_shouldShow('audio:$message')) return;
-    print('$_magenta${_bold}🎧 [${_time()}] [AUDIO]$_reset$_magenta $message$_reset');
+    _log('🎧', _magenta, message, 'AUDIO');
   }
 
   /// ⬇️ Завантаження файлів
   static void download(String message) {
-    if (!_verbose) return;
-    if (!_shouldShow('dl:$message')) return;
-    print('$_blue${_bold}⬇️  [${_time()}] [DOWNLOAD]$_reset$_blue $message$_reset');
+    _log('⬇️ ', _blue, message, 'DOWNLOAD', 500);
   }
 
   /// 📊 Візуалізатор/FFT
   static void visualizer(String message) {
-    if (!_verbose) return;
-    if (!_shouldShow('viz:$message')) return;
-    print('$_grey${_bold}📊 [${_time()}] [FFT]$_reset$_grey $message$_reset');
+    _log('📊', _grey, message, 'FFT', 2000);
   }
 
-  /// 🔀 Плавний перехід (Crossfade)
+  /// 🔀 Crossfade
   static void crossfade(String message) {
-    if (!_verbose) return;
-    if (!_shouldShow('cf:$message')) return;
-    print('$_magenta${_bold}🔀 [${_time()}] [CROSSFADE]$_reset$_magenta $message$_reset');
+    _log('🔀', _magenta, message, 'CROSSFADE');
   }
 
-  /// 🔵 Debug — тільки для розробки, вимикати в релізі
+  /// 🔵 Debug
   static void debug(String message, [String? tag]) {
     assert(() {
-      if (!_shouldShow('dbg:$tag:$message')) return true;
-      final t = tag != null ? '[$tag] ' : '';
-      print('$_grey${_bold}🔵 [${_time()}] $t$_reset$_grey$message$_reset');
+      _log('🔵', _grey, message, tag ?? 'DEBUG');
       return true;
     }());
   }
 
-  /// Роздільник для зручного читання
+  /// Розділювач
   static void separator([String? label]) {
     if (!_verbose) return;
     if (label != null) {
-      print('$_grey${_bold}── $label ${'-' * (40 - label.length)}$_reset');
+      print('$_grey$_bold── $label ${'-' * (40 - label.length)}$_reset');
     } else {
       print('$_grey${'─' * 50}$_reset');
     }

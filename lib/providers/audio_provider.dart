@@ -105,7 +105,7 @@ class AudioProvider with ChangeNotifier, QueueManagerMixin, LyricsManagerMixin, 
   Future<void> playSong(SongModel song) async {
     final int requestId = incrementPlayRequestId();
     if (!_isAutoChangingSong) cancelCrossfade();
-    AppLogger.audio('Playing: ${song.title} (${song.id})');
+    AppLogger.audio('▶️ Вмикаємо трек: "${song.title}" від "${song.author}" [id: ${song.id}]');
     
     resetStreamRetryCount();
     _isLoading = true;

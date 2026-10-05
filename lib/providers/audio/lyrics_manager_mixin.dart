@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:music_flow_mobile/models/song_model.dart';
 import 'package:music_flow_mobile/services/lyrics_service.dart';
+import 'package:music_flow_mobile/utils/app_logger.dart';
 
 mixin LyricsManagerMixin on ChangeNotifier {
   final LyricsService _lyricsService = LyricsService();
@@ -29,6 +30,7 @@ mixin LyricsManagerMixin on ChangeNotifier {
   }
 
   void loadLyricsForSong(SongModel song, SongModel? Function() getCurrentSong) {
+    AppLogger.info('Пошук караоке для: "${song.title}" (${song.author})', 'LYRICS');
     _lyricsService.getLyrics(
       song,
       onUpdate: (freshLyrics) async {
@@ -44,12 +46,16 @@ mixin LyricsManagerMixin on ChangeNotifier {
         if (lyricsMap != null && lyricsMap.isNotEmpty) {
           _availableLyrics = lyricsMap;
           await _selectBestTrack(song.id, lyricsMap);
+          AppLogger.success('Знайдено варіанти: [${lyricsMap.keys.join(", ")}] | Обрано: "$_selectedLyricsKey"', 'LYRICS');
+        } else {
+          AppLogger.warning('Караоке для "${song.title}" не знайдено', 'LYRICS');
         }
         notifyListeners();
       }
     }).catchError((e) {
       if (getCurrentSong()?.id == song.id) {
         _isLyricsLoading = false;
+        AppLogger.error('Помилка караоке для "${song.title}": $e', e, null, 'LYRICS');
         if (e.toString().contains('SocketException')) {
           _lyricsErrorMsg = 'Немає підключення до інтернету.';
         } else {
