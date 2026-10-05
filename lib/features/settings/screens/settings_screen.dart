@@ -19,6 +19,7 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _showMediaNotification = true;
   bool _enableCrossfade = true;
+  bool _smoothMediaPause = true;
   final String _language = 'Українська';
   String _downloadPath = 'Внутрішня пам\'ять/MusicFlow';
 
@@ -34,6 +35,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       _downloadPath = prefs.getString('download_path') ?? 'За замовчуванням (Внутрішня пам\'ять)';
       _showMediaNotification = prefs.getBool('show_media_notification') ?? true;
       _enableCrossfade = prefs.getBool('enable_crossfade') ?? true;
+      _smoothMediaPause = prefs.getBool('smooth_media_pause') ?? true;
     });
   }
 
@@ -86,6 +88,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     setState(() => _enableCrossfade = val);
                     if (mounted) {
                       Provider.of<AudioProvider>(context, listen: false).toggleCrossfade();
+                    }
+                  },
+                ),
+                const Divider(height: 16),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Плавна пауза при перегляді медіа'),
+                  subtitle: const Text(
+                    'Плавно зменшувати звук і зупиняти музику, якщо вмикається YouTube або інше відео',
+                    style: TextStyle(fontSize: 12),
+                  ),
+                  value: _smoothMediaPause,
+                  activeColor: primary,
+                  onChanged: (val) async {
+                    setState(() => _smoothMediaPause = val);
+                    if (mounted) {
+                      Provider.of<AudioProvider>(context, listen: false).toggleSmoothMediaPause(val);
                     }
                   },
                 ),

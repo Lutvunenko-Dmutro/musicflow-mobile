@@ -19,10 +19,11 @@ import 'package:music_flow_mobile/providers/audio/preferences_manager_mixin.dart
 import 'package:music_flow_mobile/providers/audio/stream_recovery_mixin.dart';
 import 'package:music_flow_mobile/providers/audio/audio_service_initializer.dart';
 import 'package:music_flow_mobile/providers/audio/player_setup_mixin.dart';
+import 'package:music_flow_mobile/providers/audio/audio_focus_manager_mixin.dart';
 
 export 'audio/queue_manager_mixin.dart';
 
-class AudioProvider with ChangeNotifier, QueueManagerMixin, LyricsManagerMixin, CrossfadeManagerMixin, PlaybackControlsMixin, PreferencesManagerMixin, StreamRecoveryMixin, PlayerSetupMixin {
+class AudioProvider with ChangeNotifier, QueueManagerMixin, LyricsManagerMixin, CrossfadeManagerMixin, PlaybackControlsMixin, PreferencesManagerMixin, StreamRecoveryMixin, PlayerSetupMixin, AudioFocusManagerMixin {
   final AndroidEqualizer _equalizer1 = AndroidEqualizer();
   late final AudioPlayer _player1;
   final AndroidEqualizer _equalizer2 = AndroidEqualizer();
@@ -81,10 +82,16 @@ class AudioProvider with ChangeNotifier, QueueManagerMixin, LyricsManagerMixin, 
   Future<void>? _initFuture;
 
   AudioProvider() {
-    _player1 = AudioPlayer(audioPipeline: AudioPipeline(androidAudioEffects: [_equalizer1]));
-    _player2 = AudioPlayer(audioPipeline: AudioPipeline(androidAudioEffects: [_equalizer2]));
+    _player1 = AudioPlayer(
+      handleInterruptions: false,
+      audioPipeline: AudioPipeline(androidAudioEffects: [_equalizer1]),
+    );
+    _player2 = AudioPlayer(
+      handleInterruptions: false,
+      audioPipeline: AudioPipeline(androidAudioEffects: [_equalizer2]),
+    );
 
-    AudioServiceInitializer.initSession();
+    initAudioFocus();
     _initFuture = _startAudioService();
     initPrefs();
     
@@ -125,6 +132,7 @@ class AudioProvider with ChangeNotifier, QueueManagerMixin, LyricsManagerMixin, 
     }
 
     if (requestId != _playRequestId) return;
+    await activateAudioSession();
 
     try {
       final preparedSong = await PlaybackManager.preparePlayback(
@@ -152,6 +160,7 @@ class AudioProvider with ChangeNotifier, QueueManagerMixin, LyricsManagerMixin, 
 
   @override
   Future<void> resume() async {
+    await activateAudioSession();
     final song = _currentSong;
     if (song != null && !song.isLocal && song.streamUrl != null && PlaybackManager.isYoutubeUrlExpired(song.streamUrl!)) {
       AppLogger.info('YouTube stream URL is expired upon resume. Refreshing...', 'AUDIO');
@@ -173,6 +182,7 @@ class AudioProvider with ChangeNotifier, QueueManagerMixin, LyricsManagerMixin, 
 
   @override
   void dispose() {
+    disposeAudioFocus();
     disposeSleepTimer();
     disposeCrossfade();
     _player1.dispose();

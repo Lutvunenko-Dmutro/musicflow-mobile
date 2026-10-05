@@ -11,11 +11,15 @@ mixin PreferencesManagerMixin on ChangeNotifier {
   bool _showVisualizer = true;
   bool get showVisualizer => _showVisualizer;
 
+  bool _smoothMediaPause = true;
+  bool get smoothMediaPause => _smoothMediaPause;
+
   Future<void> initPrefs() async {
     final prefs = await SharedPreferences.getInstance();
     _isCrossfadeEnabled = prefs.getBool('enable_crossfade') ?? true;
     _showVisualizer = prefs.getBool('show_visualizer') ?? true;
     _showInlineLyrics = prefs.getBool('show_inline_lyrics') ?? true;
+    _smoothMediaPause = prefs.getBool('smooth_media_pause') ?? true;
     notifyListeners();
   }
 
@@ -37,6 +41,13 @@ mixin PreferencesManagerMixin on ChangeNotifier {
     _showInlineLyrics = !_showInlineLyrics;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('show_inline_lyrics', _showInlineLyrics);
+    notifyListeners();
+  }
+
+  Future<void> toggleSmoothMediaPause([bool? value]) async {
+    _smoothMediaPause = value ?? !_smoothMediaPause;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('smooth_media_pause', _smoothMediaPause);
     notifyListeners();
   }
 }
