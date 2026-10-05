@@ -112,7 +112,8 @@ class PlayerScreen extends StatelessWidget {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            if (audioProvider.showInlineLyrics) const InlineLyrics(),
+                            if (audioProvider.showInlineLyrics && audioProvider.hasKaraokeLyrics)
+                              const InlineLyrics(),
                             _buildVisualizerArea(audioProvider),
                             PlayerControls(song: song),
                           ],
@@ -131,7 +132,8 @@ class PlayerScreen extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     Expanded(flex: 7, child: PlayerHeader(song: song)),
-                    if (audioProvider.showInlineLyrics) const InlineLyrics(),
+                    if (audioProvider.showInlineLyrics && audioProvider.hasKaraokeLyrics)
+                      const InlineLyrics(),
                     _buildVisualizerArea(audioProvider),
                     PlayerControls(song: song),
                   ],

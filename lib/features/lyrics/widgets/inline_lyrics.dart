@@ -62,7 +62,7 @@ class _InlineLyricsState extends State<InlineLyrics> {
     }
 
     if (!_isKaraoke || _lines.isEmpty) {
-      return const SizedBox(height: 90); // Empty space placeholder
+      return const SizedBox.shrink();
     }
 
     return StreamBuilder<Duration>(
@@ -85,7 +85,7 @@ class _InlineLyricsState extends State<InlineLyrics> {
         if (activeIndex == -1 && _lines.isNotEmpty && _lines[0].timeSec > currentSec) {
            activeIndex = 0;
         } else if (activeIndex == -1) {
-           return const SizedBox(height: 90);
+           return const SizedBox.shrink();
         }
 
         if (activeIndex != _lastActiveIndex && activeIndex != -1) {

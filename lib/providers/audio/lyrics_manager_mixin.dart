@@ -15,6 +15,11 @@ mixin LyricsManagerMixin on ChangeNotifier {
   String? get currentLyrics => _selectedLyricsKey != null && _availableLyrics != null ? _availableLyrics![_selectedLyricsKey!] : null;
   bool get isLyricsLoading => _isLyricsLoading;
   String? get lyricsErrorMsg => _lyricsErrorMsg;
+  bool get hasKaraokeLyrics {
+    final lyrics = currentLyrics;
+    if (lyrics == null || lyrics.isEmpty) return false;
+    return RegExp(r'\[\d+:\d+').hasMatch(lyrics);
+  }
 
   void resetLyricsState() {
     _availableLyrics = null;
