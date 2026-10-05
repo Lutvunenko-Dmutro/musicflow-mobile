@@ -101,7 +101,7 @@ class _SearchFilterSheetState extends State<SearchFilterSheet> {
                 children: [
                   Icon(Icons.tune_rounded, size: 20, color: Colors.white),
                   SizedBox(width: 8),
-                  Text('Мега-фільтр пошуку', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+                  Text('Фільтр', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
                 ],
               ),
               TextButton(
@@ -129,6 +129,7 @@ class _SearchFilterSheetState extends State<SearchFilterSheet> {
                     _buildChip(label: 'Всі мови', isSelected: _filter.region == 'all', onTap: () => setState(() => _filter = _filter.copyWith(region: 'all'))),
                     _buildChip(label: '🇺🇦 Українська', isSelected: _filter.region == 'ua', onTap: () => setState(() => _filter = _filter.copyWith(region: 'ua'))),
                     _buildChip(label: '🌍 Зарубіжна', isSelected: _filter.region == 'global', onTap: () => setState(() => _filter = _filter.copyWith(region: 'global'))),
+                    _buildChip(label: 'Російська', isSelected: _filter.region == 'ru', onTap: () => setState(() => _filter = _filter.copyWith(region: 'ru'))),
                     _buildChip(label: '🇯🇵 K-Pop', isSelected: _filter.region == 'kpop', onTap: () => setState(() => _filter = _filter.copyWith(region: 'kpop'))),
                     _buildChip(label: '🇪🇸 Латина', isSelected: _filter.region == 'latino', onTap: () => setState(() => _filter = _filter.copyWith(region: 'latino'))),
                   ]),

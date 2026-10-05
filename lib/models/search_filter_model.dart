@@ -22,7 +22,7 @@ class SearchFilterModel {
     this.region = 'all',
     this.genre = 'all',
     this.format = 'all',
-    this.durationFilter = SearchDurationFilter.under10Min,
+    this.durationFilter = SearchDurationFilter.any,
     this.sortBy = SearchSortBy.relevance,
   });
 
@@ -30,7 +30,7 @@ class SearchFilterModel {
       region == 'all' &&
       genre == 'all' &&
       format == 'all' &&
-      durationFilter == SearchDurationFilter.under10Min &&
+      durationFilter == SearchDurationFilter.any &&
       sortBy == SearchSortBy.relevance;
 
   int get activeFiltersCount {
@@ -38,7 +38,7 @@ class SearchFilterModel {
     if (region != 'all') count++;
     if (genre != 'all') count++;
     if (format != 'all') count++;
-    if (durationFilter != SearchDurationFilter.under10Min) count++;
+    if (durationFilter != SearchDurationFilter.any) count++;
     if (sortBy != SearchSortBy.relevance) count++;
     return count;
   }
@@ -85,6 +85,8 @@ class SearchFilterModel {
       tags.add('українська');
     } else if (region == 'global') {
       tags.add('english');
+    } else if (region == 'ru') {
+      tags.add('русская');
     } else if (region == 'kpop') {
       tags.add('k-pop');
     } else if (region == 'latino') {
@@ -92,8 +94,7 @@ class SearchFilterModel {
     }
 
     if (tags.isEmpty) {
-      // Default to studio audio for clean music
-      return '$baseQuery official audio';
+      return baseQuery;
     }
 
     return '$baseQuery ${tags.join(" ")}';

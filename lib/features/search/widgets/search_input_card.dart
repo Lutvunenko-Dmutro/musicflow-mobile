@@ -114,7 +114,7 @@ class SearchInputCard extends StatelessWidget {
                   label: Text(
                     filter.activeFiltersCount > 0
                         ? 'Фільтри (${filter.activeFiltersCount})'
-                        : 'Мега-фільтр',
+                        : 'Фільтр',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: filter.activeFiltersCount > 0 ? FontWeight.bold : FontWeight.normal,
