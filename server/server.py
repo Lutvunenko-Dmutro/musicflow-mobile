@@ -54,13 +54,26 @@ def get_local_ip():
     return ip
 
 
+def find_best_apk_path(filename="app-release.apk"):
+    paths = [
+        os.path.join(UPDATES_DIR, filename),
+        os.path.join(BASE_DIR, "..", "build", "app", "outputs", "flutter-apk", filename),
+        os.path.join(BASE_DIR, "..", "build", "app", "outputs", "flutter-apk", "app-debug.apk"),
+    ]
+    for p in paths:
+        if os.path.exists(p) and os.path.getsize(p) > 0:
+            return p
+    return None
+
+
 def get_version_info():
     try:
         with open(VERSION_FILE, "r", encoding="utf-8") as f:
             data = json.load(f)
-        apk_path = os.path.join(UPDATES_DIR, data.get("apkFileName", "app-release.apk"))
-        if os.path.exists(apk_path):
+        apk_path = find_best_apk_path(data.get("apkFileName", "app-release.apk"))
+        if apk_path:
             data["fileSizeBytes"] = os.path.getsize(apk_path)
+            data["resolvedApkPath"] = apk_path
         return data
     except Exception:
         return {"version": "1.0.0", "buildNumber": 1, "changelog": "Початковий реліз", "fileSizeBytes": 0}
@@ -188,6 +201,12 @@ class MusicFlowRequestHandler(http.server.SimpleHTTPRequestHandler):
         parsed = urlparse(self.path)
         path = parsed.path
 
+        # Favicon
+        if path == "/favicon.ico":
+            self.send_response(204)
+            self.end_headers()
+            return
+
         # 1. Головна сторінка Dashboard
         if path in ("/", "/dashboard"):
             self.handle_dashboard()
@@ -209,14 +228,9 @@ class MusicFlowRequestHandler(http.server.SimpleHTTPRequestHandler):
         # 4. Завантаження APK
         if path == "/api/update/download":
             info = get_version_info()
-            apk_path = os.path.join(UPDATES_DIR, info.get("apkFileName", "app-release.apk"))
-            if not os.path.exists(apk_path):
-                # Спробувати взяти напряму з build outputs Flutter якщо запущено локально
-                alt_path = os.path.join(BASE_DIR, "..", "build", "app", "outputs", "flutter-apk", "app-release.apk")
-                if os.path.exists(alt_path):
-                    apk_path = alt_path
+            apk_path = find_best_apk_path(info.get("apkFileName", "app-release.apk"))
 
-            if os.path.exists(apk_path):
+            if apk_path and os.path.exists(apk_path):
                 file_size = os.path.getsize(apk_path)
                 self.send_response(200)
                 self.send_header("Content-Type", "application/vnd.android.package-archive")
@@ -229,7 +243,7 @@ class MusicFlowRequestHandler(http.server.SimpleHTTPRequestHandler):
                 print(f"[{datetime.now().strftime('%H:%M:%S')}] 📲 APK завантажено клієнтом ({file_size // 1024} KB)")
                 return
             else:
-                self.send_json({"error": "APK файл оновлення ще не згенеровано. Покладіть app-release.apk в server/data/updates/"}, status=404)
+                self.send_json({"error": "APK файл оновлення ще не знайдено."}, status=404)
                 return
 
         # 5. Отримання списку звітів про помилки JSON
