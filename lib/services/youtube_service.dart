@@ -47,17 +47,30 @@ class YoutubeService {
 
   Future<List<SongModel>> searchSongs(String query, {bool musicOnly = true}) async {
     return _retryWithBackoff(() async {
-      final searchResults = await _yt.search.searchContent(query);
+      String targetQuery = query;
+      if (musicOnly) {
+        final l = query.toLowerCase();
+        final hasMusicTag = l.contains('audio') ||
+            l.contains('song') ||
+            l.contains('track') ||
+            l.contains('remix') ||
+            l.contains('пісн') ||
+            l.contains('музик') ||
+            l.contains('official');
+        if (!hasMusicTag) targetQuery = '$query official audio';
+      }
+
+      final searchResults = await _yt.search.searchContent(targetQuery);
       final songs = <SongModel>[];
 
       for (final item in searchResults) {
         if (item is SearchVideo) {
-          final duration = MusicSearchFilter.parseDuration(item.duration);
+          final dur = MusicSearchFilter.parseDuration(item.duration);
           if (musicOnly &&
               !MusicSearchFilter.isMusic(
                 title: item.title,
                 author: item.author,
-                duration: duration,
+                duration: dur,
                 isLive: item.isLive,
               )) {
             continue;
@@ -68,24 +81,23 @@ class YoutubeService {
               id: item.id.value,
               title: item.title,
               author: item.author,
-              duration: duration,
+              duration: dur,
               coverUrl: ThumbnailSet(item.id.value).highResUrl,
             ),
           );
         }
       }
 
-      // If strict filter yielded few results, fallback to search with query + audio
-      if (musicOnly && songs.length < 3) {
+      if (musicOnly && songs.length < 3 && targetQuery != query) {
         try {
-          final audioResults = await _yt.search.searchContent('$query audio');
-          for (final item in audioResults) {
+          final fallback = await _yt.search.searchContent(query);
+          for (final item in fallback) {
             if (item is SearchVideo) {
-              final duration = MusicSearchFilter.parseDuration(item.duration);
+              final dur = MusicSearchFilter.parseDuration(item.duration);
               if (!MusicSearchFilter.isMusic(
                 title: item.title,
                 author: item.author,
-                duration: duration,
+                duration: dur,
                 isLive: item.isLive,
               )) {
                 continue;
@@ -96,7 +108,7 @@ class YoutubeService {
                     id: item.id.value,
                     title: item.title,
                     author: item.author,
-                    duration: duration,
+                    duration: dur,
                     coverUrl: ThumbnailSet(item.id.value).highResUrl,
                   ),
                 );

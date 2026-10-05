@@ -21,11 +21,11 @@ void main() {
       expect(isMusic, isTrue);
     });
 
-    test('rejects videos exceeding 15 minutes', () {
+    test('rejects videos exceeding 10 minutes', () {
       final isMusic = MusicSearchFilter.isMusic(
         title: 'Some Potap Compilation',
         author: 'Music Channel',
-        duration: const Duration(minutes: 25),
+        duration: const Duration(minutes: 15),
       );
       expect(isMusic, isFalse);
     });

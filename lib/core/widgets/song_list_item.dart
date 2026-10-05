@@ -129,7 +129,8 @@ class SongListItem extends StatelessWidget {
                       ),
                     ),
                   ),
-                SongDownloadButton(song: song),
+                if (!song.isLocal)
+                  SongDownloadButton(song: song),
               ],
             ),
           ),

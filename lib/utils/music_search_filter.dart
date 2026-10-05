@@ -106,8 +106,8 @@ class MusicSearchFilter {
     bool isLive = false,
   }) {
     if (isLive) return false;
-    // Single tracks are usually between 40s and 15min
-    if (duration.inMinutes > 15 || duration.inSeconds < 40) {
+    // Single tracks are almost always under 10 minutes
+    if (duration.inMinutes > 10 || duration.inSeconds < 40) {
       return false;
     }
 

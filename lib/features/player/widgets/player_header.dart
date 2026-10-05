@@ -4,10 +4,65 @@ import 'package:music_flow_mobile/providers/audio_provider.dart';
 import 'package:music_flow_mobile/models/song_model.dart';
 import 'package:music_flow_mobile/features/player/widgets/smart_cover.dart';
 
-class PlayerHeader extends StatelessWidget {
+class PlayerHeader extends StatefulWidget {
   final SongModel song;
 
   const PlayerHeader({super.key, required this.song});
+
+  @override
+  State<PlayerHeader> createState() => _PlayerHeaderState();
+}
+
+class _PlayerHeaderState extends State<PlayerHeader> with SingleTickerProviderStateMixin {
+  double _dragOffset = 0.0;
+  late AnimationController _springController;
+  late Animation<double> _springAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _springController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 220),
+    );
+  }
+
+  @override
+  void dispose() {
+    _springController.dispose();
+    super.dispose();
+  }
+
+  void _onHorizontalDragUpdate(DragUpdateDetails details) {
+    setState(() {
+      _dragOffset += details.primaryDelta! * 0.75;
+    });
+  }
+
+  void _onHorizontalDragEnd(DragEndDetails details) {
+    final provider = context.read<AudioProvider>();
+    final velocity = details.primaryVelocity ?? 0;
+
+    if (_dragOffset < -60 || velocity < -350) {
+      if (provider.hasNext) {
+        provider.playNext();
+      }
+    } else if (_dragOffset > 60 || velocity > 350) {
+      if (provider.hasPrevious) {
+        provider.playPrevious();
+      }
+    }
+
+    _springAnimation = Tween<double>(begin: _dragOffset, end: 0.0).animate(
+      CurvedAnimation(parent: _springController, curve: Curves.easeOutCubic),
+    )..addListener(() {
+        setState(() {
+          _dragOffset = _springAnimation.value;
+        });
+      });
+
+    _springController.forward(from: 0.0);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -17,64 +72,30 @@ class PlayerHeader extends StatelessWidget {
         Expanded(
           child: Center(
             child: GestureDetector(
-              onHorizontalDragEnd: (details) {
-                final provider = context.read<AudioProvider>();
-                if (details.primaryVelocity! < -300) {
-                  // Swipe left -> Next
-                  provider.playNext();
-                } else if (details.primaryVelocity! > 300) {
-                  // Swipe right -> Prev
-                  provider.playPrevious();
-                }
-              },
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 500),
-                switchInCurve: Curves.easeOutCubic,
-                switchOutCurve: Curves.easeInCubic,
-                transitionBuilder: (Widget child, Animation<double> animation) {
-                  final provider = context.read<AudioProvider>();
-                  final bool isNext = provider.isPlayingNext;
-                  final bool isIncoming = child.key == ValueKey(song.id);
-                  
-                  Offset offset;
-                  if (isNext) {
-                    offset = isIncoming ? const Offset(1.0, 0.0) : const Offset(-1.0, 0.0);
-                  } else {
-                    offset = isIncoming ? const Offset(-1.0, 0.0) : const Offset(1.0, 0.0);
-                  }
-                  
-                  final slideAnimation = Tween<Offset>(begin: offset, end: Offset.zero).animate(animation);
-                  
-                  return SlideTransition(
-                    position: slideAnimation,
-                    child: FadeTransition(
-                      opacity: animation,
-                      child: child,
-                    ),
-                  );
-                },
-                child: AspectRatio(
-                  key: ValueKey(song.id),
-                  aspectRatio: 1.0,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.5),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
-                        ),
-                      ],
-                    ),
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        return SmartCover(
-                          song: song,
-                          size: constraints.maxWidth,
-                          borderRadius: 16.0,
-                          heroTag: 'cover_${song.id}',
-                        );
-                      }
+              onHorizontalDragUpdate: _onHorizontalDragUpdate,
+              onHorizontalDragEnd: _onHorizontalDragEnd,
+              behavior: HitTestBehavior.opaque,
+              child: Transform.translate(
+                offset: Offset(_dragOffset, 0),
+                child: Opacity(
+                  opacity: (1.0 - (_dragOffset.abs() / 400.0)).clamp(0.4, 1.0),
+                  child: AspectRatio(
+                    aspectRatio: 1.0,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.45),
+                            blurRadius: 18,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: SmartCover(
+                        song: widget.song,
+                        size: 320,
+                        borderRadius: 16.0,
+                      ),
                     ),
                   ),
                 ),
@@ -82,39 +103,16 @@ class PlayerHeader extends StatelessWidget {
             ),
           ),
         ),
-        
         const SizedBox(height: 16),
-        
-        // Song Info
         AnimatedSwitcher(
-          duration: const Duration(milliseconds: 400),
-          transitionBuilder: (Widget child, Animation<double> animation) {
-            final provider = context.read<AudioProvider>();
-            final bool isNext = provider.isPlayingNext;
-            final bool isIncoming = child.key == ValueKey(song.id);
-            
-            Offset offset;
-            if (isNext) {
-              offset = isIncoming ? const Offset(1.0, 0.0) : const Offset(-1.0, 0.0);
-            } else {
-              offset = isIncoming ? const Offset(-1.0, 0.0) : const Offset(1.0, 0.0);
-            }
-            
-            return FadeTransition(
-              opacity: animation,
-              child: SlideTransition(
-                position: Tween<Offset>(begin: offset, end: Offset.zero).animate(animation),
-                child: child,
-              ),
-            );
-          },
+          duration: const Duration(milliseconds: 220),
           child: Column(
-            key: ValueKey(song.id),
+            key: ValueKey(widget.song.id),
             mainAxisAlignment: MainAxisAlignment.center,
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                song.title,
+                widget.song.title,
                 textAlign: TextAlign.center,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -127,7 +125,7 @@ class PlayerHeader extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               Text(
-                song.author,
+                widget.song.author,
                 textAlign: TextAlign.center,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
