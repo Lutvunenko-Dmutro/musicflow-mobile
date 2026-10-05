@@ -79,9 +79,11 @@ def publish_release(changelog=None, bump_type="patch"):
         print(f"\n📝 Нова версія буде: v{new_version_display} (build {new_build})")
         user_input = input("Введіть опис змін (Що нового в оновленні): ").strip()
         if user_input:
-            changelog = user_input
+            changelog = user_input.replace('\\n', '\n')
         else:
             changelog = f"• Оновлення v{new_version_display}: виправлення помилок та оптимізація"
+    else:
+        changelog = changelog.replace('\\n', '\n')
 
     # 1. Оновлення pubspec.yaml
     print(f"\n[1/5] ✏️  Оновлюю pubspec.yaml: {old_version_str} -> {new_full_version}...")
