@@ -84,10 +84,12 @@ class AudioProvider with ChangeNotifier, QueueManagerMixin, LyricsManagerMixin, 
   AudioProvider() {
     _player1 = AudioPlayer(
       handleInterruptions: false,
+      handleAudioSessionActivation: false,
       audioPipeline: AudioPipeline(androidAudioEffects: [_equalizer1]),
     );
     _player2 = AudioPlayer(
       handleInterruptions: false,
+      handleAudioSessionActivation: false,
       audioPipeline: AudioPipeline(androidAudioEffects: [_equalizer2]),
     );
 

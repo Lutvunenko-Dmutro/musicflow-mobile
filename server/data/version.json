@@ -1,11 +1,17 @@
 {
-  "version": "1.0.13",
-  "buildNumber": 14,
+  "version": "1.0.14",
+  "buildNumber": 15,
   "releaseDate": "2026-10-05",
-  "changelog": "• Додано плавне призупинення музики (fade-out) при запуску YouTube або іншого медіа\n• Додано перемикач керування цією функцією в Налаштуваннях (розділ 'Відтворення')",
+  "changelog": "• Виправлено фокус аудіо: додано androidWillPauseWhenDucked для коректного реагування на TikTok, Reels та короткі відео\n• Додано автоматичне оновлення фокусу при старті відтворення",
   "apkFileName": "app-debug.apk",
-  "fileSizeBytes": 217203380,
+  "fileSizeBytes": 217205648,
   "history": [
+    {
+      "version": "1.0.14",
+      "buildNumber": 15,
+      "releaseDate": "2026-10-05",
+      "changelog": "• Виправлено фокус аудіо: додано androidWillPauseWhenDucked для коректного реагування на TikTok, Reels та короткі відео\n• Додано автоматичне оновлення фокусу при старті відтворення"
+    },
     {
       "version": "1.0.13",
       "buildNumber": 14,

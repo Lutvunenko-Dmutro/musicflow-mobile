@@ -27,7 +27,18 @@ void main() {
 
   test('Check AudioSession configuration and streams', () async {
     final session = await AudioSession.instance;
-    await session.configure(const AudioSessionConfiguration.music());
+    const config = AudioSessionConfiguration(
+      avAudioSessionCategory: AVAudioSessionCategory.playback,
+      avAudioSessionMode: AVAudioSessionMode.defaultMode,
+      androidAudioAttributes: AndroidAudioAttributes(
+        contentType: AndroidAudioContentType.music,
+        usage: AndroidAudioUsage.media,
+      ),
+      androidAudioFocusGainType: AndroidAudioFocusGainType.gain,
+      androidWillPauseWhenDucked: true,
+    );
+    await session.configure(config);
+    expect(config.androidWillPauseWhenDucked, isTrue);
     expect(session.interruptionEventStream, isNotNull);
     expect(session.becomingNoisyEventStream, isNotNull);
   });
