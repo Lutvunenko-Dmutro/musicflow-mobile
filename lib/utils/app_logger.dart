@@ -17,6 +17,8 @@ class AppLogger {
   static const String _bold    = '\x1B[1m';
 
   static final Map<String, DateTime> _lastShown = {};
+  static final List<String> _recentLogs = [];
+  static List<String> get recentLogs => List.unmodifiable(_recentLogs);
 
   static bool _shouldShow(String key, int throttleMs) {
     if (throttleMs <= 0) return true;
@@ -35,9 +37,12 @@ class AppLogger {
   }
 
   static void _log(String icon, String color, String message, [String? tag, int throttleMs = 0]) {
+    final t = tag != null ? '[$tag] ' : '';
+    _recentLogs.add('${_time()} $t$message');
+    if (_recentLogs.length > 50) _recentLogs.removeAt(0);
+
     if (!_verbose) return;
     if (throttleMs > 0 && !_shouldShow('$tag:$message', throttleMs)) return;
-    final t = tag != null ? '[$tag] ' : '';
     print('$color$_bold$icon [${_time()}] $t$_reset$color$message$_reset');
     developer.log(message, name: tag ?? 'APP');
   }
@@ -57,9 +62,14 @@ class AppLogger {
     _log('⚠️ ', _yellow, message, tag, 1000);
   }
 
+  static void Function(String message, Object? exception, StackTrace? stack, String? tag)? onErrorListener;
+
   /// ❌ Помилка
   static void error(String message, [Object? exception, StackTrace? stack, String? tag]) {
     final t = tag != null ? '[$tag] ' : '';
+    _recentLogs.add('${_time()} ❌ $t$message ${exception != null ? '($exception)' : ''}');
+    if (_recentLogs.length > 50) _recentLogs.removeAt(0);
+
     print('$_red$_bold❌ [${_time()}] $t$message$_reset');
     if (exception != null) {
       print('$_red   EXCEPTION: $exception$_reset');
@@ -68,6 +78,9 @@ class AppLogger {
       print('$_red   TRACE:\n$stack$_reset');
     }
     developer.log(message, name: tag ?? 'ERROR', error: exception, stackTrace: stack);
+    try {
+      onErrorListener?.call(message, exception, stack, tag);
+    } catch (_) {}
   }
 
   /// 🎧 Аудіо-плеєр (відтворення, зміна треку)
