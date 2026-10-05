@@ -8,6 +8,7 @@ import 'package:music_flow_mobile/features/library/screens/library_screen.dart';
 import 'package:music_flow_mobile/features/library/screens/history_screen.dart';
 import 'package:music_flow_mobile/features/settings/screens/settings_screen.dart';
 import 'package:music_flow_mobile/features/settings/widgets/update_dialog.dart';
+import 'package:music_flow_mobile/services/update_preferences.dart';
 import 'package:music_flow_mobile/services/update_service.dart';
 
 class MainScreen extends StatefulWidget {
@@ -38,9 +39,22 @@ class _MainScreenState extends State<MainScreen> {
   Future<void> _checkAutoUpdate() async {
     await Future.delayed(const Duration(seconds: 2));
     if (!mounted) return;
+
+    final shouldCheck = await UpdatePreferences.shouldCheckNow();
+    if (!shouldCheck) return;
+
     final info = await UpdateService.instance.checkForUpdate();
     if (info != null && mounted) {
       UpdateDialog.show(context, info);
+      await UpdatePreferences.recordCheckTime();
+
+      final systemNotif = await UpdatePreferences.isSystemNotificationEnabled();
+      if (systemNotif) {
+        await UpdateService.instance.showSystemNotification(
+          title: 'Доступне оновлення MusicFlow v${info.version}',
+          message: 'Натисніть, щоб переглянути нові функції та оновити додаток',
+        );
+      }
     }
   }
 

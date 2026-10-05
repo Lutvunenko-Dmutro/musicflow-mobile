@@ -56,8 +56,56 @@ class ApkInstallerHandler(private val context: Context) : MethodChannel.MethodCa
             } catch (e: Exception) {
                 result.error("VERSION_ERROR", e.message, null)
             }
+        } else if (call.method == "showUpdateNotification") {
+            try {
+                val title = call.argument<String>("title") ?: "Доступне оновлення MusicFlow"
+                val message = call.argument<String>("message") ?: "Натисніть, щоб переглянути оновлення"
+                showSystemNotification(title, message)
+                result.success(true)
+            } catch (e: Exception) {
+                result.error("NOTIFICATION_ERROR", e.message, null)
+            }
         } else {
             result.notImplemented()
         }
+    }
+
+    private fun showSystemNotification(title: String, message: String) {
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
+        val channelId = "music_flow_updates_channel"
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            val channel = android.app.NotificationChannel(
+                channelId,
+                "Оновлення додатку",
+                android.app.NotificationManager.IMPORTANCE_DEFAULT
+            ).apply {
+                description = "Сповіщення про нові версії MusicFlow"
+            }
+            notificationManager.createNotificationChannel(channel)
+        }
+
+        val intent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val flags = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+        } else {
+            android.app.PendingIntent.FLAG_UPDATE_CURRENT
+        }
+        val pendingIntent = android.app.PendingIntent.getActivity(context, 1002, intent, flags)
+        val icon = context.applicationInfo.icon.takeIf { it != 0 } ?: android.R.drawable.stat_notify_sync
+
+        val notification = androidx.core.app.NotificationCompat.Builder(context, channelId)
+            .setSmallIcon(icon)
+            .setContentTitle(title)
+            .setContentText(message)
+            .setStyle(androidx.core.app.NotificationCompat.BigTextStyle().bigText(message))
+            .setPriority(androidx.core.app.NotificationCompat.PRIORITY_DEFAULT)
+            .setAutoCancel(true)
+            .setContentIntent(pendingIntent)
+            .build()
+
+        notificationManager.notify(1002, notification)
     }
 }

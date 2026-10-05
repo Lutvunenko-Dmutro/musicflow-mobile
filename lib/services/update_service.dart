@@ -123,4 +123,20 @@ class UpdateService {
       return false;
     }
   }
+
+  Future<bool> showSystemNotification({
+    required String title,
+    required String message,
+  }) async {
+    try {
+      final result = await _installerChannel.invokeMethod<bool>('showUpdateNotification', {
+        'title': title,
+        'message': message,
+      });
+      return result ?? false;
+    } catch (e) {
+      AppLogger.warning('Не вдалося показати системне сповіщення: $e', 'UPDATER');
+      return false;
+    }
+  }
 }

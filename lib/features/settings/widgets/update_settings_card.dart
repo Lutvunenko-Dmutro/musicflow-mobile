@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:music_flow_mobile/core/widgets/custom_card.dart';
-import 'package:music_flow_mobile/services/telemetry_service.dart';
-import 'package:music_flow_mobile/services/update_service.dart';
+import 'package:music_flow_mobile/features/settings/widgets/dev_server_dialog.dart';
 import 'package:music_flow_mobile/features/settings/widgets/update_dialog.dart';
+import 'package:music_flow_mobile/services/update_preferences.dart';
+import 'package:music_flow_mobile/services/update_service.dart';
 
 class UpdateSettingsCard extends StatefulWidget {
   const UpdateSettingsCard({super.key});
@@ -14,18 +15,27 @@ class UpdateSettingsCard extends StatefulWidget {
 class _UpdateSettingsCardState extends State<UpdateSettingsCard> {
   bool _isChecking = false;
   String _installedVersion = UpdateService.currentVersion;
+  bool _autoCheck = true;
+  UpdateFrequency _frequency = UpdateFrequency.onLaunch;
+  bool _systemNotif = true;
 
   @override
   void initState() {
     super.initState();
-    _loadInstalledVersion();
+    _loadState();
   }
 
-  Future<void> _loadInstalledVersion() async {
+  Future<void> _loadState() async {
     final ver = await UpdateService.instance.getCurrentVersion();
+    final auto = await UpdatePreferences.isAutoCheckEnabled();
+    final freq = await UpdatePreferences.getFrequency();
+    final notif = await UpdatePreferences.isSystemNotificationEnabled();
     if (mounted) {
       setState(() {
         _installedVersion = ver.version;
+        _autoCheck = auto;
+        _frequency = freq;
+        _systemNotif = notif;
       });
     }
   }
@@ -48,51 +58,25 @@ class _UpdateSettingsCardState extends State<UpdateSettingsCard> {
     }
   }
 
-  // Приховане меню розробника по довгому натисканню на версію
-  Future<void> _devEditServerUrl() async {
-    final currentUrl = await TelemetryService.instance.getServerUrl();
-    if (!mounted) return;
-    final controller = TextEditingController(text: currentUrl);
-
-    final newUrl = await showDialog<String>(
+  Future<void> _selectFrequency() async {
+    final selected = await showDialog<UpdateFrequency>(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) => SimpleDialog(
         backgroundColor: const Color(0xFF222222),
-        title: const Text('Налаштування сервера (Dev Mode)', style: TextStyle(color: Colors.white, fontSize: 16)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Адреса сервера оновлень та телеметрії:', style: TextStyle(color: Colors.white70, fontSize: 12)),
-            const SizedBox(height: 10),
-            TextField(
-              controller: controller,
-              style: const TextStyle(color: Colors.white, fontFamily: 'monospace'),
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: Colors.black26,
-                hintText: 'http://192.168.0.103:8080',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Скасувати', style: TextStyle(color: Colors.white60))),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, controller.text.trim()),
-            style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).primaryColor, foregroundColor: Colors.white),
-            child: const Text('Зберегти'),
-          ),
-        ],
+        title: const Text('Частота перевірки оновлень', style: TextStyle(color: Colors.white, fontSize: 16)),
+        children: UpdateFrequency.values.map((f) => RadioListTile<UpdateFrequency>(
+          title: Text(f.label, style: const TextStyle(color: Colors.white, fontSize: 14)),
+          value: f,
+          groupValue: _frequency,
+          activeColor: Theme.of(context).primaryColor,
+          onChanged: (val) => Navigator.pop(ctx, val),
+        )).toList(),
       ),
     );
 
-    if (newUrl != null && newUrl.isNotEmpty && mounted) {
-      await TelemetryService.instance.setServerUrl(newUrl);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Адресу сервера змінено: $newUrl'), behavior: SnackBarBehavior.floating));
-      }
+    if (selected != null && mounted) {
+      await UpdatePreferences.setFrequency(selected);
+      setState(() => _frequency = selected);
     }
   }
 
@@ -109,19 +93,48 @@ class _UpdateSettingsCardState extends State<UpdateSettingsCard> {
             children: [
               const Text('Оновлення додатку', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               GestureDetector(
-                onLongPress: _devEditServerUrl,
+                onLongPress: () => DevServerDialog.show(context),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(6)),
-                  child: Text(
-                    'v$_installedVersion',
-                    style: const TextStyle(fontSize: 11, color: Colors.white70),
-                  ),
+                  child: Text('v$_installedVersion', style: const TextStyle(fontSize: 11, color: Colors.white70)),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Автоматична перевірка'),
+            subtitle: const Text('Шукати нові версії у фоновому режимі', style: TextStyle(fontSize: 12)),
+            value: _autoCheck,
+            activeColor: primary,
+            onChanged: (val) async {
+              await UpdatePreferences.setAutoCheckEnabled(val);
+              setState(() => _autoCheck = val);
+            },
+          ),
+          if (_autoCheck) ...[
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Частота перевірки'),
+              subtitle: Text(_frequency.label, style: TextStyle(fontSize: 12, color: primary)),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+              onTap: _selectFrequency,
+            ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Сповіщення на телефоні'),
+              subtitle: const Text('Показувати повідомлення у шторці Android', style: TextStyle(fontSize: 12)),
+              value: _systemNotif,
+              activeColor: primary,
+              onChanged: (val) async {
+                await UpdatePreferences.setSystemNotificationEnabled(val);
+                setState(() => _systemNotif = val);
+              },
+            ),
+          ],
+          const SizedBox(height: 10),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
