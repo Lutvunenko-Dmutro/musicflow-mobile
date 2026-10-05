@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:music_flow_mobile/core/widgets/custom_card.dart';
 import 'package:music_flow_mobile/features/settings/widgets/dev_server_dialog.dart';
 import 'package:music_flow_mobile/features/settings/widgets/update_dialog.dart';
+import 'package:music_flow_mobile/features/settings/widgets/update_channel_dialogs.dart';
 import 'package:music_flow_mobile/services/update_preferences.dart';
 import 'package:music_flow_mobile/services/update_service.dart';
 
@@ -17,6 +18,7 @@ class _UpdateSettingsCardState extends State<UpdateSettingsCard> {
   String _installedVersion = UpdateService.currentVersion;
   bool _autoCheck = true;
   UpdateFrequency _frequency = UpdateFrequency.onLaunch;
+  UpdateChannel _channel = UpdateChannel.release;
   bool _systemNotif = true;
 
   @override
@@ -29,20 +31,25 @@ class _UpdateSettingsCardState extends State<UpdateSettingsCard> {
     final ver = await UpdateService.instance.getCurrentVersion();
     final auto = await UpdatePreferences.isAutoCheckEnabled();
     final freq = await UpdatePreferences.getFrequency();
+    final channel = await UpdatePreferences.getChannel();
     final notif = await UpdatePreferences.isSystemNotificationEnabled();
     if (mounted) {
       setState(() {
         _installedVersion = ver.version;
         _autoCheck = auto;
         _frequency = freq;
+        _channel = channel;
         _systemNotif = notif;
       });
     }
   }
 
-  Future<void> _checkUpdate() async {
+  Future<void> _checkUpdate({bool force = false}) async {
     setState(() => _isChecking = true);
-    final info = await UpdateService.instance.checkForUpdate();
+    final info = await UpdateService.instance.checkForUpdate(
+      force: force,
+      allowChannelSwitch: true,
+    );
     if (!mounted) return;
     setState(() => _isChecking = false);
 
@@ -59,24 +66,27 @@ class _UpdateSettingsCardState extends State<UpdateSettingsCard> {
   }
 
   Future<void> _selectFrequency() async {
-    final selected = await showDialog<UpdateFrequency>(
-      context: context,
-      builder: (ctx) => SimpleDialog(
-        backgroundColor: const Color(0xFF222222),
-        title: const Text('Частота перевірки оновлень', style: TextStyle(color: Colors.white, fontSize: 16)),
-        children: UpdateFrequency.values.map((f) => RadioListTile<UpdateFrequency>(
-          title: Text(f.label, style: const TextStyle(color: Colors.white, fontSize: 14)),
-          value: f,
-          groupValue: _frequency,
-          activeColor: Theme.of(context).primaryColor,
-          onChanged: (val) => Navigator.pop(ctx, val),
-        )).toList(),
-      ),
-    );
-
+    final selected = await UpdateChannelDialogs.showFrequencyDialog(context, _frequency);
     if (selected != null && mounted) {
       await UpdatePreferences.setFrequency(selected);
       setState(() => _frequency = selected);
+    }
+  }
+
+  Future<void> _selectChannel() async {
+    final selected = await UpdateChannelDialogs.showChannelDialog(context, _channel);
+    if (selected != null && mounted) {
+      final oldChannel = _channel;
+      await UpdatePreferences.setChannel(selected);
+      setState(() => _channel = selected);
+
+      if (selected != oldChannel || selected != UpdatePreferences.currentRunningChannel) {
+        if (!mounted) return;
+        final confirm = await UpdateChannelDialogs.showConfirmChannelSwitch(context, selected);
+        if (confirm == true && mounted) {
+          _checkUpdate(force: true);
+        }
+      }
     }
   }
 
@@ -97,7 +107,10 @@ class _UpdateSettingsCardState extends State<UpdateSettingsCard> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(6)),
-                  child: Text('v$_installedVersion', style: const TextStyle(fontSize: 11, color: Colors.white70)),
+                  child: Text(
+                    'v$_installedVersion (${UpdatePreferences.currentRunningChannel == UpdateChannel.release ? "Release" : "Debug"})',
+                    style: const TextStyle(fontSize: 11, color: Colors.white70),
+                  ),
                 ),
               ),
             ],
@@ -134,7 +147,24 @@ class _UpdateSettingsCardState extends State<UpdateSettingsCard> {
               },
             ),
           ],
-          const SizedBox(height: 10),
+          const Divider(color: Colors.white12, height: 20),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: const Icon(Icons.manage_accounts_rounded, size: 20),
+            title: const Text('Канал оновлень'),
+            subtitle: Text(
+              _channel != UpdatePreferences.currentRunningChannel
+                  ? '${_channel.label} • потрібне перемикання'
+                  : _channel.label,
+              style: TextStyle(
+                fontSize: 12,
+                color: _channel != UpdatePreferences.currentRunningChannel ? Colors.amber : primary,
+              ),
+            ),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+            onTap: _selectChannel,
+          ),
+          const SizedBox(height: 4),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(

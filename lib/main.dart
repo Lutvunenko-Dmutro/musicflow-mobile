@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -13,17 +14,25 @@ final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey = GlobalKey<Scaffol
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  
-  setupLocator();
-  
-  // Ініціалізація телеметрії помилок за згодою користувача
-  TelemetryService.initGlobalCrashHandler();
-  
-  // Start background sync of local files on app startup
-  locator<LocalLibraryProvider>().init();
-  
-  runApp(const MusicFlowApp());
+  runZonedGuarded(() async {
+    WidgetsFlutterBinding.ensureInitialized();
+    
+    setupLocator();
+    
+    // Ініціалізація глобального перехоплювача помилок телеметрії
+    TelemetryService.initGlobalCrashHandler();
+    
+    // Start background sync of local files on app startup
+    locator<LocalLibraryProvider>().init();
+    
+    runApp(const MusicFlowApp());
+  }, (error, stack) {
+    TelemetryService.instance.sendCrashReport(
+      error: error.toString(),
+      stack: stack,
+      extra: {'source': 'runZonedGuarded'},
+    );
+  });
 }
 
 class MusicFlowApp extends StatelessWidget {

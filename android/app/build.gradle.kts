@@ -1,3 +1,12 @@
+import java.util.Properties
+import java.io.FileInputStream
+
+val keystoreProperties = Properties()
+val keystorePropertiesFile = rootProject.file("key.properties")
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+}
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -20,21 +29,30 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.example.music_flow_mobile"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 24
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        create("release") {
+            keyAlias = keystoreProperties.getProperty("keyAlias") ?: "musicflow"
+            keyPassword = keystoreProperties.getProperty("keyPassword") ?: "musicflow123"
+            storeFile = file(keystoreProperties.getProperty("storeFile") ?: "release.keystore")
+            storePassword = keystoreProperties.getProperty("storePassword") ?: "musicflow123"
+        }
+    }
+
     buildTypes {
+        debug {
+            // Підписуємо офіційним ключем MusicFlow (CN=MusicFlow, Kyiv, UA)
+            signingConfig = signingConfigs.getByName("release")
+        }
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // Підписуємо тим самим ключем MusicFlow для 100% сумісності та відсутності конфліктів
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 }

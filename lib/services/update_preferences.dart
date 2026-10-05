@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 enum UpdateFrequency {
@@ -18,11 +19,46 @@ enum UpdateFrequency {
   }
 }
 
+enum UpdateChannel {
+  release('release', 'Release (Швидкий, ~65 МБ)'),
+  debug('debug', 'Debug (Розробка, ~217 МБ)');
+
+  final String key;
+  final String label;
+  const UpdateChannel(this.key, this.label);
+
+  static UpdateChannel fromKey(String? key) {
+    return UpdateChannel.values.firstWhere(
+      (e) => e.key == key,
+      orElse: () => UpdateChannel.release,
+    );
+  }
+}
+
 class UpdatePreferences {
   static const _keyAutoCheck = 'update_auto_check';
   static const _keyFrequency = 'update_frequency';
+  static const _keyChannel = 'update_channel';
   static const _keySystemNotif = 'update_system_notif';
   static const _keyLastCheck = 'update_last_check_ms';
+
+  /// Визначає, у якому саме режимі скомпільовано поточний запущений додаток
+  static UpdateChannel get currentRunningChannel =>
+      kDebugMode ? UpdateChannel.debug : UpdateChannel.release;
+
+  static Future<UpdateChannel> getChannel() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_keyChannel);
+    if (raw == null) {
+      return currentRunningChannel;
+    }
+    return UpdateChannel.fromKey(raw);
+  }
+
+  static Future<void> setChannel(UpdateChannel channel) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_keyChannel, channel.key);
+  }
 
   static Future<bool> isAutoCheckEnabled() async {
     final prefs = await SharedPreferences.getInstance();

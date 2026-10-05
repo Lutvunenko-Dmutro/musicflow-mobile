@@ -11,15 +11,15 @@ void main() {
   });
 
   group('TelemetryService Tests', () {
-    test('Default consent is false and can be granted or revoked', () async {
+    test('Default consent is true and can be granted or revoked', () async {
       final telemetry = TelemetryService();
-      expect(await telemetry.isConsentGranted(), isFalse);
-
-      await telemetry.setConsent(true);
       expect(await telemetry.isConsentGranted(), isTrue);
 
       await telemetry.setConsent(false);
       expect(await telemetry.isConsentGranted(), isFalse);
+
+      await telemetry.setConsent(true);
+      expect(await telemetry.isConsentGranted(), isTrue);
     });
 
     test('Server URL defaults to local IP and can be updated', () async {

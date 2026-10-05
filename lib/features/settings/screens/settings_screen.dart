@@ -8,6 +8,8 @@ import 'package:music_flow_mobile/features/settings/widgets/cache_info_card.dart
 import 'package:music_flow_mobile/features/settings/widgets/download_settings_card.dart';
 import 'package:music_flow_mobile/features/settings/widgets/update_settings_card.dart';
 import 'package:music_flow_mobile/features/settings/widgets/telemetry_settings_card.dart';
+import 'package:music_flow_mobile/features/settings/screens/visualizer_settings_screen.dart';
+import 'package:music_flow_mobile/features/settings/screens/equalizer_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -106,6 +108,34 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     if (mounted) {
                       Provider.of<AudioProvider>(context, listen: false).toggleSmoothMediaPause(val);
                     }
+                  },
+                ),
+                const Divider(height: 16),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(Icons.graphic_eq, color: primary),
+                  title: const Text('Візуалізатор'),
+                  subtitle: const Text('Живий перегляд, стилі та параметри анімації', style: TextStyle(fontSize: 12)),
+                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const VisualizerSettingsScreen()),
+                    );
+                  },
+                ),
+                const Divider(height: 16),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(Icons.equalizer, color: primary),
+                  title: const Text('Еквалайзер'),
+                  subtitle: const Text('Частотні смуги, бас та пресети', style: TextStyle(fontSize: 12)),
+                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const EqualizerScreen()),
+                    );
                   },
                 ),
               ],

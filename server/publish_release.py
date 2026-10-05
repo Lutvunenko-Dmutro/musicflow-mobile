@@ -92,34 +92,39 @@ def publish_release(changelog=None, bump_type="patch", mode="release"):
     update_pubspec_version(new_major, new_minor, new_patch, new_build)
 
     # 2. Компіляція APK
-    is_release = (mode == "release")
-    built_apk_path = BUILT_APK_RELEASE if is_release else BUILT_APK_DEBUG
-    apk_flag = "--release" if is_release else "--debug"
-    print(f"[2/5] 🔨 Компілюю APK через Flutter (`flutter build apk {apk_flag}`)...")
-    build_cmd = ["flutter", "build", "apk", apk_flag]
-    res = subprocess.run(build_cmd, cwd=PROJECT_DIR, shell=True)
-    if res.returncode != 0:
-        print("\n❌ Помилка під час збірки APK! Відновлюю версію у pubspec.yaml...")
-        update_pubspec_version(major, minor, patch, build)
-        sys.exit(1)
+    print(f"\n[2/5] 🔨 Компілюю APK через Flutter...")
+    os.makedirs(UPDATES_DIR, exist_ok=True)
+    build_release = (mode in ("release", "both"))
+    build_debug = (mode in ("debug", "both"))
 
-    if not os.path.exists(built_apk_path):
-        print(f"\n❌ Зібраний файл не знайдено за шляхом: {built_apk_path}")
-        sys.exit(1)
+    if build_release:
+        print(f"       -> Збірка RELEASE (`flutter build apk --release`)...")
+        res = subprocess.run(["flutter", "build", "apk", "--release"], cwd=PROJECT_DIR, shell=True)
+        if res.returncode != 0:
+            print("\n❌ Помилка під час збірки Release APK! Відновлюю версію у pubspec.yaml...")
+            update_pubspec_version(major, minor, patch, build)
+            sys.exit(1)
+        shutil.copy2(BUILT_APK_RELEASE, os.path.join(UPDATES_DIR, "app-release.apk"))
+        rel_size = os.path.getsize(BUILT_APK_RELEASE)
+        print(f"       ✅ Release APK готово: {rel_size / (1024 * 1024):.1f} MB")
 
-    file_size = os.path.getsize(built_apk_path)
-    file_size_mb = file_size / (1024 * 1024)
-    print(f"    ✅ APK успішно зібрано! Розмір: {file_size_mb:.1f} MB ({file_size} байт)")
+    if build_debug:
+        print(f"       -> Збірка DEBUG (`flutter build apk --debug`)...")
+        res = subprocess.run(["flutter", "build", "apk", "--debug"], cwd=PROJECT_DIR, shell=True)
+        if res.returncode != 0:
+            print("\n❌ Помилка під час збірки Debug APK! Відновлюю версію у pubspec.yaml...")
+            update_pubspec_version(major, minor, patch, build)
+            sys.exit(1)
+        shutil.copy2(BUILT_APK_DEBUG, os.path.join(UPDATES_DIR, "app-debug.apk"))
+        dbg_size = os.path.getsize(BUILT_APK_DEBUG)
+        print(f"       ✅ Debug APK готово: {dbg_size / (1024 * 1024):.1f} MB")
+
+    primary_apk = BUILT_APK_RELEASE if build_release else BUILT_APK_DEBUG
+    file_size = os.path.getsize(primary_apk)
+    apk_file_name = "app-release.apk" if build_release else "app-debug.apk"
 
     # 3. Копіювання у папку сервера
-    print(f"[3/5] 📦 Копіюю APK у сховище сервера ({UPDATES_DIR})...")
-    os.makedirs(UPDATES_DIR, exist_ok=True)
-    apk_file_name = "app-release.apk" if is_release else "app-debug.apk"
-    target_apk = os.path.join(UPDATES_DIR, apk_file_name)
-    shutil.copy2(built_apk_path, target_apk)
-    # Також створюємо копію іншого імені для зворотної сумісності
-    compat_name = "app-debug.apk" if is_release else "app-release.apk"
-    shutil.copy2(built_apk_path, os.path.join(UPDATES_DIR, compat_name))
+    print(f"[3/5] 📦 APK файли успішно синхронізовано у сховищі сервера ({UPDATES_DIR})")
 
     # 4. Оновлення version.json з підтримкою повної історії релізів
     print(f"[4/5] 📄 Оновлюю інформацію про реліз у version.json...")
@@ -164,7 +169,7 @@ def publish_release(changelog=None, bump_type="patch", mode="release"):
     print("=" * 65)
     print(f"✨ Реліз v{new_version_display} (build {new_build}) успішно опубліковано!")
     print(f"📝 Зміни:\n{changelog}")
-    print(f"💾 Розмір: {file_size_mb:.1f} MB (режим: {mode})")
+    print(f"💾 Розмір: {file_size / (1024 * 1024):.1f} MB (режим: {mode})")
     print(f"📡 Сервер оновлень готовий роздавати нову версію смартфонам по Wi-Fi.")
     print("=" * 65)
 
@@ -180,9 +185,9 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--mode", "-m",
-        choices=["release", "debug"],
-        default="release",
-        help="Режим збірки (за замовчуванням: release ~35MB, або debug ~200MB)"
+        choices=["both", "release", "debug"],
+        default="both",
+        help="Режим збірки (за замовчуванням: both — збирає синхронно обидва канали)"
     )
     args = parser.parse_args()
     publish_release(changelog=args.changelog, bump_type=args.bump, mode=args.mode)

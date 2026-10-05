@@ -49,7 +49,16 @@ class _UpdateDialogState extends State<UpdateDialog> {
           _isDownloading = false;
           _statusText = 'Готово! Відкриваємо інсталятор...';
         });
-        await UpdateService.instance.installApk(file);
+        final ok = await UpdateService.instance.installApk(file);
+        if (mounted) {
+          if (ok) {
+            Navigator.pop(context);
+          } else {
+            setState(() {
+              _statusText = 'Надайте дозвіл на встановлення і натисніть «Встановити зараз»';
+            });
+          }
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -92,7 +101,10 @@ class _UpdateDialogState extends State<UpdateDialog> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Нове оновлення!', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                      Text(
+                        widget.info.isChannelSwitch ? 'Зміна каналу оновлення' : 'Нове оновлення!',
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                      ),
                       const SizedBox(height: 4),
                       Row(
                         children: [
@@ -100,6 +112,24 @@ class _UpdateDialogState extends State<UpdateDialog> {
                             padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                             decoration: BoxDecoration(color: primary.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(6)),
                             child: Text('v${widget.info.version}', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: primary)),
+                          ),
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: widget.info.channel.toLowerCase() == 'debug'
+                                  ? Colors.orange.withValues(alpha: 0.2)
+                                  : Colors.green.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              widget.info.channel.toUpperCase(),
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: widget.info.channel.toLowerCase() == 'debug' ? Colors.orange : Colors.greenAccent,
+                              ),
+                            ),
                           ),
                           const SizedBox(width: 8),
                           Text(sizeMb, style: const TextStyle(fontSize: 12, color: Colors.white60)),
@@ -125,7 +155,14 @@ class _UpdateDialogState extends State<UpdateDialog> {
             ElevatedButton.icon(
               onPressed: _isDownloading ? null : (_downloadedFile != null ? () => UpdateService.instance.installApk(_downloadedFile!) : _startDownload),
               icon: Icon(_downloadedFile != null ? Icons.install_mobile_rounded : Icons.download_rounded, size: 20),
-              label: Text(_downloadedFile != null ? 'Встановити зараз' : (_isDownloading ? 'Завантаження...' : 'Завантажити та оновити'), style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+              label: Text(
+                _downloadedFile != null
+                    ? 'Встановити зараз'
+                    : (_isDownloading
+                        ? 'Завантаження...'
+                        : (widget.info.isChannelSwitch ? 'Завантажити та перейти' : 'Завантажити та оновити')),
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+              ),
               style: ElevatedButton.styleFrom(backgroundColor: primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)), elevation: 0),
             ),
             if (!_isDownloading)

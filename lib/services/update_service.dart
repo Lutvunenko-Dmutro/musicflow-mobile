@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:music_flow_mobile/models/release_history_item.dart';
 import 'package:music_flow_mobile/services/telemetry_service.dart';
+import 'package:music_flow_mobile/services/update_preferences.dart';
 import 'package:music_flow_mobile/utils/app_logger.dart';
 
 class UpdateInfo {
@@ -15,6 +16,8 @@ class UpdateInfo {
   final int fileSizeBytes;
   final List<ReleaseHistoryItem> history;
   final int userCurrentBuild;
+  final String channel;
+  final bool isChannelSwitch;
 
   const UpdateInfo({
     required this.version,
@@ -24,9 +27,15 @@ class UpdateInfo {
     required this.fileSizeBytes,
     this.history = const [],
     this.userCurrentBuild = 0,
+    this.channel = 'release',
+    this.isChannelSwitch = false,
   });
 
-  factory UpdateInfo.fromJson(Map<String, dynamic> json, {int userCurrentBuild = 0}) {
+  factory UpdateInfo.fromJson(
+    Map<String, dynamic> json, {
+    int userCurrentBuild = 0,
+    bool isChannelSwitch = false,
+  }) {
     final rawHistory = json['history'] as List<dynamic>?;
     final historyList = rawHistory != null
         ? rawHistory
@@ -43,6 +52,8 @@ class UpdateInfo {
       fileSizeBytes: json['fileSizeBytes'] as int? ?? 0,
       history: historyList,
       userCurrentBuild: userCurrentBuild,
+      channel: json['channel'] as String? ?? 'release',
+      isChannelSwitch: isChannelSwitch,
     );
   }
 
@@ -72,20 +83,39 @@ class UpdateService {
     return (version: currentVersion, buildNumber: currentBuildNumber);
   }
 
-  Future<UpdateInfo?> checkForUpdate({String? customServerUrl}) async {
+  Future<UpdateInfo?> checkForUpdate({
+    String? customServerUrl,
+    bool force = false,
+    bool allowChannelSwitch = false,
+  }) async {
     try {
       final current = await getCurrentVersion();
+      final channel = await UpdatePreferences.getChannel();
       final base = customServerUrl ?? await TelemetryService.instance.getServerUrl();
-      final url = Uri.parse('$base/api/update/check?currentBuild=${current.buildNumber}');
-      AppLogger.info('Перевірка оновлень на $url', 'UPDATER');
+      final url = Uri.parse(
+        '$base/api/update/check?currentBuild=${current.buildNumber}&channel=${channel.key}',
+      );
+      AppLogger.info('Перевірка оновлень на $url [${channel.key}]', 'UPDATER');
 
       final response = await http.get(url).timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
         final data = json.decode(response.body) as Map<String, dynamic>;
-        final info = UpdateInfo.fromJson(data, userCurrentBuild: current.buildNumber);
+        final serverBuild = data['buildNumber'] as int? ?? 0;
+        final isDifferentChannel = (channel != UpdatePreferences.currentRunningChannel);
+        final isNewer = serverBuild > current.buildNumber;
+        final isChannelSwitch = (force || allowChannelSwitch) && isDifferentChannel && serverBuild >= current.buildNumber;
 
-        if (info.buildNumber > current.buildNumber) {
-          AppLogger.success('Знайдено оновлення v${info.version}+${info.buildNumber}', 'UPDATER');
+        final info = UpdateInfo.fromJson(
+          data,
+          userCurrentBuild: current.buildNumber,
+          isChannelSwitch: isChannelSwitch,
+        );
+
+        if (isNewer || isChannelSwitch) {
+          AppLogger.success(
+            'Знайдено ${isNewer ? "новішу версію" : "зміну каналу"} v${info.version}+${info.buildNumber}',
+            'UPDATER',
+          );
           return info;
         }
       }
@@ -109,8 +139,12 @@ class UpdateService {
       }
 
       final total = response.contentLength ?? info.fileSizeBytes;
-      final tempDir = await getTemporaryDirectory();
-      final apkFile = File('${tempDir.path}/music_flow_update.apk');
+      // Використовуємо зовнішній кеш, щоб Android PackageInstaller мав гарантований доступ до читання APK
+      final extDirs = await getExternalCacheDirectories();
+      final dir = (extDirs != null && extDirs.isNotEmpty)
+          ? extDirs.first
+          : await getTemporaryDirectory();
+      final apkFile = File('${dir.path}/music_flow_update.apk');
       if (await apkFile.exists()) await apkFile.delete();
 
       final sink = apkFile.openWrite();

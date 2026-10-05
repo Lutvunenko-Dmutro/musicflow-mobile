@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:music_flow_mobile/utils/app_logger.dart';
@@ -10,18 +11,36 @@ class TelemetryService {
   static const String consentKey = 'telemetry_consent';
   static const String serverUrlKey = 'telemetry_server_url';
 
+  static const String lastCrashKey = 'telemetry_last_crash';
+
   static TelemetryService? _instance;
   static TelemetryService get instance => _instance ??= TelemetryService();
 
   Future<bool> isConsentGranted() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(consentKey) ?? false;
+    return prefs.getBool(consentKey) ?? true;
   }
 
   Future<void> setConsent(bool granted) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(consentKey, granted);
     AppLogger.info('Згода на збір діагностики: ${granted ? "УВІМКНЕНО" : "ВИМКНЕНО"}', 'TELEMETRY');
+  }
+
+  static Future<Map<String, dynamic>?> getLastLocalCrash() async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(lastCrashKey);
+    if (raw == null) return null;
+    try {
+      return json.decode(raw) as Map<String, dynamic>;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static Future<void> clearLastLocalCrash() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(lastCrashKey);
   }
 
   Future<String> getServerUrl() async {
@@ -52,22 +71,27 @@ class TelemetryService {
     StackTrace? stack,
     Map<String, dynamic>? extra,
   }) async {
+    final payload = {
+      'device': '${Platform.operatingSystem} ${Platform.operatingSystemVersion}',
+      'appVersion': '1.0.19+20',
+      'timestamp': DateTime.now().toIso8601String(),
+      'error': error,
+      'stackTrace': stack?.toString() ?? '',
+      'recentLogs': AppLogger.recentLogs,
+      if (extra != null) ...extra,
+    };
+
+    // Завжди зберігаємо локальний звіт, щоб користувач міг побачити причину
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(lastCrashKey, json.encode(payload));
+    } catch (_) {}
+
     if (!await isConsentGranted()) return false;
 
     try {
       final base = await getServerUrl();
       final url = Uri.parse('$base/api/telemetry/crash-report');
-      final device = '${Platform.operatingSystem} ${Platform.operatingSystemVersion}';
-
-      final payload = {
-        'device': device,
-        'appVersion': '1.0.0+1',
-        'timestamp': DateTime.now().toIso8601String(),
-        'error': error,
-        'stackTrace': stack?.toString() ?? '',
-        'recentLogs': AppLogger.recentLogs,
-        if (extra != null) ...extra,
-      };
 
       final response = await http.post(
         url,
@@ -77,13 +101,45 @@ class TelemetryService {
 
       return response.statusCode == 200;
     } catch (e) {
-      // Тихо ігноруємо помилки мережі, щоб не порушувати роботу плеєра
       return false;
+    }
+  }
+
+  static const MethodChannel _nativeCrashChannel =
+      MethodChannel('com.example.music_flow_mobile/native_crash');
+
+  /// Перевіряє, чи не стався нативний збій Android перед попереднім перезапуском
+  static Future<void> checkAndSendPendingNativeCrash() async {
+    if (!Platform.isAndroid) return;
+    try {
+      final pending = await _nativeCrashChannel.invokeMethod<String>('getPendingNativeCrash');
+      if (pending != null && pending.isNotEmpty) {
+        AppLogger.warning('Знайдено нативний звіт про збій Android! Відправляємо...', 'TELEMETRY');
+        final service = TelemetryService.instance;
+        final base = await service.getServerUrl();
+        final url = Uri.parse('$base/api/telemetry/crash-report');
+
+        final response = await http.post(
+          url,
+          headers: {'Content-Type': 'application/json; charset=utf-8'},
+          body: pending,
+        ).timeout(const Duration(seconds: 5));
+
+        if (response.statusCode == 200) {
+          AppLogger.info('Нативний звіт про збій успішно доставлено на сервер!', 'TELEMETRY');
+          await _nativeCrashChannel.invokeMethod('clearPendingNativeCrash');
+        }
+      }
+    } catch (e) {
+      AppLogger.warning('Не вдалося перевірити нативний звіт: $e', 'TELEMETRY');
     }
   }
 
   static void initGlobalCrashHandler() {
     final service = TelemetryService.instance;
+
+    // Перевірка нативних збоїв при запуску
+    checkAndSendPendingNativeCrash();
 
     AppLogger.onErrorListener = (msg, ex, stack, tag) {
       service.sendCrashReport(
@@ -112,3 +168,4 @@ class TelemetryService {
     };
   }
 }
+

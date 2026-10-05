@@ -22,7 +22,7 @@ class AudioServiceInitializer {
         androidNotificationChannelName: 'Music Flow',
         androidNotificationOngoing: true,
         androidStopForegroundOnPause: true,
-        androidNotificationIcon: 'drawable/ic_stat_music_note',
+        androidNotificationIcon: 'mipmap/ic_launcher',
       ),
     );
     audioHandler.onPlay = onPlay;

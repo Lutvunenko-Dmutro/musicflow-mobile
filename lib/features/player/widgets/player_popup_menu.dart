@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:music_flow_mobile/providers/audio_provider.dart';
-import 'package:music_flow_mobile/features/player/widgets/visualizer/visualizer_settings_sheet.dart';
+import 'package:music_flow_mobile/features/settings/screens/visualizer_settings_screen.dart';
 import 'package:music_flow_mobile/features/settings/screens/equalizer_screen.dart';
 import 'package:music_flow_mobile/features/player/widgets/sleep_timer_dialog.dart';
 import 'package:music_flow_mobile/features/lyrics/widgets/lyrics_search_sheet.dart';
@@ -16,11 +16,9 @@ class PlayerPopupMenu extends StatelessWidget {
       icon: const Icon(Icons.more_vert, size: 28),
       onSelected: (value) {
         if (value == 'visualizer_settings') {
-          showModalBottomSheet(
-            context: context,
-            backgroundColor: Colors.transparent,
-            isScrollControlled: true,
-            builder: (context) => const VisualizerSettingsSheet(),
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const VisualizerSettingsScreen()),
           );
         } else if (value == 'toggle_visualizer') {
           audioProvider.toggleVisualizer();

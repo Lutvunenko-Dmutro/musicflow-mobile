@@ -6,6 +6,7 @@ import 'package:music_flow_mobile/utils/fft_processor.dart';
 import 'package:music_flow_mobile/utils/visualizer_physics.dart';
 import 'package:music_flow_mobile/features/player/widgets/visualizer/visualizer_painter.dart';
 import 'package:music_flow_mobile/features/player/utils/visualizer_permission_helper.dart';
+import 'package:music_flow_mobile/features/player/widgets/visualizer/visualizer_mock_generator.dart';
 import 'package:music_flow_mobile/providers/visualizer_settings_provider.dart';
 import 'package:music_flow_mobile/providers/audio_provider.dart';
 
@@ -14,6 +15,7 @@ class AudioVisualizer extends StatefulWidget {
   final bool isPlaying;
   final double width;
   final double height;
+  final bool testMode;
 
   const AudioVisualizer({
     super.key,
@@ -21,6 +23,7 @@ class AudioVisualizer extends StatefulWidget {
     required this.isPlaying,
     this.width = 240,
     this.height = 48,
+    this.testMode = false,
   });
 
   @override
@@ -34,9 +37,12 @@ class _AudioVisualizerState extends State<AudioVisualizer> with SingleTickerProv
   late List<double> _dotVelocities;
 
   Ticker? _ticker;
+  Timer? _testTimer;
+  final VisualizerMockGenerator _mockGenerator = VisualizerMockGenerator();
   late VisualizerSettingsProvider _settings;
   StreamSubscription? _visualizerSubscription;
   final ValueNotifier<int> _repaintNotifier = ValueNotifier<int>(0);
+  bool _isStartingListening = false;
 
   @override
   void initState() {
@@ -49,6 +55,8 @@ class _AudioVisualizerState extends State<AudioVisualizer> with SingleTickerProv
     _ticker = createTicker(_onTick);
     if (widget.isPlaying) {
       _startListening();
+    } else if (widget.testMode) {
+      _startTestSimulation();
     }
   }
 
@@ -61,44 +69,59 @@ class _AudioVisualizerState extends State<AudioVisualizer> with SingleTickerProv
   @override
   void didUpdateWidget(AudioVisualizer oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.isPlaying != oldWidget.isPlaying) {
+    if (widget.isPlaying != oldWidget.isPlaying || widget.testMode != oldWidget.testMode) {
       if (widget.isPlaying) {
+        _stopTestSimulation();
         _startListening();
+      } else if (widget.testMode) {
+        _stopListening();
+        _startTestSimulation();
       } else {
+        _stopTestSimulation();
         _stopListening();
       }
     }
   }
 
-  Future<void> _startListening() async {
-    final hasPermission = await VisualizerPermissionHelper.checkOrRequestMicPermission();
+  void _startTestSimulation() {
+    _testTimer?.cancel();
+    if (_ticker != null && !_ticker!.isTicking) _ticker!.start();
+    _testTimer = Timer.periodic(const Duration(milliseconds: 35), (_) {
+      if (mounted) _processWaveform(_mockGenerator.generateNextFrame());
+    });
+  }
 
-    if (hasPermission) {
-      if (!mounted) return;
-      final provider = context.read<AudioProvider>();
-      
-      await _visualizerSubscription?.cancel();
-      _visualizerSubscription = provider.visualizerStream.listen((dynamic event) {
-        if (event is List<dynamic> || event is List<int>) {
-          List<int> waveformData = (event as List).cast<int>();
-          _processWaveform(waveformData);
-        }
-      });
-      
-      if (!_ticker!.isTicking) {
-        _ticker!.start();
-      }
-    } else {
-      if (mounted) {
+  void _stopTestSimulation() {
+    _testTimer?.cancel();
+    _testTimer = null;
+  }
+
+  Future<void> _startListening() async {
+    if (_isStartingListening) return;
+    _isStartingListening = true;
+    try {
+      final hasPermission = await VisualizerPermissionHelper.checkOrRequestMicPermission();
+      if (hasPermission && mounted && widget.isPlaying) {
+        final provider = context.read<AudioProvider>();
+        await _visualizerSubscription?.cancel();
+        _visualizerSubscription = provider.visualizerStream.listen((dynamic event) {
+          if (event is List<dynamic> || event is List<int>) {
+            _processWaveform((event as List).cast<int>());
+          }
+        });
+        if (_ticker != null && !_ticker!.isTicking) _ticker!.start();
+      } else if (mounted) {
         _targetHeights = List.filled(widget.barCount, 0.05);
       }
+    } finally {
+      _isStartingListening = false;
     }
   }
 
   void _stopListening() {
+    _isStartingListening = false;
     _visualizerSubscription?.cancel();
     _visualizerSubscription = null;
-    
     if (mounted) {
       _targetHeights = List.filled(widget.barCount, 0.05);
       Future.delayed(const Duration(milliseconds: 1500), () {
@@ -129,22 +152,15 @@ class _AudioVisualizerState extends State<AudioVisualizer> with SingleTickerProv
   void _processWaveform(List<int> raw) {
     if (!mounted) return;
     if (_settings.core == VisualizerCore.hardware) {
-      _targetHeights = FftProcessor.processHardwareFft(
-        raw,
-        widget.barCount,
-        amplitudeBoost: _settings.amplitudeBoost,
-      );
+      _targetHeights = FftProcessor.processHardwareFft(raw, widget.barCount, amplitudeBoost: _settings.amplitudeBoost);
     } else {
-      _targetHeights = FftProcessor.process(
-        raw,
-        widget.barCount,
-        amplitudeBoost: _settings.amplitudeBoost,
-      );
+      _targetHeights = FftProcessor.process(raw, widget.barCount, amplitudeBoost: _settings.amplitudeBoost);
     }
   }
 
   @override
   void dispose() {
+    _stopTestSimulation();
     _ticker?.dispose();
     _visualizerSubscription?.cancel();
     _repaintNotifier.dispose();
@@ -159,9 +175,7 @@ class _AudioVisualizerState extends State<AudioVisualizer> with SingleTickerProv
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 420),
-          child: SizedBox(
-            width: double.infinity,
-            height: double.infinity,
+          child: SizedBox.expand(
             child: CustomPaint(
               painter: VisualizerPainter(
                 heights: _currentHeights,

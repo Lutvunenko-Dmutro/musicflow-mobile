@@ -66,11 +66,13 @@ def find_best_apk_path(filename="app-release.apk"):
     return None
 
 
-def get_version_info():
+def get_version_info(apk_filename=None):
     try:
         with open(VERSION_FILE, "r", encoding="utf-8") as f:
             data = json.load(f)
-        apk_path = find_best_apk_path(data.get("apkFileName", "app-release.apk"))
+        filename = apk_filename or data.get("apkFileName", "app-release.apk")
+        data["apkFileName"] = filename
+        apk_path = find_best_apk_path(filename)
         if apk_path:
             data["fileSizeBytes"] = os.path.getsize(apk_path)
             data["resolvedApkPath"] = apk_path
@@ -227,11 +229,15 @@ class MusicFlowRequestHandler(http.server.SimpleHTTPRequestHandler):
 
         # 3. Перевірка оновлення
         if path == "/api/update/check":
-            info = get_version_info()
-            local_ip = get_local_ip()
-            info["downloadUrl"] = f"http://{local_ip}:{PORT}/api/update/download"
-
             query = parse_qs(parsed.query)
+            channel = query.get("channel", ["release"])[0].lower()
+            apk_filename = "app-debug.apk" if channel == "debug" else "app-release.apk"
+
+            info = get_version_info(apk_filename)
+            local_ip = get_local_ip()
+            info["downloadUrl"] = f"http://{local_ip}:{PORT}/api/update/download?channel={channel}"
+            info["channel"] = channel
+
             current_build_param = query.get("currentBuild", [None])[0]
             if current_build_param:
                 try:
@@ -247,8 +253,11 @@ class MusicFlowRequestHandler(http.server.SimpleHTTPRequestHandler):
 
         # 4. Завантаження APK
         if path == "/api/update/download":
-            info = get_version_info()
-            apk_path = find_best_apk_path(info.get("apkFileName", "app-release.apk"))
+            query = parse_qs(parsed.query)
+            channel = query.get("channel", ["release"])[0].lower()
+            apk_filename = "app-debug.apk" if channel == "debug" else "app-release.apk"
+            info = get_version_info(apk_filename)
+            apk_path = find_best_apk_path(apk_filename)
 
             if apk_path and os.path.exists(apk_path):
                 file_size = os.path.getsize(apk_path)
@@ -413,8 +422,8 @@ def main():
     print("Сервер готовий приймати оновлення та звіти про збої.")
     print("Натисніть Ctrl+C для зупинки.\n")
 
-    socketserver.TCPServer.allow_reuse_address = True
-    with socketserver.TCPServer(("0.0.0.0", PORT), MusicFlowRequestHandler) as httpd:
+    socketserver.ThreadingTCPServer.allow_reuse_address = True
+    with socketserver.ThreadingTCPServer(("0.0.0.0", PORT), MusicFlowRequestHandler) as httpd:
         try:
             httpd.serve_forever()
         except KeyboardInterrupt:
