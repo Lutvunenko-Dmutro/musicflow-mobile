@@ -115,6 +115,27 @@ class LyricsService {
     await savePreferredLyricsKey(song.id, label);
   }
 
+  Future<void> removeCustomLyrics(String songId, String label) async {
+    final prefs = await SharedPreferences.getInstance();
+    final cacheKey = 'lyrics_cache_$songId';
+    final cachedData = prefs.getString(cacheKey);
+    if (cachedData != null && cachedData != "NOT_FOUND") {
+      try {
+        final map = json.decode(cachedData) as Map<String, dynamic>;
+        map.remove(label);
+        await prefs.setString(cacheKey, json.encode(map));
+      } catch (_) {}
+    }
+    final preferred = await getPreferredLyricsKey(songId);
+    if (preferred == label) await prefs.remove('preferred_lyrics_$songId');
+  }
+
+  Future<void> resetAllLyrics(String songId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('lyrics_cache_$songId');
+    await prefs.remove('preferred_lyrics_$songId');
+  }
+
   Future<Map<String, String>?> _fetchFreshLyrics(SongModel song) async {
     final results = <String, String>{};
 

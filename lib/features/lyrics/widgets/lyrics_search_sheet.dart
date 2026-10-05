@@ -5,6 +5,7 @@ import 'package:music_flow_mobile/models/lrclib_search_result.dart';
 import 'package:music_flow_mobile/services/online_lyrics_client.dart';
 import 'package:music_flow_mobile/providers/audio_provider.dart';
 import 'package:music_flow_mobile/features/lyrics/widgets/lyrics_result_card.dart';
+import 'package:music_flow_mobile/features/lyrics/widgets/lyrics_preview_sheet.dart';
 
 class LyricsSearchSheet extends StatefulWidget {
   final SongModel song;
@@ -157,7 +158,16 @@ class _LyricsSearchSheetState extends State<LyricsSearchSheet> {
     final list = _tab == 1 ? _results.where((r) => r.isKaraoke).toList() : (_tab == 2 ? _results.where((r) => !r.isKaraoke).toList() : _results);
     return ListView.builder(
       itemCount: list.length,
-      itemBuilder: (context, i) => LyricsResultCard(item: list[i], onSelect: () => _selectAndSave(list[i])),
+      itemBuilder: (context, i) => LyricsResultCard(
+        item: list[i],
+        onPreview: () => LyricsPreviewSheet.show(
+          context,
+          song: widget.song,
+          item: list[i],
+          onConfirmSave: () => _selectAndSave(list[i]),
+        ),
+        onSelect: () => _selectAndSave(list[i]),
+      ),
     );
   }
 }

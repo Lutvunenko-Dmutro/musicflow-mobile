@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:music_flow_mobile/models/song_model.dart';
 import 'package:music_flow_mobile/providers/audio/lyrics_manager_mixin.dart';
 import 'package:music_flow_mobile/services/lyrics_service.dart';
 import 'package:music_flow_mobile/services/online_lyrics_client.dart';
@@ -35,6 +36,31 @@ void main() {
       expect(manager.isLyricsDisabledForCurrentSong, isTrue);
       expect(manager.currentLyrics, isNull);
       expect(manager.hasKaraokeLyrics, isFalse);
+    });
+
+    test('LyricsService saveCustomLyrics, removeCustomLyrics and resetAllLyrics', () async {
+      final service = LyricsService();
+      final song = SongModel(
+        id: 'song_test_123',
+        title: 'Test Title',
+        author: 'Test Author',
+        duration: const Duration(seconds: 180),
+        coverUrl: '',
+        isLocal: false,
+      );
+      await service.saveCustomLyrics(song, 'Караоке [LRCLIB]', '[00:01.00]Hello world');
+
+      var pref = await service.getPreferredLyricsKey(song.id);
+      expect(pref, equals('Караоке [LRCLIB]'));
+
+      await service.removeCustomLyrics(song.id, 'Караоке [LRCLIB]');
+      pref = await service.getPreferredLyricsKey(song.id);
+      expect(pref, isNull);
+
+      await service.saveCustomLyrics(song, 'Караоке [LRCLIB]', '[00:01.00]Hello again');
+      await service.resetAllLyrics(song.id);
+      pref = await service.getPreferredLyricsKey(song.id);
+      expect(pref, isNull);
     });
 
     test('OnlineLyricsClient.cleanArtistAndTitle splits Artist - Track from YouTube title', () {

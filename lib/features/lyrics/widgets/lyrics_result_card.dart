@@ -4,11 +4,13 @@ import 'package:music_flow_mobile/models/lrclib_search_result.dart';
 class LyricsResultCard extends StatelessWidget {
   final LrclibSearchResult item;
   final VoidCallback onSelect;
+  final VoidCallback onPreview;
 
   const LyricsResultCard({
     super.key,
     required this.item,
     required this.onSelect,
+    required this.onPreview,
   });
 
   String _formatDuration(double sec) {
@@ -126,20 +128,39 @@ class LyricsResultCard extends StatelessWidget {
             ),
           ],
           const SizedBox(height: 10),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: onSelect,
-              icon: Icon(item.isKaraoke ? Icons.check_rounded : Icons.file_download_done, size: 15),
-              label: Text(item.isKaraoke ? 'Вибрати караоке з таймінгами' : 'Вибрати цей текст'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: item.isKaraoke ? primary : Colors.white24,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                elevation: 0,
+          Row(
+            children: [
+              Expanded(
+                flex: 1,
+                child: OutlinedButton.icon(
+                  onPressed: onPreview,
+                  icon: const Icon(Icons.visibility_rounded, size: 15),
+                  label: const Text('Прев\'ю 👁️'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    side: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
+                    padding: const EdgeInsets.symmetric(vertical: 9),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
               ),
-            ),
+              const SizedBox(width: 8),
+              Expanded(
+                flex: 1,
+                child: ElevatedButton.icon(
+                  onPressed: onSelect,
+                  icon: const Icon(Icons.check_rounded, size: 16),
+                  label: const Text('Зберегти'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: item.isKaraoke ? primary : Colors.white24,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 9),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    elevation: 0,
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),

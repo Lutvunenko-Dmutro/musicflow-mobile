@@ -127,4 +127,31 @@ mixin LyricsManagerMixin on ChangeNotifier {
     await _lyricsService.saveCustomLyrics(song, label, text);
     notifyListeners();
   }
+
+  Future<void> removeLyricsTrack(SongModel song, String key) async {
+    await _lyricsService.removeCustomLyrics(song.id, key);
+    if (_availableLyrics != null) {
+      final updated = Map<String, String>.from(_availableLyrics!);
+      updated.remove(key);
+      if (updated.isEmpty) {
+        resetLyricsState();
+        notifyListeners();
+        loadLyricsForSong(song, () => song);
+      } else {
+        _availableLyrics = updated;
+        if (_selectedLyricsKey == key) {
+          _selectedLyricsKey = updated.keys.first;
+          await _lyricsService.savePreferredLyricsKey(song.id, _selectedLyricsKey!);
+        }
+        notifyListeners();
+      }
+    }
+  }
+
+  Future<void> resetAllLyricsForSong(SongModel song) async {
+    await _lyricsService.resetAllLyrics(song.id);
+    resetLyricsState();
+    notifyListeners();
+    loadLyricsForSong(song, () => song);
+  }
 }
