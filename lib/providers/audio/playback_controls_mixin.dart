@@ -27,7 +27,7 @@ mixin PlaybackControlsMixin on ChangeNotifier, CrossfadeManagerMixin {
     _isFadePausing = false;
   }
 
-  Future<void> smoothPause({Duration duration = const Duration(milliseconds: 700)}) async {
+  Future<void> smoothPause({Duration duration = const Duration(milliseconds: 1200)}) async {
     if (!player.playing && !(isCrossfading && fadingPlayer.playing)) return;
     if (_isFadePausing) return;
     _fadePauseTimer?.cancel();
@@ -36,13 +36,13 @@ mixin PlaybackControlsMixin on ChangeNotifier, CrossfadeManagerMixin {
     final targetPlayer = player;
     final secondaryPlayer = isCrossfading ? fadingPlayer : null;
     final double startVolume = targetPlayer.volume > 0 ? targetPlayer.volume : 1.0;
-    const int steps = 14;
-    final int stepMs = duration.inMilliseconds ~/ steps;
-    double currentVol = startVolume;
+    const int totalSteps = 24;
+    final int stepMs = duration.inMilliseconds ~/ totalSteps;
+    int currentStep = 0;
 
     _fadePauseTimer = Timer.periodic(Duration(milliseconds: stepMs), (timer) async {
-      currentVol -= (startVolume / steps);
-      if (currentVol <= 0.05 || !targetPlayer.playing) {
+      currentStep++;
+      if (currentStep >= totalSteps || !targetPlayer.playing) {
         timer.cancel();
         _fadePauseTimer = null;
         try {
@@ -51,10 +51,14 @@ mixin PlaybackControlsMixin on ChangeNotifier, CrossfadeManagerMixin {
         } catch (_) {}
         try {
           await targetPlayer.setVolume(startVolume);
+          if (secondaryPlayer != null) await secondaryPlayer.setVolume(startVolume);
         } catch (_) {}
         _isFadePausing = false;
         notifyListeners();
       } else {
+        final double progress = currentStep / totalSteps;
+        final double remaining = 1.0 - progress;
+        final double currentVol = startVolume * (remaining * remaining);
         try {
           await targetPlayer.setVolume(currentVol);
           if (secondaryPlayer != null) await secondaryPlayer.setVolume(currentVol);

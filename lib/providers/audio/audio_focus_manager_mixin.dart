@@ -14,7 +14,7 @@ mixin AudioFocusManagerMixin on ChangeNotifier {
   AudioPlayer get player;
   AudioPlayer get player1;
   AudioPlayer get player2;
-  Future<void> smoothPause({Duration duration = const Duration(milliseconds: 700)});
+  Future<void> smoothPause({Duration duration = const Duration(milliseconds: 1200)});
   Future<void> pause();
 
   Future<void> initAudioFocus() async {
@@ -37,7 +37,7 @@ mixin AudioFocusManagerMixin on ChangeNotifier {
         if (!player.playing) return;
         AppLogger.audio('🎧 Виявлено інше медіа (TikTok/YouTube), плавна зупинка...');
         if (smoothMediaPause) {
-          smoothPause(duration: const Duration(milliseconds: 700));
+          smoothPause(duration: const Duration(milliseconds: 1200));
         } else {
           pause();
         }
@@ -49,7 +49,7 @@ mixin AudioFocusManagerMixin on ChangeNotifier {
       AppLogger.audio('🎧 Навушники відключено (becoming noisy)');
       if (!player.playing) return;
       if (smoothMediaPause) {
-        smoothPause(duration: const Duration(milliseconds: 500));
+        smoothPause(duration: const Duration(milliseconds: 600));
       } else {
         pause();
       }
@@ -61,15 +61,19 @@ mixin AudioFocusManagerMixin on ChangeNotifier {
   void _setupPlayingListeners() {
     _playingSub1?.cancel();
     _playingSub1 = player1.playingStream.listen((playing) {
-      if (playing && player == player1) {
+      if (playing) {
         activateAudioSession();
+      } else if (!player2.playing) {
+        deactivateAudioSession();
       }
     });
 
     _playingSub2?.cancel();
     _playingSub2 = player2.playingStream.listen((playing) {
-      if (playing && player == player2) {
+      if (playing) {
         activateAudioSession();
+      } else if (!player1.playing) {
+        deactivateAudioSession();
       }
     });
   }
@@ -77,7 +81,6 @@ mixin AudioFocusManagerMixin on ChangeNotifier {
   Future<bool> activateAudioSession() async {
     try {
       final session = await AudioSession.instance;
-      await session.setActive(false);
       final success = await session.setActive(
         true,
         androidAudioFocusGainType: AndroidAudioFocusGainType.gain,

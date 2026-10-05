@@ -24,7 +24,8 @@ PROJECT_DIR = os.path.dirname(BASE_DIR)
 PUBSPEC_PATH = os.path.join(PROJECT_DIR, "pubspec.yaml")
 UPDATES_DIR = os.path.join(BASE_DIR, "data", "updates")
 VERSION_JSON_PATH = os.path.join(BASE_DIR, "data", "version.json")
-BUILT_APK_PATH = os.path.join(PROJECT_DIR, "build", "app", "outputs", "flutter-apk", "app-debug.apk")
+BUILT_APK_DEBUG = os.path.join(PROJECT_DIR, "build", "app", "outputs", "flutter-apk", "app-debug.apk")
+BUILT_APK_RELEASE = os.path.join(PROJECT_DIR, "build", "app", "outputs", "flutter-apk", "app-release.apk")
 
 
 def get_current_pubspec_version():
@@ -52,9 +53,10 @@ def update_pubspec_version(major, minor, patch, build):
     return new_version_str
 
 
-def publish_release(changelog=None, bump_type="patch"):
+def publish_release(changelog=None, bump_type="patch", mode="release"):
     print("=" * 65)
     print("🚀 MusicFlow • Автоматична публікація нового оновлення")
+    print(f"📦 Режим збірки: {mode.upper()}")
     print("=" * 65)
 
     major, minor, patch, build = get_current_pubspec_version()
@@ -90,29 +92,34 @@ def publish_release(changelog=None, bump_type="patch"):
     update_pubspec_version(new_major, new_minor, new_patch, new_build)
 
     # 2. Компіляція APK
-    print(f"[2/5] 🔨 Компілюю APK через Flutter (`flutter build apk --debug`)...")
-    build_cmd = ["flutter", "build", "apk", "--debug"]
+    is_release = (mode == "release")
+    built_apk_path = BUILT_APK_RELEASE if is_release else BUILT_APK_DEBUG
+    apk_flag = "--release" if is_release else "--debug"
+    print(f"[2/5] 🔨 Компілюю APK через Flutter (`flutter build apk {apk_flag}`)...")
+    build_cmd = ["flutter", "build", "apk", apk_flag]
     res = subprocess.run(build_cmd, cwd=PROJECT_DIR, shell=True)
     if res.returncode != 0:
         print("\n❌ Помилка під час збірки APK! Відновлюю версію у pubspec.yaml...")
         update_pubspec_version(major, minor, patch, build)
         sys.exit(1)
 
-    if not os.path.exists(BUILT_APK_PATH):
-        print(f"\n❌ Зібраний файл не знайдено за шляхом: {BUILT_APK_PATH}")
+    if not os.path.exists(built_apk_path):
+        print(f"\n❌ Зібраний файл не знайдено за шляхом: {built_apk_path}")
         sys.exit(1)
 
-    file_size = os.path.getsize(BUILT_APK_PATH)
+    file_size = os.path.getsize(built_apk_path)
     file_size_mb = file_size / (1024 * 1024)
     print(f"    ✅ APK успішно зібрано! Розмір: {file_size_mb:.1f} MB ({file_size} байт)")
 
     # 3. Копіювання у папку сервера
     print(f"[3/5] 📦 Копіюю APK у сховище сервера ({UPDATES_DIR})...")
     os.makedirs(UPDATES_DIR, exist_ok=True)
-    target_debug_apk = os.path.join(UPDATES_DIR, "app-debug.apk")
-    target_release_apk = os.path.join(UPDATES_DIR, "app-release.apk")
-    shutil.copy2(BUILT_APK_PATH, target_debug_apk)
-    shutil.copy2(BUILT_APK_PATH, target_release_apk)
+    apk_file_name = "app-release.apk" if is_release else "app-debug.apk"
+    target_apk = os.path.join(UPDATES_DIR, apk_file_name)
+    shutil.copy2(built_apk_path, target_apk)
+    # Також створюємо копію іншого імені для зворотної сумісності
+    compat_name = "app-debug.apk" if is_release else "app-release.apk"
+    shutil.copy2(built_apk_path, os.path.join(UPDATES_DIR, compat_name))
 
     # 4. Оновлення version.json з підтримкою повної історії релізів
     print(f"[4/5] 📄 Оновлюю інформацію про реліз у version.json...")
@@ -145,7 +152,7 @@ def publish_release(changelog=None, bump_type="patch"):
         "buildNumber": new_build,
         "releaseDate": datetime.now().strftime("%Y-%m-%d"),
         "changelog": changelog,
-        "apkFileName": "app-debug.apk",
+        "apkFileName": apk_file_name,
         "fileSizeBytes": file_size,
         "history": updated_history
     }
@@ -157,7 +164,7 @@ def publish_release(changelog=None, bump_type="patch"):
     print("=" * 65)
     print(f"✨ Реліз v{new_version_display} (build {new_build}) успішно опубліковано!")
     print(f"📝 Зміни:\n{changelog}")
-    print(f"💾 Розмір: {file_size_mb:.1f} MB")
+    print(f"💾 Розмір: {file_size_mb:.1f} MB (режим: {mode})")
     print(f"📡 Сервер оновлень готовий роздавати нову версію смартфонам по Wi-Fi.")
     print("=" * 65)
 
@@ -171,5 +178,11 @@ if __name__ == "__main__":
         default="patch",
         help="Тип підвищення версії (за замовчуванням: patch)"
     )
+    parser.add_argument(
+        "--mode", "-m",
+        choices=["release", "debug"],
+        default="release",
+        help="Режим збірки (за замовчуванням: release ~35MB, або debug ~200MB)"
+    )
     args = parser.parse_args()
-    publish_release(changelog=args.changelog, bump_type=args.bump)
+    publish_release(changelog=args.changelog, bump_type=args.bump, mode=args.mode)
