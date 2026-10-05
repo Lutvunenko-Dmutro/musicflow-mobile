@@ -7,6 +7,8 @@ import 'package:music_flow_mobile/features/search/screens/search_screen.dart';
 import 'package:music_flow_mobile/features/library/screens/library_screen.dart';
 import 'package:music_flow_mobile/features/library/screens/history_screen.dart';
 import 'package:music_flow_mobile/features/settings/screens/settings_screen.dart';
+import 'package:music_flow_mobile/features/settings/widgets/update_dialog.dart';
+import 'package:music_flow_mobile/services/update_service.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -24,6 +26,23 @@ class _MainScreenState extends State<MainScreen> {
     HistoryScreen(),
     SettingsScreen(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAutoUpdate();
+    });
+  }
+
+  Future<void> _checkAutoUpdate() async {
+    await Future.delayed(const Duration(seconds: 2));
+    if (!mounted) return;
+    final info = await UpdateService.instance.checkForUpdate();
+    if (info != null && mounted) {
+      UpdateDialog.show(context, info);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
