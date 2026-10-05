@@ -102,15 +102,19 @@ class LyricsSourceBanner extends StatelessWidget {
                         color: col,
                       ),
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 5),
                     const Text('•', style: TextStyle(color: Colors.white54, fontSize: 11)),
-                    const SizedBox(width: 6),
-                    Text(
-                      isKaraoke ? 'Синхронізоване ⏱️' : 'Статичний текст 📄',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                        color: isKaraoke ? Colors.amberAccent : Colors.white70,
+                    const SizedBox(width: 5),
+                    Flexible(
+                      child: Text(
+                        isKaraoke ? 'Синхронізоване ⏱️' : 'Статичний текст 📄',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: isKaraoke ? Colors.amberAccent : Colors.white70,
+                        ),
                       ),
                     ),
                   ],

@@ -130,7 +130,7 @@ class LyricsResultCard extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 8),
-        Text('LRCLIB #${item.id}', style: const TextStyle(fontSize: 11, color: Colors.white38)),
+        Flexible(child: Text('LRCLIB #${item.id}', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 11, color: Colors.white38))),
       ],
     );
   }
