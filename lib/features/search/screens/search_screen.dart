@@ -136,6 +136,7 @@ class _SearchScreenState extends State<SearchScreen> {
               controller: _searchController,
               onSearch: _search,
               filter: _filter,
+              isSearching: _isSearching,
               onOpenFilter: () {
                 SearchFilterSheet.show(
                   context,

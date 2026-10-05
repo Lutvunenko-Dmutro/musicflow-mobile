@@ -116,14 +116,51 @@ class _LyricsScreenState extends State<LyricsScreen> {
         ),
         child: SafeArea(
           child: audioProvider.isLyricsLoading 
-              ? const Center(
-                  child: CircularProgressIndicator(color: Colors.white54),
+              ? Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SizedBox(
+                        width: 160,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(2),
+                          child: LinearProgressIndicator(
+                            minHeight: 3,
+                            backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.2),
+                            valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).primaryColor),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text('Завантаження караоке та тексту...', style: TextStyle(color: Colors.white70, fontSize: 14)),
+                    ],
+                  ),
                 )
               : audioProvider.currentLyrics == null
                   ? Center(
-                      child: Text(
-                        audioProvider.lyricsErrorMsg ?? 'Текст пісні не знайдено...',
-                        style: const TextStyle(color: Colors.white54, fontSize: 16),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.lyrics_outlined, size: 48, color: Colors.white24),
+                          const SizedBox(height: 12),
+                          Text(
+                            audioProvider.lyricsErrorMsg ?? 'Текст пісні не знайдено',
+                            style: const TextStyle(color: Colors.white54, fontSize: 15),
+                          ),
+                          if (song != null) ...[
+                            const SizedBox(height: 16),
+                            ElevatedButton.icon(
+                              onPressed: () => LyricsSearchSheet.show(context, song: song),
+                              icon: const Icon(Icons.search, size: 16),
+                              label: const Text('Знайти караоке в базі'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.2),
+                                foregroundColor: Theme.of(context).primaryColor,
+                                elevation: 0,
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                     )
                   : StreamBuilder<Duration>(

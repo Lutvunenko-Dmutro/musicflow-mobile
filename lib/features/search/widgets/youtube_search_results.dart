@@ -32,13 +32,36 @@ class YoutubeSearchResults extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          if (isSearching)
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.all(24.0),
-                child: CircularProgressIndicator(),
+          if (isSearching) ...[
+            ClipRRect(
+              borderRadius: BorderRadius.circular(2),
+              child: LinearProgressIndicator(
+                minHeight: 3,
+                backgroundColor: Colors.red.withValues(alpha: 0.2),
+                valueColor: const AlwaysStoppedAnimation<Color>(Colors.red),
               ),
-            )
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 28.0),
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      width: 28,
+                      height: 28,
+                      child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.red),
+                    ),
+                    SizedBox(height: 12),
+                    Text(
+                      'Пошук треків на YouTube...',
+                      style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ]
           else if (results.isEmpty)
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 16.0),
