@@ -20,30 +20,6 @@ class _InlineLyricsState extends State<InlineLyrics> {
   final Map<int, GlobalKey> _keys = {};
   int _lastActiveIndex = -1;
 
-  void _parseLyricsStr(String? lyricsText) {
-    if (lyricsText == null || lyricsText.isEmpty) {
-      if (_lines.isNotEmpty) {
-        setState(() {
-          _lines = [];
-          _isKaraoke = false;
-          _lastActiveIndex = -1;
-          _keys.clear();
-        });
-      }
-      return;
-    }
-
-    final result = LyricsParser.parse(lyricsText);
-    setState(() {
-      _lines = result.lines;
-      _isKaraoke = result.isKaraoke;
-      _lastActiveIndex = -1;
-      _keys.clear();
-    });
-  }
-
-
-
   @override
   void dispose() {
     _scrollController.dispose();
@@ -56,9 +32,11 @@ class _InlineLyricsState extends State<InlineLyrics> {
     
     if (_lastParsedLyrics != audioProvider.currentLyrics) {
       _lastParsedLyrics = audioProvider.currentLyrics;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _parseLyricsStr(_lastParsedLyrics);
-      });
+      final result = LyricsParser.parse(_lastParsedLyrics);
+      _lines = result.lines;
+      _isKaraoke = result.isKaraoke;
+      _lastActiveIndex = -1;
+      _keys.clear();
     }
 
     if (!_isKaraoke || _lines.isEmpty) {
@@ -68,10 +46,7 @@ class _InlineLyricsState extends State<InlineLyrics> {
     return StreamBuilder<Duration>(
       stream: audioProvider.positionStream,
       builder: (context, snapshot) {
-        double currentSec = 0.0;
-        if (snapshot.hasData) {
-          currentSec = snapshot.data!.inMilliseconds / 1000.0;
-        }
+        final currentSec = (snapshot.data?.inMilliseconds ?? 0) / 1000.0;
 
         int activeIndex = -1;
         for (int i = 0; i < _lines.length; i++) {
@@ -83,9 +58,9 @@ class _InlineLyricsState extends State<InlineLyrics> {
         }
 
         if (activeIndex == -1 && _lines.isNotEmpty && _lines[0].timeSec > currentSec) {
-           activeIndex = 0;
+          activeIndex = 0;
         } else if (activeIndex == -1) {
-           return const SizedBox.shrink();
+          return const SizedBox.shrink();
         }
 
         if (activeIndex != _lastActiveIndex && activeIndex != -1) {
@@ -111,30 +86,23 @@ class _InlineLyricsState extends State<InlineLyrics> {
           width: double.infinity,
           child: ShaderMask(
             shaderCallback: (Rect bounds) {
-              return LinearGradient(
+              return const LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [
-                  Colors.transparent,
-                  Colors.black,
-                  Colors.black,
-                  Colors.transparent,
-                ],
-                stops: const [0.0, 0.2, 0.8, 1.0],
+                colors: [Colors.transparent, Colors.black, Colors.black, Colors.transparent],
+                stops: [0.0, 0.2, 0.8, 1.0],
               ).createShader(bounds);
             },
             blendMode: BlendMode.dstIn,
             child: ListView.builder(
               controller: _scrollController,
               physics: const NeverScrollableScrollPhysics(),
-              padding: const EdgeInsets.symmetric(vertical: 45), // Pad so first/last items can be centered in 90px
+              padding: const EdgeInsets.symmetric(vertical: 45),
               itemCount: _lines.length,
-              cacheExtent: 3000, // Pre-build items so keys have contexts
+              cacheExtent: 3000,
               itemBuilder: (context, index) {
                 final line = _lines[index];
                 final isCurrent = index == activeIndex;
-                
-                // Ensure key exists
                 _keys[index] ??= GlobalKey();
                 
                 Widget lineContent;
@@ -162,14 +130,11 @@ class _InlineLyricsState extends State<InlineLyrics> {
                     style: TextStyle(
                       fontSize: isCurrent ? 18 : 14,
                       fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
-                      color: isCurrent 
-                          ? Theme.of(context).primaryColor 
-                          : Colors.white.withValues(alpha: 0.3),
+                      color: isCurrent ? Theme.of(context).primaryColor : Colors.white.withValues(alpha: 0.3),
                     ),
                   );
                 }
 
-                // Add AnimatedDefaultTextStyle implicitly for smooth font size transitions
                 return Container(
                   key: _keys[index],
                   alignment: Alignment.center,

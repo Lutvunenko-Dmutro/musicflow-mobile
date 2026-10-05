@@ -49,13 +49,16 @@ class LyricsService {
         AppLogger.info('Found cached lyrics for ${song.title}', 'LYRICS');
         final nowMs = DateTime.now().millisecondsSinceEpoch;
         const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
-        
-        if (lastUpdateMs == null || (nowMs - lastUpdateMs) > sevenDaysMs) {
-          AppLogger.info('Lyrics cache is old, scheduling background update for ${song.title}', 'LYRICS');
+        final hasKaraoke = mapString.values.any((text) => RegExp(r'\[\d+:\d+').hasMatch(text));
+        if (!hasKaraoke || lastUpdateMs == null || (nowMs - lastUpdateMs) > sevenDaysMs) {
+          AppLogger.info('Lyrics cache has no karaoke or is old, updating for ${song.title}', 'LYRICS');
           Future.microtask(() async {
             final freshLyrics = await _fetchFreshLyrics(song);
             if (freshLyrics != null && freshLyrics.isNotEmpty) {
               freshLyrics['_last_update_ms'] = DateTime.now().millisecondsSinceEpoch.toString();
+              mapString.forEach((k, v) {
+                if (!freshLyrics.containsKey(k)) freshLyrics[k] = v;
+              });
               final freshData = json.encode(freshLyrics);
               if (freshData != cachedData) {
                 await prefs.setString(cacheKey, freshData);

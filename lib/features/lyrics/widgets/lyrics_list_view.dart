@@ -23,14 +23,22 @@ class _LyricsListViewState extends State<LyricsListView> {
   int _activeIndex = -1;
 
   @override
-  void didUpdateWidget(covariant LyricsListView oldWidget) {
-    super.didUpdateWidget(oldWidget);
+  void initState() {
+    super.initState();
     if (widget.isKaraoke) {
-      _updateActiveIndex();
+      _updateActiveIndex(scroll: false);
     }
   }
 
-  void _updateActiveIndex() {
+  @override
+  void didUpdateWidget(covariant LyricsListView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isKaraoke) {
+      _updateActiveIndex(scroll: true);
+    }
+  }
+
+  void _updateActiveIndex({bool scroll = true}) {
     int newActiveIndex = -1;
     for (int i = 0; i < widget.lines.length; i++) {
       if (widget.lines[i].timeSec >= 0 && widget.currentSec >= widget.lines[i].timeSec) {
@@ -42,9 +50,11 @@ class _LyricsListViewState extends State<LyricsListView> {
     
     if (newActiveIndex != _activeIndex) {
       _activeIndex = newActiveIndex;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _scrollToActiveIndex(_activeIndex);
-      });
+      if (scroll) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _scrollToActiveIndex(_activeIndex);
+        });
+      }
     }
   }
 

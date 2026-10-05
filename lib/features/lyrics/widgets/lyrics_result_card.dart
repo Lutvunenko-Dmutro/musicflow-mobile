@@ -32,6 +32,25 @@ class LyricsResultCard extends StatelessWidget {
           children: [
             const SizedBox(height: 2),
             Text(item.artistName, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                Icon(
+                  item.isKaraoke ? Icons.check_circle_rounded : Icons.info_outline_rounded,
+                  size: 13,
+                  color: item.isKaraoke ? Colors.greenAccent : Colors.amber,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  item.isKaraoke ? 'Синхронізовані таймінги (підсвічування)' : 'Статичний текст (без таймінгів)',
+                  style: TextStyle(
+                    color: item.isKaraoke ? Colors.greenAccent : Colors.amber,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
             if (preview.isNotEmpty) ...[
               const SizedBox(height: 4),
               Text(

@@ -36,8 +36,8 @@ class _LyricsSearchSheetState extends State<LyricsSearchSheet> {
   @override
   void initState() {
     super.initState();
-    final clean = widget.song.title.replaceAll(RegExp(r'[\(\[].*?[\)\]]'), '').trim();
-    _controller = TextEditingController(text: '${widget.song.author} $clean'.trim());
+    final info = OnlineLyricsClient.cleanArtistAndTitle(widget.song.author, widget.song.title);
+    _controller = TextEditingController(text: '${info.artist} ${info.track}'.trim());
     _performSearch();
   }
 

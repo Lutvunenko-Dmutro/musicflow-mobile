@@ -3,14 +3,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:music_flow_mobile/providers/audio/lyrics_manager_mixin.dart';
 import 'package:music_flow_mobile/services/lyrics_service.dart';
+import 'package:music_flow_mobile/services/online_lyrics_client.dart';
 
 class TestLyricsManager with ChangeNotifier, LyricsManagerMixin {
-  void setMockLyrics(Map<String, String> lyrics) {
-    setCustomLyricsForTest(lyrics);
-  }
-
   void setCustomLyricsForTest(Map<String, String> lyrics) {
-    // initialize availableLyrics directly for unit test
     for (final entry in lyrics.entries) {
       changeLyricsTrack(entry.key);
     }
@@ -39,6 +35,12 @@ void main() {
       expect(manager.isLyricsDisabledForCurrentSong, isTrue);
       expect(manager.currentLyrics, isNull);
       expect(manager.hasKaraokeLyrics, isFalse);
+    });
+
+    test('OnlineLyricsClient.cleanArtistAndTitle splits Artist - Track from YouTube title', () {
+      final res = OnlineLyricsClient.cleanArtistAndTitle('SEREBROofficial', 'SEREBRO - MI MI MI');
+      expect(res.artist, equals('SEREBRO'));
+      expect(res.track, equals('MI MI MI'));
     });
   });
 }

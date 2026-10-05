@@ -83,16 +83,16 @@ mixin LyricsManagerMixin on ChangeNotifier {
       _selectedLyricsKey = disabledLyricsKey;
       return;
     }
+    final karaokeKey = map.keys.firstWhere((k) => k.contains('Караоке'), orElse: () => '');
     if (savedKey != null && map.containsKey(savedKey)) {
+      if (karaokeKey.isNotEmpty && !savedKey.contains('Караоке')) {
+        _selectedLyricsKey = karaokeKey;
+        return;
+      }
       _selectedLyricsKey = savedKey;
       return;
     }
-    // Prefer synchronized karaoke track if available
-    final karaokeKey = map.keys.firstWhere(
-      (k) => k.contains('Караоке'),
-      orElse: () => map.keys.first,
-    );
-    _selectedLyricsKey = karaokeKey;
+    _selectedLyricsKey = karaokeKey.isNotEmpty ? karaokeKey : map.keys.first;
   }
 
   void changeLyricsTrack(String key, {String? songId}) {

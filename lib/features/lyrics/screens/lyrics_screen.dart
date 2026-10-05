@@ -20,14 +20,6 @@ class _LyricsScreenState extends State<LyricsScreen> {
   bool _isKaraoke = false;
   String? _lastParsedLyrics;
 
-  void _parseLyricsStr(String? lyricsText) {
-    final result = LyricsParser.parse(lyricsText);
-    setState(() {
-      _lines = result.lines;
-      _isKaraoke = result.isKaraoke;
-    });
-  }
-
   Widget _buildDisabledView(BuildContext context, AudioProvider provider, SongModel? song) {
     return Center(
       child: Column(
@@ -89,9 +81,9 @@ class _LyricsScreenState extends State<LyricsScreen> {
     
     if (_lastParsedLyrics != audioProvider.currentLyrics) {
       _lastParsedLyrics = audioProvider.currentLyrics;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _parseLyricsStr(_lastParsedLyrics);
-      });
+      final result = LyricsParser.parse(_lastParsedLyrics);
+      _lines = result.lines;
+      _isKaraoke = result.isKaraoke;
     }
     
     return Scaffold(
@@ -125,42 +117,71 @@ class _LyricsScreenState extends State<LyricsScreen> {
           ),
         ),
         child: SafeArea(
-          child: audioProvider.isLyricsLoading 
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
+          child: Column(
+            children: [
+              if (!_isKaraoke && _lines.isNotEmpty && song != null)
+                Container(
+                  margin: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
                     children: [
-                      SizedBox(
-                        width: 160,
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(2),
-                          child: LinearProgressIndicator(
-                            minHeight: 3,
-                            backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.2),
-                            valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).primaryColor),
-                          ),
-                        ),
+                      const Icon(Icons.info_outline, size: 15, color: Colors.amber),
+                      const SizedBox(width: 8),
+                      const Expanded(
+                        child: Text('Статичний текст (без синхронізації)', style: TextStyle(fontSize: 11, color: Colors.amber)),
                       ),
-                      const SizedBox(height: 16),
-                      const Text('Завантаження караоке та тексту...', style: TextStyle(color: Colors.white70, fontSize: 14)),
+                      GestureDetector(
+                        onTap: () => LyricsSearchSheet.show(context, song: song),
+                        child: const Text('Знайти караоке ⏱️', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.amber)),
+                      ),
                     ],
                   ),
-                )
-              : audioProvider.isLyricsDisabledForCurrentSong
-                  ? _buildDisabledView(context, audioProvider, song)
-                  : audioProvider.currentLyrics == null
-                      ? _buildEmptyView(context, audioProvider, song)
-                      : StreamBuilder<Duration>(
-                          stream: audioProvider.positionStream,
-                          builder: (context, snapshot) {
-                            final currentSec = (snapshot.data?.inMilliseconds ?? 0) / 1000.0;
-                            return LyricsListView(
-                              lines: _lines,
-                              isKaraoke: _isKaraoke,
-                              currentSec: currentSec,
-                            );
-                          },
+                ),
+              Expanded(
+                child: audioProvider.isLyricsLoading 
+                    ? Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            SizedBox(
+                              width: 160,
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(2),
+                                child: LinearProgressIndicator(
+                                  minHeight: 3,
+                                  backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.2),
+                                  valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).primaryColor),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            const Text('Завантаження караоке та тексту...', style: TextStyle(color: Colors.white70, fontSize: 14)),
+                          ],
                         ),
+                      )
+                    : audioProvider.isLyricsDisabledForCurrentSong
+                        ? _buildDisabledView(context, audioProvider, song)
+                        : audioProvider.currentLyrics == null
+                            ? _buildEmptyView(context, audioProvider, song)
+                            : StreamBuilder<Duration>(
+                                stream: audioProvider.positionStream,
+                                builder: (context, snapshot) {
+                                  final currentSec = (snapshot.data?.inMilliseconds ?? 0) / 1000.0;
+                                  return LyricsListView(
+                                    lines: _lines,
+                                    isKaraoke: _isKaraoke,
+                                    currentSec: currentSec,
+                                  );
+                                },
+                              ),
+              ),
+            ],
+          ),
         ),
       ),
     );
