@@ -3,7 +3,9 @@ import 'package:music_flow_mobile/providers/local_library_provider.dart';
 import 'package:music_flow_mobile/services/youtube_service.dart';
 import 'package:music_flow_mobile/models/song_model.dart';
 import 'package:music_flow_mobile/locator.dart';
+import 'package:music_flow_mobile/models/search_filter_model.dart';
 import 'package:music_flow_mobile/features/search/widgets/search_input_card.dart';
+import 'package:music_flow_mobile/features/search/widgets/search_filter_sheet.dart';
 import 'package:music_flow_mobile/features/search/widgets/local_search_results.dart';
 import 'package:music_flow_mobile/features/search/widgets/youtube_search_results.dart';
 
@@ -20,7 +22,7 @@ class _SearchScreenState extends State<SearchScreen> {
   List<SongModel> _results = [];
   List<SongModel> _localResults = [];
   bool _isSearching = false;
-  bool _musicOnly = true;
+  SearchFilterModel _filter = const SearchFilterModel();
 
   void _search() async {
     final query = _searchController.text.trim();
@@ -57,7 +59,7 @@ class _SearchScreenState extends State<SearchScreen> {
       if (isUrl) {
         results = await _ytService.resolveLink(query);
       } else {
-        results = await _ytService.searchSongs(query, musicOnly: _musicOnly);
+        results = await _ytService.searchSongs(query, filter: _filter);
       }
 
       if (mounted) {
@@ -133,14 +135,18 @@ class _SearchScreenState extends State<SearchScreen> {
             SearchInputCard(
               controller: _searchController,
               onSearch: _search,
-              musicOnly: _musicOnly,
-              onMusicOnlyChanged: (val) {
-                setState(() {
-                  _musicOnly = val;
-                });
-                if (_searchController.text.trim().isNotEmpty) {
-                  _search();
-                }
+              filter: _filter,
+              onOpenFilter: () {
+                SearchFilterSheet.show(
+                  context,
+                  filter: _filter,
+                  onApply: (newFilter) {
+                    setState(() => _filter = newFilter);
+                    if (_searchController.text.trim().isNotEmpty) {
+                      _search();
+                    }
+                  },
+                );
               },
             ),
 

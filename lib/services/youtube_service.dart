@@ -1,6 +1,7 @@
 import 'package:youtube_explode_dart/youtube_explode_dart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:music_flow_mobile/models/song_model.dart';
+import 'package:music_flow_mobile/models/search_filter_model.dart';
 import 'package:music_flow_mobile/services/youtube_caption_service.dart';
 import 'package:music_flow_mobile/utils/music_search_filter.dart';
 import 'package:music_flow_mobile/utils/app_logger.dart';
@@ -46,74 +47,28 @@ class YoutubeService {
     }
   }
 
-  Future<List<SongModel>> searchSongs(String query, {bool musicOnly = true}) async {
+  Future<List<SongModel>> searchSongs(String query, {SearchFilterModel? filter}) async {
+    final activeFilter = filter ?? const SearchFilterModel();
     return _retryWithBackoff(() async {
-      String targetQuery = query;
-      if (musicOnly) {
-        final l = query.toLowerCase();
-        final hasMusicTag = l.contains('audio') ||
-            l.contains('song') ||
-            l.contains('track') ||
-            l.contains('remix') ||
-            l.contains('пісн') ||
-            l.contains('музик') ||
-            l.contains('official');
-        if (!hasMusicTag) targetQuery = '$query official audio';
-      }
+      final targetQuery = activeFilter.buildTargetQuery(query);
+      SearchFilter sf = const SearchFilter('');
+      if (activeFilter.sortBy == SearchSortBy.views) sf = SortFilters.viewCount;
+      if (activeFilter.sortBy == SearchSortBy.newest) sf = SortFilters.uploadDate;
 
-      final searchResults = await _yt.search.searchContent(targetQuery);
+      final res = await _yt.search.searchContent(targetQuery, filter: sf);
       final songs = <SongModel>[];
-
-      for (final item in searchResults) {
-        if (item is SearchVideo) {
-          final dur = MusicSearchFilter.parseDuration(item.duration);
-          if (musicOnly &&
-              !MusicSearchFilter.isMusic(
-                title: item.title,
-                author: item.author,
-                duration: dur,
-                isLive: item.isLive,
-              )) {
-            continue;
-          }
-
-          songs.add(
-            SongModel(
-              id: item.id.value,
-              title: item.title,
-              author: item.author,
-              duration: dur,
-              coverUrl: ThumbnailSet(item.id.value).highResUrl,
-            ),
-          );
-        }
+      for (final item in res) {
+        final song = _mapSearchItem(item, activeFilter);
+        if (song != null) songs.add(song);
       }
 
-      if (musicOnly && songs.length < 3 && targetQuery != query) {
+      if (songs.length < 3 && targetQuery != query) {
         try {
-          final fallback = await _yt.search.searchContent(query);
+          final fallback = await _yt.search.searchContent(query, filter: sf);
           for (final item in fallback) {
-            if (item is SearchVideo) {
-              final dur = MusicSearchFilter.parseDuration(item.duration);
-              if (!MusicSearchFilter.isMusic(
-                title: item.title,
-                author: item.author,
-                duration: dur,
-                isLive: item.isLive,
-              )) {
-                continue;
-              }
-              if (!songs.any((s) => s.id == item.id.value)) {
-                songs.add(
-                  SongModel(
-                    id: item.id.value,
-                    title: item.title,
-                    author: item.author,
-                    duration: dur,
-                    coverUrl: ThumbnailSet(item.id.value).highResUrl,
-                  ),
-                );
-              }
+            final song = _mapSearchItem(item, activeFilter);
+            if (song != null && !songs.any((s) => s.id == song.id)) {
+              songs.add(song);
             }
           }
         } catch (_) {}
@@ -121,6 +76,19 @@ class YoutubeService {
 
       return songs;
     }, operationName: 'searchSongs("$query")');
+  }
+
+  SongModel? _mapSearchItem(dynamic item, SearchFilterModel filter) {
+    if (item is! SearchVideo || item.isLive) return null;
+    final dur = MusicSearchFilter.parseDuration(item.duration);
+    if (!filter.matchesDuration(dur)) return null;
+    return SongModel(
+      id: item.id.value,
+      title: item.title,
+      author: item.author,
+      duration: dur,
+      coverUrl: ThumbnailSet(item.id.value).highResUrl,
+    );
   }
 
   Future<dynamic> getAudioStreamInfo(String videoId) async {

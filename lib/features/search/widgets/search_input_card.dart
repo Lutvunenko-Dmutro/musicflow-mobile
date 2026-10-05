@@ -1,20 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:music_flow_mobile/core/widgets/custom_card.dart';
+import 'package:music_flow_mobile/models/search_filter_model.dart';
 
 class SearchInputCard extends StatelessWidget {
   final TextEditingController controller;
   final VoidCallback onSearch;
-  final bool musicOnly;
-  final ValueChanged<bool> onMusicOnlyChanged;
+  final SearchFilterModel filter;
+  final VoidCallback onOpenFilter;
 
   const SearchInputCard({
     super.key,
     required this.controller,
     required this.onSearch,
-    required this.musicOnly,
-    required this.onMusicOnlyChanged,
+    required this.filter,
+    required this.onOpenFilter,
   });
+
+  Widget _buildActiveBadge(String text, Color primary) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: primary.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: primary.withValues(alpha: 0.4)),
+      ),
+      child: Text(text, style: TextStyle(fontSize: 11, color: primary, fontWeight: FontWeight.bold)),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -88,28 +101,51 @@ class SearchInputCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 10),
-          Row(
-            children: [
-              FilterChip(
-                label: const Text('Тільки музика', style: TextStyle(fontSize: 12)),
-                avatar: Icon(
-                  Icons.music_note_rounded,
-                  size: 15,
-                  color: musicOnly ? primary : Colors.grey[400],
-                ),
-                selected: musicOnly,
-                selectedColor: primary.withValues(alpha: 0.2),
-                checkmarkColor: primary,
-                backgroundColor: Colors.white.withValues(alpha: 0.05),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  side: BorderSide(
-                    color: musicOnly ? primary.withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.1),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                ActionChip(
+                  avatar: Icon(
+                    Icons.tune_rounded,
+                    size: 16,
+                    color: filter.activeFiltersCount > 0 ? primary : Colors.grey[400],
                   ),
+                  label: Text(
+                    filter.activeFiltersCount > 0
+                        ? 'Фільтри (${filter.activeFiltersCount})'
+                        : 'Мега-фільтр',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: filter.activeFiltersCount > 0 ? FontWeight.bold : FontWeight.normal,
+                      color: filter.activeFiltersCount > 0 ? primary : Colors.white70,
+                    ),
+                  ),
+                  backgroundColor: filter.activeFiltersCount > 0
+                      ? primary.withValues(alpha: 0.18)
+                      : Colors.white.withValues(alpha: 0.06),
+                  side: BorderSide(
+                    color: filter.activeFiltersCount > 0
+                        ? primary.withValues(alpha: 0.6)
+                        : Colors.white.withValues(alpha: 0.12),
+                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  onPressed: onOpenFilter,
                 ),
-                onSelected: onMusicOnlyChanged,
-              ),
-            ],
+                if (filter.region != 'all') ...[
+                  const SizedBox(width: 8),
+                  _buildActiveBadge(filter.region == 'ua' ? '🇺🇦 UA' : filter.region.toUpperCase(), primary),
+                ],
+                if (filter.genre != 'all') ...[
+                  const SizedBox(width: 8),
+                  _buildActiveBadge(filter.genre, primary),
+                ],
+                if (filter.format != 'all') ...[
+                  const SizedBox(width: 8),
+                  _buildActiveBadge(filter.format, primary),
+                ],
+              ],
+            ),
           ),
           const SizedBox(height: 28),
           Icon(
