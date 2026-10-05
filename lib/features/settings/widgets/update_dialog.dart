@@ -8,9 +8,11 @@ class UpdateDialog extends StatefulWidget {
   const UpdateDialog({super.key, required this.info});
 
   static Future<void> show(BuildContext context, UpdateInfo info) {
-    return showDialog(
+    return showModalBottomSheet(
       context: context,
-      barrierDismissible: false,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF161616),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
       builder: (ctx) => UpdateDialog(info: info),
     );
   }
@@ -28,29 +30,23 @@ class _UpdateDialogState extends State<UpdateDialog> {
   Future<void> _startDownload() async {
     setState(() {
       _isDownloading = true;
-      _statusText = 'Завантаження оновлення...';
+      _statusText = 'Підготовка...';
     });
-
     try {
-      final file = await UpdateService.instance.downloadApk(
-        widget.info,
-        onProgress: (p, received, total) {
-          if (mounted) {
-            setState(() {
-              _progress = p;
-              final recMb = (received / (1024 * 1024)).toStringAsFixed(1);
-              final totMb = total > 0 ? (total / (1024 * 1024)).toStringAsFixed(1) : '?';
-              _statusText = '$recMb MB / $totMb MB (${(p * 100).toInt()}%)';
-            });
-          }
-        },
-      );
-
+      final file = await UpdateService.instance.downloadApk(widget.info, onProgress: (p, rec, tot) {
+        if (!mounted) return;
+        setState(() {
+          _progress = p;
+          final recMb = (rec / 1048576).toStringAsFixed(1);
+          final totMb = tot > 0 ? (tot / 1048576).toStringAsFixed(1) : '?';
+          _statusText = '$recMb MB з $totMb MB (${(p * 100).toInt()}%)';
+        });
+      });
       _downloadedFile = file;
       if (mounted) {
         setState(() {
           _isDownloading = false;
-          _statusText = 'Завантаження завершено! Встановлення...';
+          _statusText = 'Готово! Відкриваємо інсталятор...';
         });
         await UpdateService.instance.installApk(file);
       }
@@ -58,75 +54,117 @@ class _UpdateDialogState extends State<UpdateDialog> {
       if (mounted) {
         setState(() {
           _isDownloading = false;
-          _statusText = 'Помилка завантаження: $e';
+          _statusText = 'Помилка: $e';
         });
       }
     }
   }
 
+  List<String> _parseChangelog(String text) => text
+      .split('\n')
+      .map((l) => l.replaceAll(RegExp(r'^[•\-\*]\s*'), '').trim())
+      .where((l) => l.isNotEmpty)
+      .toList();
+
   @override
   Widget build(BuildContext context) {
     final primary = Theme.of(context).primaryColor;
-    final sizeMb = widget.info.fileSizeBytes > 0
-        ? ' • ${(widget.info.fileSizeBytes / (1024 * 1024)).toStringAsFixed(1)} MB'
-        : '';
+    final sizeMb = widget.info.fileSizeBytes > 0 ? '${(widget.info.fileSizeBytes / 1048576).toStringAsFixed(1)} MB' : 'Новий APK';
+    final items = _parseChangelog(widget.info.changelog);
 
-    return AlertDialog(
-      backgroundColor: const Color(0xFF1E1E1E),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      title: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: primary.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(10)),
-            child: Icon(Icons.system_update_rounded, color: primary, size: 24),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(child: Container(width: 44, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2)))),
+            const SizedBox(height: 18),
+            Row(
               children: [
-                const Text('Нове оновлення! 🎉', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                Text('Версія v${widget.info.version}$sizeMb', style: const TextStyle(fontSize: 12, color: Colors.white60)),
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [primary, primary.withValues(alpha: 0.6)]),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [BoxShadow(color: primary.withValues(alpha: 0.3), blurRadius: 16, offset: const Offset(0, 4))],
+                  ),
+                  child: const Icon(Icons.rocket_launch_rounded, color: Colors.white, size: 28),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Нове оновлення!', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                            decoration: BoxDecoration(color: primary.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(6)),
+                            child: Text('v${widget.info.version}', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: primary)),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(sizeMb, style: const TextStyle(fontSize: 12, color: Colors.white60)),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
-          ),
-        ],
-      ),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('Що нового:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white70)),
-          const SizedBox(height: 6),
-          Container(
-            constraints: const BoxConstraints(maxHeight: 150),
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: Colors.black26, borderRadius: BorderRadius.circular(8)),
-            child: SingleChildScrollView(
-              child: Text(widget.info.changelog, style: const TextStyle(fontSize: 12, height: 1.4, color: Colors.white)),
+            const SizedBox(height: 18),
+            const Text('Що нового в цій версії:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white70)),
+            const SizedBox(height: 8),
+            Container(
+              constraints: const BoxConstraints(maxHeight: 180),
+              child: SingleChildScrollView(
+                child: Column(
+                  children: items.map((item) => Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.white.withValues(alpha: 0.06))),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(Icons.check_circle_rounded, size: 16, color: primary),
+                          const SizedBox(width: 10),
+                          Expanded(child: Text(item, style: const TextStyle(fontSize: 13, height: 1.3, color: Colors.white))),
+                        ],
+                      ),
+                    ),
+                  )).toList(),
+                ),
+              ),
             ),
-          ),
-          if (_isDownloading || _statusText.isNotEmpty) ...[
-            const SizedBox(height: 14),
-            LinearProgressIndicator(value: _isDownloading ? _progress : null, backgroundColor: Colors.white12, valueColor: AlwaysStoppedAnimation<Color>(primary)),
-            const SizedBox(height: 6),
-            Text(_statusText, style: TextStyle(fontSize: 11, color: _isDownloading ? primary : Colors.white70)),
+            if (_isDownloading || _statusText.isNotEmpty) ...[
+              const SizedBox(height: 14),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: LinearProgressIndicator(minHeight: 7, value: _isDownloading ? _progress : null, backgroundColor: Colors.white12, valueColor: AlwaysStoppedAnimation<Color>(primary)),
+              ),
+              const SizedBox(height: 5),
+              Text(_statusText, textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: _isDownloading ? primary : Colors.white70, fontWeight: FontWeight.w500)),
+            ],
+            const SizedBox(height: 18),
+            ElevatedButton.icon(
+              onPressed: _isDownloading ? null : (_downloadedFile != null ? () => UpdateService.instance.installApk(_downloadedFile!) : _startDownload),
+              icon: Icon(_downloadedFile != null ? Icons.install_mobile_rounded : Icons.download_rounded, size: 20),
+              label: Text(_downloadedFile != null ? 'Встановити зараз' : (_isDownloading ? 'Завантаження...' : 'Завантажити та оновити'), style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+              style: ElevatedButton.styleFrom(backgroundColor: primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)), elevation: 0),
+            ),
+            if (!_isDownloading)
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Нагадати пізніше', style: TextStyle(color: Colors.white54, fontSize: 13)),
+              ),
           ],
-        ],
-      ),
-      actions: [
-        if (!_isDownloading)
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Пізніше', style: TextStyle(color: Colors.white54)),
-          ),
-        ElevatedButton(
-          onPressed: _isDownloading ? null : (_downloadedFile != null ? () => UpdateService.instance.installApk(_downloadedFile!) : _startDownload),
-          style: ElevatedButton.styleFrom(backgroundColor: primary, foregroundColor: Colors.white),
-          child: Text(_downloadedFile != null ? 'Встановити' : (_isDownloading ? 'Завантаження...' : 'Оновити зараз')),
         ),
-      ],
+      ),
     );
   }
 }
