@@ -39,9 +39,9 @@ android {
     signingConfigs {
         create("release") {
             keyAlias = keystoreProperties.getProperty("keyAlias") ?: "musicflow"
-            keyPassword = keystoreProperties.getProperty("keyPassword") ?: "musicflow123"
+            keyPassword = keystoreProperties.getProperty("keyPassword") ?: ""
             storeFile = file(keystoreProperties.getProperty("storeFile") ?: "release.keystore")
-            storePassword = keystoreProperties.getProperty("storePassword") ?: "musicflow123"
+            storePassword = keystoreProperties.getProperty("storePassword") ?: ""
         }
     }
 

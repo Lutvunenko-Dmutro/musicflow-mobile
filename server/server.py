@@ -8,6 +8,7 @@ MusicFlow Local Update & Telemetry Server
 """
 
 import http.server
+import html
 import json
 import os
 import socket
@@ -349,22 +350,22 @@ class MusicFlowRequestHandler(http.server.SimpleHTTPRequestHandler):
             crashes_html = '<div class="empty-state">🎉 Звітів про помилки поки немає. Все працює стабільно!</div>'
         else:
             for c in crashes[:20]:
-                stack = c.get("stackTrace", "").strip()
+                stack = html.escape(c.get("stackTrace", "").strip())
                 trace_box = f'<pre class="crash-trace">{stack}</pre>' if stack else ""
                 logs = c.get("recentLogs", [])
                 logs_html = ""
                 if logs:
-                    logs_formatted = "\n".join(logs)
+                    logs_formatted = html.escape("\n".join(logs))
                     logs_html = f'<details style="margin-top:6px; font-size:11px; color:#aaa;"><summary style="cursor:pointer;">Останні дії перед збоєм ({len(logs)} рядків)</summary><pre class="crash-trace" style="color:#81c784;">{logs_formatted}</pre></details>'
 
                 crashes_html += f"""
                 <div class="crash-card">
                   <div class="crash-header">
-                    <span>ID: #{c.get('reportId', 'N/A')}</span>
-                    <span>{c.get('receivedAt', '')}</span>
+                    <span>ID: #{html.escape(str(c.get('reportId', 'N/A')))}</span>
+                    <span>{html.escape(str(c.get('receivedAt', '')))}</span>
                   </div>
-                  <div class="crash-title">❌ {c.get('error', 'Невідома помилка')}</div>
-                  <div class="crash-device">📱 {c.get('device', 'Невідомий пристрій')} • Додаток v{c.get('appVersion', '1.0')}</div>
+                  <div class="crash-title">❌ {html.escape(str(c.get('error', 'Невідома помилка')))}</div>
+                  <div class="crash-device">📱 {html.escape(str(c.get('device', 'Невідомий пристрій')))} • Додаток v{html.escape(str(c.get('appVersion', '1.0')))}</div>
                   {trace_box}
                   {logs_html}
                 </div>
@@ -375,10 +376,10 @@ class MusicFlowRequestHandler(http.server.SimpleHTTPRequestHandler):
         if history:
             items_html = []
             for h in history:
-                v = h.get("version", "")
-                b = h.get("buildNumber", "")
-                d = h.get("releaseDate", "")
-                cl = h.get("changelog", "").replace("\n", "<br>")
+                v = html.escape(str(h.get("version", "")))
+                b = html.escape(str(h.get("buildNumber", "")))
+                d = html.escape(str(h.get("releaseDate", "")))
+                cl = html.escape(str(h.get("changelog", ""))).replace("\n", "<br>")
                 items_html.append(f"""
                 <div style="border-left: 3px solid var(--accent); padding-left: 10px; margin-bottom: 12px;">
                   <div style="font-size: 13px; font-weight: bold; color: var(--accent);">v{v} (build {b}) <span style="font-size: 11px; color: var(--text-muted); font-weight: normal;">• {d}</span></div>
