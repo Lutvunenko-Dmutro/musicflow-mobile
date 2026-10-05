@@ -91,12 +91,16 @@ class YoutubeService {
     );
   }
 
-  Future<dynamic> getAudioStreamInfo(String videoId) async {
+  Future<dynamic> getAudioStreamInfo(String videoId, {bool forDownload = false}) async {
     return _retryWithBackoff(() async {
       final prefs = await SharedPreferences.getInstance();
       final highQuality = prefs.getBool('high_quality') ?? true;
       
       final manifest = await _yt.videos.streamsClient.getManifest(videoId);
+      if (!forDownload && highQuality) {
+        return manifest.audioOnly.withHighestBitrate();
+      }
+
       final audioStreams = manifest.audioOnly
           .where((s) => s.container.name == 'mp4' || s.container.name == 'm4a')
           .toList();

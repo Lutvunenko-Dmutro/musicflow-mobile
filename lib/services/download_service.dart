@@ -26,7 +26,7 @@ class DownloadService {
     try {
       _updateProgress(song.id, 0.01, "З'єднання...");
 
-      final streamInfo = await _ytService.getAudioStreamInfo(song.id);
+      final streamInfo = await _ytService.getAudioStreamInfo(song.id, forDownload: true);
       if (streamInfo == null) {
         throw Exception("Could not get stream info");
       }
