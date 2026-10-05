@@ -55,6 +55,50 @@ void main() {
       expect(info.changelog, contains('Оновлення караоке'));
       expect(info.downloadUrl, equals('http://192.168.0.103:8080/api/update/download'));
       expect(info.fileSizeBytes, equals(25000000));
+      expect(info.history, isEmpty);
+      expect(info.missedReleases, isEmpty);
+    });
+
+    test('UpdateInfo parses history and filters missed releases', () {
+      final json = {
+        'version': '1.0.7',
+        'buildNumber': 8,
+        'changelog': '• Зміни в 1.0.7',
+        'downloadUrl': 'http://192.168.0.103:8080/api/update/download',
+        'fileSizeBytes': 200000000,
+        'history': [
+          {
+            'version': '1.0.7',
+            'buildNumber': 8,
+            'releaseDate': '2026-10-05',
+            'changelog': '• Зміни в 1.0.7',
+          },
+          {
+            'version': '1.0.6',
+            'buildNumber': 7,
+            'releaseDate': '2026-10-05',
+            'changelog': '• Зміни в 1.0.6',
+          },
+          {
+            'version': '1.0.5',
+            'buildNumber': 6,
+            'releaseDate': '2026-10-05',
+            'changelog': '• Зміни в 1.0.5',
+          },
+          {
+            'version': '1.0.4',
+            'buildNumber': 5,
+            'releaseDate': '2026-10-05',
+            'changelog': '• Зміни в 1.0.4',
+          },
+        ],
+      };
+
+      // Користувач на build 6 (пропустив версії 7 та 8)
+      final info = UpdateInfo.fromJson(json, userCurrentBuild: 6);
+      expect(info.history.length, equals(4));
+      expect(info.missedReleases.length, equals(2));
+      expect(info.missedReleases.map((r) => r.version), equals(['1.0.7', '1.0.6']));
     });
   });
 }

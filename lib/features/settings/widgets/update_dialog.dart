@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:music_flow_mobile/features/settings/widgets/update_changelog_view.dart';
 import 'package:music_flow_mobile/services/update_service.dart';
 
 class UpdateDialog extends StatefulWidget {
@@ -60,17 +61,10 @@ class _UpdateDialogState extends State<UpdateDialog> {
     }
   }
 
-  List<String> _parseChangelog(String text) => text
-      .split('\n')
-      .map((l) => l.replaceAll(RegExp(r'^[•\-\*]\s*'), '').trim())
-      .where((l) => l.isNotEmpty)
-      .toList();
-
   @override
   Widget build(BuildContext context) {
     final primary = Theme.of(context).primaryColor;
     final sizeMb = widget.info.fileSizeBytes > 0 ? '${(widget.info.fileSizeBytes / 1048576).toStringAsFixed(1)} MB' : 'Новий APK';
-    final items = _parseChangelog(widget.info.changelog);
 
     return SafeArea(
       child: Padding(
@@ -117,30 +111,7 @@ class _UpdateDialogState extends State<UpdateDialog> {
               ],
             ),
             const SizedBox(height: 18),
-            const Text('Що нового в цій версії:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white70)),
-            const SizedBox(height: 8),
-            Container(
-              constraints: const BoxConstraints(maxHeight: 180),
-              child: SingleChildScrollView(
-                child: Column(
-                  children: items.map((item) => Padding(
-                    padding: const EdgeInsets.only(bottom: 6),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-                      decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(10), border: Border.all(color: Colors.white.withValues(alpha: 0.06))),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(Icons.check_circle_rounded, size: 16, color: primary),
-                          const SizedBox(width: 10),
-                          Expanded(child: Text(item, style: const TextStyle(fontSize: 13, height: 1.3, color: Colors.white))),
-                        ],
-                      ),
-                    ),
-                  )).toList(),
-                ),
-              ),
-            ),
+            UpdateChangelogView(info: widget.info),
             if (_isDownloading || _statusText.isNotEmpty) ...[
               const SizedBox(height: 14),
               ClipRRect(

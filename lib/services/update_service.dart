@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
+import 'package:music_flow_mobile/models/release_history_item.dart';
 import 'package:music_flow_mobile/services/telemetry_service.dart';
 import 'package:music_flow_mobile/utils/app_logger.dart';
 
@@ -12,6 +13,8 @@ class UpdateInfo {
   final String changelog;
   final String downloadUrl;
   final int fileSizeBytes;
+  final List<ReleaseHistoryItem> history;
+  final int userCurrentBuild;
 
   const UpdateInfo({
     required this.version,
@@ -19,16 +22,33 @@ class UpdateInfo {
     required this.changelog,
     required this.downloadUrl,
     required this.fileSizeBytes,
+    this.history = const [],
+    this.userCurrentBuild = 0,
   });
 
-  factory UpdateInfo.fromJson(Map<String, dynamic> json) {
+  factory UpdateInfo.fromJson(Map<String, dynamic> json, {int userCurrentBuild = 0}) {
+    final rawHistory = json['history'] as List<dynamic>?;
+    final historyList = rawHistory != null
+        ? rawHistory
+            .whereType<Map<String, dynamic>>()
+            .map(ReleaseHistoryItem.fromJson)
+            .toList()
+        : <ReleaseHistoryItem>[];
+
     return UpdateInfo(
       version: json['version'] as String? ?? '1.0.0',
       buildNumber: json['buildNumber'] as int? ?? 1,
       changelog: json['changelog'] as String? ?? 'Оновлення без опису',
       downloadUrl: json['downloadUrl'] as String? ?? '',
       fileSizeBytes: json['fileSizeBytes'] as int? ?? 0,
+      history: historyList,
+      userCurrentBuild: userCurrentBuild,
     );
+  }
+
+  List<ReleaseHistoryItem> get missedReleases {
+    if (history.isEmpty) return const [];
+    return history.where((h) => h.buildNumber > userCurrentBuild).toList();
   }
 }
 
@@ -54,15 +74,15 @@ class UpdateService {
 
   Future<UpdateInfo?> checkForUpdate({String? customServerUrl}) async {
     try {
+      final current = await getCurrentVersion();
       final base = customServerUrl ?? await TelemetryService.instance.getServerUrl();
-      final url = Uri.parse('$base/api/update/check');
+      final url = Uri.parse('$base/api/update/check?currentBuild=${current.buildNumber}');
       AppLogger.info('Перевірка оновлень на $url', 'UPDATER');
 
       final response = await http.get(url).timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
         final data = json.decode(response.body) as Map<String, dynamic>;
-        final info = UpdateInfo.fromJson(data);
-        final current = await getCurrentVersion();
+        final info = UpdateInfo.fromJson(data, userCurrentBuild: current.buildNumber);
 
         if (info.buildNumber > current.buildNumber) {
           AppLogger.success('Знайдено оновлення v${info.version}+${info.buildNumber}', 'UPDATER');

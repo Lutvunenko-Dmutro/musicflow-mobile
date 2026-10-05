@@ -112,15 +112,40 @@ def publish_release(changelog=None, bump_type="patch"):
     shutil.copy2(BUILT_APK_PATH, target_debug_apk)
     shutil.copy2(BUILT_APK_PATH, target_release_apk)
 
-    # 4. Оновлення version.json
+    # 4. Оновлення version.json з підтримкою повної історії релізів
     print(f"[4/5] 📄 Оновлюю інформацію про реліз у version.json...")
+    existing_history = []
+    if os.path.exists(VERSION_JSON_PATH):
+        try:
+            with open(VERSION_JSON_PATH, "r", encoding="utf-8") as f:
+                old_data = json.load(f)
+                existing_history = old_data.get("history", [])
+                if not existing_history and "version" in old_data:
+                    existing_history.append({
+                        "version": old_data.get("version"),
+                        "buildNumber": old_data.get("buildNumber"),
+                        "releaseDate": old_data.get("releaseDate", ""),
+                        "changelog": old_data.get("changelog", "")
+                    })
+        except Exception:
+            pass
+
+    new_release_entry = {
+        "version": new_version_display,
+        "buildNumber": new_build,
+        "releaseDate": datetime.now().strftime("%Y-%m-%d"),
+        "changelog": changelog
+    }
+    updated_history = [new_release_entry] + [h for h in existing_history if h.get("buildNumber") != new_build]
+
     version_data = {
         "version": new_version_display,
         "buildNumber": new_build,
         "releaseDate": datetime.now().strftime("%Y-%m-%d"),
         "changelog": changelog,
         "apkFileName": "app-debug.apk",
-        "fileSizeBytes": file_size
+        "fileSizeBytes": file_size,
+        "history": updated_history
     }
     with open(VERSION_JSON_PATH, "w", encoding="utf-8") as f:
         json.dump(version_data, f, ensure_ascii=False, indent=2)

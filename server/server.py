@@ -148,6 +148,14 @@ DASHBOARD_HTML = """<!DOCTYPE html>
         <div class="info-row"><span>Розмір:</span><b>{{APK_SIZE}}</b></div>
         <div style="margin-top: 12px;"><b>Що нового в релізі:</b></div>
         <div class="changelog-box">{{CHANGELOG}}</div>
+        <div style="margin-top: 14px;">
+          <details>
+            <summary style="cursor: pointer; font-size: 13px; font-weight: bold; color: var(--accent); user-select: none;">📜 Історія всіх релізів ({{HISTORY_COUNT}} версій)</summary>
+            <div style="margin-top: 10px; max-height: 250px; overflow-y: auto; background: #151515; padding: 10px; border-radius: 8px;">
+              {{HISTORY_HTML}}
+            </div>
+          </details>
+        </div>
         <div style="margin-top: 16px; display: flex; gap: 10px;">
           <a href="/api/update/download" class="btn">Завантажити APK</a>
           <a href="/api/update/check" class="btn btn-secondary" target="_blank">Перевірити API JSON</a>
@@ -222,6 +230,18 @@ class MusicFlowRequestHandler(http.server.SimpleHTTPRequestHandler):
             info = get_version_info()
             local_ip = get_local_ip()
             info["downloadUrl"] = f"http://{local_ip}:{PORT}/api/update/download"
+
+            query = parse_qs(parsed.query)
+            current_build_param = query.get("currentBuild", [None])[0]
+            if current_build_param:
+                try:
+                    c_build = int(current_build_param)
+                    history = info.get("history", [])
+                    missed = [h for h in history if h.get("buildNumber", 0) > c_build]
+                    info["missedCount"] = len(missed)
+                except Exception:
+                    pass
+
             self.send_json(info)
             return
 
@@ -341,6 +361,25 @@ class MusicFlowRequestHandler(http.server.SimpleHTTPRequestHandler):
                 </div>
                 """
 
+        history = info.get("history", [])
+        history_html = ""
+        if history:
+            items_html = []
+            for h in history:
+                v = h.get("version", "")
+                b = h.get("buildNumber", "")
+                d = h.get("releaseDate", "")
+                cl = h.get("changelog", "").replace("\n", "<br>")
+                items_html.append(f"""
+                <div style="border-left: 3px solid var(--accent); padding-left: 10px; margin-bottom: 12px;">
+                  <div style="font-size: 13px; font-weight: bold; color: var(--accent);">v{v} (build {b}) <span style="font-size: 11px; color: var(--text-muted); font-weight: normal;">• {d}</span></div>
+                  <div style="font-size: 12px; color: #ddd; margin-top: 4px;">{cl}</div>
+                </div>
+                """)
+            history_html = "".join(items_html)
+        else:
+            history_html = '<div style="color: var(--text-muted); font-size: 12px;">Історія релізів порожня.</div>'
+
         html = DASHBOARD_HTML
         html = html.replace("{{LOCAL_IP}}", local_ip)
         html = html.replace("{{PORT}}", str(PORT))
@@ -350,6 +389,8 @@ class MusicFlowRequestHandler(http.server.SimpleHTTPRequestHandler):
         html = html.replace("{{APK_STATUS}}", apk_status)
         html = html.replace("{{APK_SIZE}}", apk_size)
         html = html.replace("{{CHANGELOG}}", str(info.get("changelog", "Немає опису")))
+        html = html.replace("{{HISTORY_COUNT}}", str(len(history)))
+        html = html.replace("{{HISTORY_HTML}}", history_html)
         html = html.replace("{{CRASH_COUNT}}", str(len(crashes)))
         html = html.replace("{{CRASHES_HTML}}", crashes_html)
 
