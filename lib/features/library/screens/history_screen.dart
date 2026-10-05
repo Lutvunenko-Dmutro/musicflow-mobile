@@ -17,6 +17,7 @@ class HistoryScreen extends StatefulWidget {
 class _HistoryScreenState extends State<HistoryScreen> {
   List<HistoryModel> _history = [];
   bool _isLoading = true;
+  final Set<String> _selectedIds = {};
 
   @override
   void initState() {
@@ -59,11 +60,79 @@ class _HistoryScreenState extends State<HistoryScreen> {
     audioProvider.setQueue(songsToPlay, initialIndex: index);
   }
 
+  void _toggleSelection(String id) {
+    setState(() {
+      if (_selectedIds.contains(id)) {
+        _selectedIds.remove(id);
+      } else {
+        _selectedIds.add(id);
+      }
+    });
+  }
+
+  Future<void> _confirmDeleteSelected() async {
+    final count = _selectedIds.length;
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF222222),
+        title: const Text('Видалити з історії', style: TextStyle(color: Colors.white)),
+        content: Text(
+          'Видалити $count ${count == 1 ? 'трек' : 'треків'} з історії?',
+          style: const TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Скасувати', style: TextStyle(color: Colors.white60))),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
+            child: const Text('Видалити'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      final db = locator<DatabaseService>();
+      for (final id in _selectedIds.toList()) {
+        await db.removeFromHistory(id);
+      }
+      if (mounted) setState(() => _selectedIds.clear());
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isSelectionMode = _selectedIds.isNotEmpty;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Історія'),
+        title: Text(isSelectionMode ? 'Вибрано: ${_selectedIds.length}' : 'Історія'),
+        leading: isSelectionMode
+            ? IconButton(icon: const Icon(Icons.close), onPressed: () => setState(() => _selectedIds.clear()))
+            : null,
+        actions: [
+          if (isSelectionMode) ...[
+            IconButton(
+              icon: Icon(_selectedIds.length == _history.length ? Icons.deselect : Icons.select_all),
+              tooltip: _selectedIds.length == _history.length ? 'Зняти все' : 'Вибрати все',
+              onPressed: () {
+                setState(() {
+                  if (_selectedIds.length == _history.length) {
+                    _selectedIds.clear();
+                  } else {
+                    _selectedIds.addAll(_history.map((h) => h.id));
+                  }
+                });
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete_outline),
+              tooltip: 'Видалити вибране',
+              onPressed: _confirmDeleteSelected,
+            ),
+          ],
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -73,6 +142,18 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   itemCount: _history.length,
                   itemBuilder: (context, index) {
                     final item = _history[index];
+                    final isSelected = _selectedIds.contains(item.id);
+
+                    final tile = HistoryListItem(
+                      item: item,
+                      isSelected: isSelected,
+                      isSelectionMode: isSelectionMode,
+                      onTap: () => isSelectionMode ? _toggleSelection(item.id) : _playSong(item, index),
+                      onLongPress: () => _toggleSelection(item.id),
+                    );
+
+                    if (isSelectionMode) return tile;
+
                     return Dismissible(
                       key: Key(item.id),
                       direction: DismissDirection.endToStart,
@@ -82,13 +163,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         padding: const EdgeInsets.only(right: 20.0),
                         child: const Icon(Icons.delete, color: Colors.white),
                       ),
-                      onDismissed: (direction) async {
-                        await locator<DatabaseService>().removeFromHistory(item.id);
-                      },
-                      child: HistoryListItem(
-                        item: item,
-                        onTap: () => _playSong(item, index),
-                      ),
+                      onDismissed: (_) async => locator<DatabaseService>().removeFromHistory(item.id),
+                      child: tile,
                     );
                   },
                 ),
