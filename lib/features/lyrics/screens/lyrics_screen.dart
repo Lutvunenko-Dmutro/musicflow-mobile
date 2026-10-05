@@ -83,8 +83,6 @@ class _LyricsScreenState extends State<LyricsScreen> {
         child: SafeArea(
           child: Column(
             children: [
-              if (audioProvider.currentLyrics != null && !audioProvider.isLyricsDisabledForCurrentSong)
-                LyricsSourceBanner(provider: audioProvider, song: song, isKaraoke: _isKaraoke),
               Expanded(
                 child: audioProvider.isLyricsLoading
                     ? Center(
@@ -126,6 +124,8 @@ class _LyricsScreenState extends State<LyricsScreen> {
                                 },
                               ),
               ),
+              if (audioProvider.currentLyrics != null && !audioProvider.isLyricsDisabledForCurrentSong)
+                LyricsSourceBanner(provider: audioProvider, song: song, isKaraoke: _isKaraoke),
             ],
           ),
         ),
