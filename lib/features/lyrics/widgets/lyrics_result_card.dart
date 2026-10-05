@@ -36,134 +36,146 @@ class LyricsResultCard extends StatelessWidget {
     final preview = _cleanPreview(item.bestLyrics);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: item.isKaraoke ? 0.07 : 0.03),
-        borderRadius: BorderRadius.circular(14),
+        color: const Color(0xFF222222),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: item.isKaraoke ? primary.withValues(alpha: 0.4) : Colors.white.withValues(alpha: 0.08),
+          color: item.isKaraoke ? primary.withValues(alpha: 0.25) : Colors.white.withValues(alpha: 0.08),
         ),
       ),
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                item.isKaraoke ? Icons.mic_external_on_rounded : Icons.article_outlined,
-                size: 18,
-                color: item.isKaraoke ? primary : Colors.white60,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  item.trackName,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              if (dur.isNotEmpty)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(6)),
-                  child: Text(dur, style: const TextStyle(fontSize: 10, color: Colors.white70)),
-                ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Row(
-            children: [
-              const Icon(Icons.person_outline, size: 14, color: Colors.white54),
-              const SizedBox(width: 4),
-              Text(item.artistName, style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500)),
-              if (item.albumName != null && item.albumName!.trim().isNotEmpty) ...[
-                const SizedBox(width: 8),
-                const Text('•', style: TextStyle(color: Colors.white38)),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(item.albumName!, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white38, fontSize: 12)),
-                ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: onPreview,
+          child: Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildHeader(primary, dur),
+                const SizedBox(height: 10),
+                _buildBadges(),
+                if (preview.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  _buildPreviewBox(preview),
+                ],
+                const SizedBox(height: 12),
+                _buildActions(primary),
               ],
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                decoration: BoxDecoration(
-                  color: (item.isKaraoke ? Colors.greenAccent : Colors.amber).withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: (item.isKaraoke ? Colors.greenAccent : Colors.amber).withValues(alpha: 0.3)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(item.isKaraoke ? Icons.check_circle : Icons.info_outline, size: 11, color: item.isKaraoke ? Colors.greenAccent : Colors.amber),
-                    const SizedBox(width: 4),
-                    Text(
-                      item.isKaraoke ? 'Синхронізоване караоке' : 'Статичний текст',
-                      style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: item.isKaraoke ? Colors.greenAccent : Colors.amber),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 6),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(6)),
-                child: Text('Джерело: LRCLIB (#${item.id})', style: const TextStyle(fontSize: 10, color: Colors.white60)),
-              ),
-            ],
-          ),
-          if (preview.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Text(
-              '«$preview»',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.45), fontSize: 11, fontStyle: FontStyle.italic),
             ),
-          ],
-          const SizedBox(height: 10),
-          Row(
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader(Color primary, String dur) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: (item.isKaraoke ? primary : Colors.white24).withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(item.isKaraoke ? Icons.mic_external_on_rounded : Icons.lyrics_rounded, size: 20, color: item.isKaraoke ? primary : Colors.white70),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                flex: 1,
-                child: OutlinedButton.icon(
-                  onPressed: onPreview,
-                  icon: const Icon(Icons.visibility_rounded, size: 15),
-                  label: const Text('Прев\'ю 👁️'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    side: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
-                    padding: const EdgeInsets.symmetric(vertical: 9),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                  ),
-                ),
+              Row(
+                children: [
+                  Expanded(child: Text(item.trackName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.white), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                  if (dur.isNotEmpty) ...[
+                    const SizedBox(width: 8),
+                    Container(padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2), decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(6)), child: Text(dur, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.white70))),
+                  ],
+                ],
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                flex: 1,
-                child: ElevatedButton.icon(
-                  onPressed: onSelect,
-                  icon: const Icon(Icons.check_rounded, size: 16),
-                  label: const Text('Зберегти'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: item.isKaraoke ? primary : Colors.white24,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 9),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    elevation: 0,
-                  ),
-                ),
+              const SizedBox(height: 3),
+              Text(
+                item.albumName != null && item.albumName!.trim().isNotEmpty ? '${item.artistName} • ${item.albumName}' : item.artistName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: Colors.white70, fontSize: 13),
               ),
             ],
           ),
-        ],
-      ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBadges() {
+    final isK = item.isKaraoke;
+    final color = isK ? const Color(0xFF00E676) : Colors.amber;
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(isK ? Icons.timer_outlined : Icons.article_outlined, size: 13, color: color),
+              const SizedBox(width: 5),
+              Text(isK ? 'Синхронізоване' : 'Статичний текст', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: color)),
+            ],
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text('LRCLIB #${item.id}', style: const TextStyle(fontSize: 11, color: Colors.white38)),
+      ],
+    );
+  }
+
+  Widget _buildPreviewBox(String preview) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.25), borderRadius: BorderRadius.circular(8)),
+      child: Text('«$preview»', maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.white60, fontSize: 12, fontStyle: FontStyle.italic, height: 1.3)),
+    );
+  }
+
+  Widget _buildActions(Color primary) {
+    return Row(
+      children: [
+        Expanded(
+          child: OutlinedButton.icon(
+            onPressed: onPreview,
+            icon: const Icon(Icons.remove_red_eye_outlined, size: 16),
+            label: const Text('Переглянути'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.white,
+              side: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
+              padding: const EdgeInsets.symmetric(vertical: 9),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: ElevatedButton.icon(
+            onPressed: onSelect,
+            icon: const Icon(Icons.check_rounded, size: 16),
+            label: const Text('Вибрати'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: primary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 9),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              elevation: 0,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

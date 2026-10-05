@@ -16,8 +16,8 @@ class LyricsSearchSheet extends StatefulWidget {
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: const Color(0xFF1E1E1E),
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      backgroundColor: const Color(0xFF191919),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (ctx) => LyricsSearchSheet(song: song),
     );
   }
@@ -77,15 +77,16 @@ class _LyricsSearchSheetState extends State<LyricsSearchSheet> {
     final sel = _tab == idx;
     return GestureDetector(
       onTap: () => setState(() => _tab = idx),
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
         margin: const EdgeInsets.only(right: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: sel ? pri.withValues(alpha: 0.25) : Colors.white.withValues(alpha: 0.05),
-          borderRadius: BorderRadius.circular(16),
+          color: sel ? pri.withValues(alpha: 0.22) : Colors.white.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(color: sel ? pri : Colors.white12),
         ),
-        child: Text(txt, style: TextStyle(fontSize: 11, fontWeight: sel ? FontWeight.bold : FontWeight.normal, color: sel ? pri : Colors.white70)),
+        child: Text(txt, style: TextStyle(fontSize: 12, fontWeight: sel ? FontWeight.bold : FontWeight.w500, color: sel ? pri : Colors.white70)),
       ),
     );
   }
@@ -96,20 +97,21 @@ class _LyricsSearchSheetState extends State<LyricsSearchSheet> {
     final kCount = _results.where((r) => r.isKaraoke).length;
 
     return Container(
-      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.85),
-      padding: EdgeInsets.only(left: 16, right: 16, top: 12, bottom: MediaQuery.of(context).viewInsets.bottom + 16),
+      constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.88),
+      padding: EdgeInsets.only(left: 16, right: 16, top: 10, bottom: MediaQuery.of(context).viewInsets.bottom + 16),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(width: 36, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2))),
+          Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2))),
           const SizedBox(height: 12),
           Row(children: [
-            Container(padding: const EdgeInsets.all(6), decoration: BoxDecoration(color: pri.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(8)), child: Icon(Icons.manage_search_rounded, size: 20, color: pri)),
+            Container(padding: const EdgeInsets.all(7), decoration: BoxDecoration(color: pri.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(10)), child: Icon(Icons.manage_search_rounded, size: 22, color: pri)),
             const SizedBox(width: 10),
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Text('Пошук караоке в базі LRCLIB', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              const Text('Пошук караоке та слів', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               Text('${widget.song.author} • ${widget.song.title}', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, color: Colors.white54)),
             ])),
+            IconButton(icon: const Icon(Icons.close_rounded, color: Colors.white60, size: 20), onPressed: () => Navigator.pop(context)),
           ]),
           const SizedBox(height: 12),
           Row(children: [
@@ -117,31 +119,32 @@ class _LyricsSearchSheetState extends State<LyricsSearchSheet> {
               controller: _controller,
               style: const TextStyle(fontSize: 14),
               decoration: InputDecoration(
+                prefixIcon: const Icon(Icons.search_rounded, size: 20, color: Colors.white60),
                 hintText: 'Виконавець або назва...',
                 filled: true,
-                fillColor: Colors.black.withValues(alpha: 0.3),
+                fillColor: const Color(0xFF262626),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
               ),
               onSubmitted: (_) => _performSearch(),
             )),
             const SizedBox(width: 8),
             ElevatedButton(
               onPressed: _isLoading ? null : _performSearch,
-              style: ElevatedButton.styleFrom(backgroundColor: pri, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-              child: _isLoading ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text('Пошук', style: TextStyle(fontWeight: FontWeight.bold)),
+              style: ElevatedButton.styleFrom(backgroundColor: pri, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 13), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+              child: _isLoading ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text('Пошук', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
             ),
           ]),
           if (_isLoading) Padding(padding: const EdgeInsets.only(top: 8), child: ClipRRect(borderRadius: BorderRadius.circular(2), child: LinearProgressIndicator(minHeight: 3, backgroundColor: pri.withValues(alpha: 0.2), valueColor: AlwaysStoppedAnimation<Color>(pri)))),
           if (_results.isNotEmpty) ...[
-            const SizedBox(height: 10),
-            Row(children: [
+            const SizedBox(height: 12),
+            SingleChildScrollView(scrollDirection: Axis.horizontal, child: Row(children: [
               _buildChip(0, 'Всі (${_results.length})', pri),
               _buildChip(1, '⏱️ Караоке ($kCount)', pri),
               _buildChip(2, '📄 Текст (${_results.length - kCount})', pri),
-            ]),
+            ])),
           ],
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           Expanded(child: _buildBody()),
         ],
       ),
