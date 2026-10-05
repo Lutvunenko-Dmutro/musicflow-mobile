@@ -33,12 +33,24 @@ class UpdateInfo {
 }
 
 class UpdateService {
-  static const String currentVersion = '1.0.0';
-  static const int currentBuildNumber = 1;
+  static const String currentVersion = '1.0.1';
+  static const int currentBuildNumber = 2;
   static const MethodChannel _installerChannel = MethodChannel('com.example.music_flow_mobile/installer');
 
   static UpdateService? _instance;
   static UpdateService get instance => _instance ??= UpdateService();
+
+  Future<({String version, int buildNumber})> getCurrentVersion() async {
+    try {
+      final res = await _installerChannel.invokeMapMethod<String, dynamic>('getAppVersion');
+      if (res != null) {
+        final name = res['versionName'] as String? ?? currentVersion;
+        final code = (res['versionCode'] as num?)?.toInt() ?? currentBuildNumber;
+        return (version: name, buildNumber: code);
+      }
+    } catch (_) {}
+    return (version: currentVersion, buildNumber: currentBuildNumber);
+  }
 
   Future<UpdateInfo?> checkForUpdate({String? customServerUrl}) async {
     try {
@@ -50,9 +62,9 @@ class UpdateService {
       if (response.statusCode == 200) {
         final data = json.decode(response.body) as Map<String, dynamic>;
         final info = UpdateInfo.fromJson(data);
+        final current = await getCurrentVersion();
 
-        // Якщо збірка на сервері новіша або номер версії відрізняється у більший бік
-        if (info.buildNumber > currentBuildNumber || info.version != currentVersion) {
+        if (info.buildNumber > current.buildNumber) {
           AppLogger.success('Знайдено оновлення v${info.version}+${info.buildNumber}', 'UPDATER');
           return info;
         }

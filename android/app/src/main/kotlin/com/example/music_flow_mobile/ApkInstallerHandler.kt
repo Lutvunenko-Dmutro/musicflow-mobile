@@ -39,6 +39,23 @@ class ApkInstallerHandler(private val context: Context) : MethodChannel.MethodCa
             } catch (e: Exception) {
                 result.error("INSTALL_ERROR", e.message, null)
             }
+        } else if (call.method == "getAppVersion") {
+            try {
+                val pInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+                val versionName = pInfo.versionName ?: "1.0.0"
+                val versionCode = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                    pInfo.longVersionCode
+                } else {
+                    @Suppress("DEPRECATION")
+                    pInfo.versionCode.toLong()
+                }
+                result.success(mapOf(
+                    "versionName" to versionName,
+                    "versionCode" to versionCode
+                ))
+            } catch (e: Exception) {
+                result.error("VERSION_ERROR", e.message, null)
+            }
         } else {
             result.notImplemented()
         }
