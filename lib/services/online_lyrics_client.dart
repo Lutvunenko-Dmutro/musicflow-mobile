@@ -3,12 +3,6 @@ import 'package:http/http.dart' as http;
 import 'package:music_flow_mobile/models/lrclib_search_result.dart';
 import 'package:music_flow_mobile/utils/app_logger.dart';
 
-class CleanedTrackInfo {
-  final String artist;
-  final String track;
-  const CleanedTrackInfo(this.artist, this.track);
-}
-
 class OnlineLyricsClient {
   static const String _lrclibUrl = 'https://lrclib.net/api/search';
   static const String _ovhUrl = 'https://api.lyrics.ovh/v1';
@@ -16,7 +10,7 @@ class OnlineLyricsClient {
     'User-Agent': 'MusicFlow/1.0 (https://github.com/music-flow)',
   };
 
-  static CleanedTrackInfo cleanArtistAndTitle(String rawArtist, String rawTitle) {
+  static ({String artist, String track}) cleanArtistAndTitle(String rawArtist, String rawTitle) {
     var title = rawTitle
         .replaceAll(RegExp(r'[\(\[].*?[\)\]]'), '')
         .replaceAll(RegExp(r'(official\s*(music\s*)?video|lyric\s*video|audio|remastered|hd|4k)', caseSensitive: false), '')
@@ -32,11 +26,11 @@ class OnlineLyricsClient {
       final candArtist = parts[0].trim();
       final candTrack = parts.sublist(1).join(' - ').trim();
       if (candArtist.isNotEmpty && candTrack.isNotEmpty) {
-        return CleanedTrackInfo(candArtist, candTrack);
+        return (artist: candArtist, track: candTrack);
       }
     }
 
-    return CleanedTrackInfo(artist, title);
+    return (artist: artist, track: title);
   }
 
   static Future<String?> fetchFromOvh(String artist, String title) async {
