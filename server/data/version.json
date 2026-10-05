@@ -1,8 +1,8 @@
 {
-  "version": "1.0.6",
-  "buildNumber": 7,
+  "version": "1.0.7",
+  "buildNumber": 8,
   "releaseDate": "2026-10-05",
-  "changelog": "• Виправлено мікро-переповнення RenderFlex (2.5px) у плашці караоке\n• Адаптивна верстка під будь-яку ширину екрану",
+  "changelog": "• Увімкнено максимальний бітрейт YouTube (160 kbps Opus замість 128 kbps AAC)\n• Покращена чіткість високих частот та глибина звуку",
   "apkFileName": "app-debug.apk",
-  "fileSizeBytes": 217189484
+  "fileSizeBytes": 217190592
 }
