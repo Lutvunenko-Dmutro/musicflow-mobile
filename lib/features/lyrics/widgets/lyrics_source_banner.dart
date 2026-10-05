@@ -68,34 +68,39 @@ class LyricsSourceBanner extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Row(
-                        children: [
-                          Text(
-                            isKaraoke ? 'Синхронізовано ⏱️' : 'Статичний текст 📄',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: isKaraoke ? Colors.amberAccent : Colors.white70,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
-                            decoration: BoxDecoration(
-                              color: AppColors.primary.withValues(alpha: 0.18),
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(color: AppColors.primary.withValues(alpha: 0.35)),
-                            ),
-                            child: Text(
-                              src,
-                              style: const TextStyle(
-                                fontSize: 10,
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              isKaraoke ? 'Синхронізовано ⏱️' : 'Статичний текст 📄',
+                              style: TextStyle(
+                                fontSize: 12,
                                 fontWeight: FontWeight.bold,
-                                color: AppColors.primary,
+                                color: isKaraoke ? Colors.amberAccent : Colors.white70,
                               ),
                             ),
-                          ),
-                        ],
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withValues(alpha: 0.18),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: AppColors.primary.withValues(alpha: 0.35)),
+                              ),
+                              child: Text(
+                                src,
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                       const SizedBox(height: 2),
                       Text(
