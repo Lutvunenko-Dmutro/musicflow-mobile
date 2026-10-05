@@ -46,8 +46,9 @@ mixin LyricsManagerMixin on ChangeNotifier {
       song,
       onUpdate: (freshLyrics) async {
         if (getCurrentSong()?.id == song.id) {
-          _availableLyrics = freshLyrics;
-          await _selectBestTrack(song.id, freshLyrics);
+          final cleaned = _deduplicateLyrics(freshLyrics);
+          _availableLyrics = cleaned;
+          await _selectBestTrack(song.id, cleaned);
           notifyListeners();
         }
       },
@@ -55,9 +56,10 @@ mixin LyricsManagerMixin on ChangeNotifier {
       if (getCurrentSong()?.id == song.id) {
         _isLyricsLoading = false;
         if (lyricsMap != null && lyricsMap.isNotEmpty) {
-          _availableLyrics = lyricsMap;
-          await _selectBestTrack(song.id, lyricsMap);
-          AppLogger.success('Знайдено варіанти: [${lyricsMap.keys.join(", ")}] | Обрано: "$_selectedLyricsKey"', 'LYRICS');
+          final cleaned = _deduplicateLyrics(lyricsMap);
+          _availableLyrics = cleaned;
+          await _selectBestTrack(song.id, cleaned);
+          AppLogger.success('Знайдено варіанти: [${cleaned.keys.join(", ")}] | Обрано: "$_selectedLyricsKey"', 'LYRICS');
         } else {
           AppLogger.warning('Караоке для "${song.title}" не знайдено', 'LYRICS');
         }
@@ -119,10 +121,28 @@ mixin LyricsManagerMixin on ChangeNotifier {
     }
   }
 
+  Map<String, String> _deduplicateLyrics(Map<String, String> map) {
+    final hasSpecific = map.keys.any((k) => k.startsWith('Караоке [LRCLIB]') || k.startsWith('Текст [LRCLIB]'));
+    final result = <String, String>{};
+    final seen = <String>{};
+    for (final entry in map.entries) {
+      if (hasSpecific && entry.key == 'Караоке (LRCLIB)') continue;
+      final norm = entry.value.trim();
+      if (seen.contains(norm)) continue;
+      seen.add(norm);
+      result[entry.key] = entry.value;
+    }
+    return result.isEmpty ? map : result;
+  }
+
   Future<void> setCustomLyrics(SongModel song, String label, String text) async {
     final updated = Map<String, String>.from(_availableLyrics ?? {});
+    if (label.contains('LRCLIB')) {
+      updated.remove('Караоке (LRCLIB)');
+    }
     updated[label] = text;
-    _availableLyrics = updated;
+    final cleaned = _deduplicateLyrics(updated);
+    _availableLyrics = cleaned;
     _selectedLyricsKey = label;
     await _lyricsService.saveCustomLyrics(song, label, text);
     notifyListeners();

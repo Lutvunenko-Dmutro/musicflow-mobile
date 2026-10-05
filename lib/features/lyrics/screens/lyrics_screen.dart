@@ -5,7 +5,6 @@ import 'package:music_flow_mobile/models/lyrics_line.dart';
 import 'package:music_flow_mobile/utils/lyrics_parser.dart';
 import 'package:music_flow_mobile/features/lyrics/widgets/lyrics_list_view.dart';
 import 'package:music_flow_mobile/features/lyrics/widgets/lyrics_search_sheet.dart';
-import 'package:music_flow_mobile/features/lyrics/widgets/lyrics_version_menu.dart';
 import 'package:music_flow_mobile/features/lyrics/widgets/lyrics_empty_views.dart';
 import 'package:music_flow_mobile/features/lyrics/widgets/lyrics_source_banner.dart';
 
@@ -63,7 +62,6 @@ class _LyricsScreenState extends State<LyricsScreen> {
               tooltip: 'Знайти інше караоке',
               onPressed: () => LyricsSearchSheet.show(context, song: song),
             ),
-          LyricsVersionMenu(audioProvider: audioProvider, song: song),
         ],
       ),
       extendBodyBehindAppBar: true,

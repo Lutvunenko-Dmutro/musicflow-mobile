@@ -109,6 +109,9 @@ class LyricsService {
         });
       } catch (_) {}
     }
+    if (label.contains('LRCLIB')) {
+      map.remove('Караоке (LRCLIB)');
+    }
     map[label] = text;
     map['_last_update_ms'] = DateTime.now().millisecondsSinceEpoch.toString();
     await prefs.setString(cacheKey, json.encode(map));

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:music_flow_mobile/core/app_colors.dart';
 import 'package:music_flow_mobile/models/song_model.dart';
 import 'package:music_flow_mobile/providers/audio_provider.dart';
-import 'package:music_flow_mobile/features/lyrics/widgets/lyrics_search_sheet.dart';
 import 'package:music_flow_mobile/features/lyrics/widgets/lyrics_version_sheet.dart';
 
 class LyricsSourceBanner extends StatelessWidget {
@@ -16,34 +15,6 @@ class LyricsSourceBanner extends StatelessWidget {
     required this.song,
     required this.isKaraoke,
   });
-
-  Future<void> _confirmDelete(BuildContext context, String key) async {
-    if (song == null) return;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF222222),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Видалити це караоке?', style: TextStyle(color: Colors.white, fontSize: 17)),
-        content: Text('Видалити версію "$key" для "${song!.title}"?', style: const TextStyle(color: Colors.white70, fontSize: 14)),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Скасувати', style: TextStyle(color: Colors.white60))),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
-            child: const Text('Видалити'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true && context.mounted) {
-      await provider.removeLyricsTrack(song!, key);
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Караоке успішно видалено'), behavior: SnackBarBehavior.floating));
-      }
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -79,7 +50,7 @@ class LyricsSourceBanner extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           onTap: () => LyricsVersionSheet.show(context, audioProvider: provider, song: song),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             child: Row(
               children: [
                 Container(
@@ -91,7 +62,7 @@ class LyricsSourceBanner extends StatelessWidget {
                   ),
                   child: Icon(ico, size: 18, color: AppColors.primary),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -138,40 +109,27 @@ class LyricsSourceBanner extends StatelessWidget {
                     ],
                   ),
                 ),
-                const SizedBox(width: 8),
-                if (song != null) ...[
-                  InkWell(
-                    onTap: () => LyricsVersionSheet.show(context, audioProvider: provider, song: song),
-                    borderRadius: BorderRadius.circular(8),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: AppColors.primary.withValues(alpha: 0.4)),
-                      ),
-                      child: const Text(
-                        'Змінити',
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
-                      ),
+                const SizedBox(width: 10),
+                if (song != null)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: AppColors.primary.withValues(alpha: 0.45)),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.tune_rounded, size: 14, color: Colors.white),
+                        SizedBox(width: 5),
+                        Text(
+                          'Версії',
+                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(width: 4),
-                  IconButton(
-                    icon: const Icon(Icons.search_rounded, size: 20, color: Colors.white70),
-                    tooltip: 'Знайти в базі',
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                    onPressed: () => LyricsSearchSheet.show(context, song: song!),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.delete_outline_rounded, size: 20, color: Colors.white60),
-                    tooltip: 'Видалити версію',
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                    onPressed: () => _confirmDelete(context, key),
-                  ),
-                ],
               ],
             ),
           ),
