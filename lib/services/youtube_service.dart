@@ -29,16 +29,17 @@ class YoutubeService {
       try {
         return await operation();
       } catch (e, st) {
+        if (e is VideoUnplayableException || e.toString().contains('VideoUnplayableException')) {
+          AppLogger.error('Video is unplayable (restricted on YouTube): $e', e, st, 'YOUTUBE');
+          rethrow;
+        }
         if (attempt >= maxAttempts) {
           _resetClient();
           AppLogger.error('Failed $operationName after $attempt attempts: $e', e, st, 'YOUTUBE');
           rethrow;
         }
         _resetClient();
-        AppLogger.warning(
-          '$operationName failed (attempt $attempt/$maxAttempts): $e. Retrying in ${delay.inMilliseconds}ms...',
-          'YOUTUBE',
-        );
+        AppLogger.warning('$operationName failed ($attempt/$maxAttempts): $e', 'YOUTUBE');
         await Future.delayed(delay);
         delay *= 2;
       }

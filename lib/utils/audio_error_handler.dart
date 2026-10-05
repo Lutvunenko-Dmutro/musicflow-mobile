@@ -46,6 +46,18 @@ void handleAudioPlaybackError(dynamic e, StackTrace stacktrace, SongModel song, 
         behavior: SnackBarBehavior.floating,
       ),
     );
+  } else if (errorMsg.contains('VideoUnplayableException') ||
+      errorMsg.contains('unplayable') ||
+      errorMsg.contains('Streams are not available')) {
+    const friendly = 'Цей трек заблоковано на YouTube (обмеження правовласника). Спробуйте іншу версію.';
+    setErrorCallback(friendly);
+    scaffoldMessengerKey.currentState?.showSnackBar(
+      const SnackBar(
+        content: Text(friendly),
+        backgroundColor: Colors.redAccent,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   } else {
     setErrorCallback('Помилка: $errorMsg');
     scaffoldMessengerKey.currentState?.showSnackBar(
