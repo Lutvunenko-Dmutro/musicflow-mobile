@@ -12,6 +12,7 @@
 > 📋 **[Вимоги до продукту (PRD.md) →](PRD.md)**  
 > 🏗️ **[Системна архітектура (ARCHITECTURE.md) →](ARCHITECTURE.md)**  
 > 🗺️ **[План реалізації та Roadmap (PLAN.md) →](PLAN.md)**  
+> 🤖 **[ШІ-Оркестрація та Агенти (ORCHESTRATION.md) →](ORCHESTRATION.md)**  
 > 📥 **[Завантажити останній релізний APK (v1.0.32) →](https://github.com/Lutvunenko-Dmutro/musicflow-mobile/releases/latest)**  
 > 📖 **[Технічна документація проекту →](docs/README.md)**  
 > 🔍 **[Результати аудиту системи →](docs/audit.md)**
