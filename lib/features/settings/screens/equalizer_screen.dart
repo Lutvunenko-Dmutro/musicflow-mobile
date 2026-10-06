@@ -47,9 +47,18 @@ class _EqualizerScreenBodyState extends State<_EqualizerScreenBody> {
     return Scaffold(
       backgroundColor: const Color(0xFF1E1E1E),
       appBar: AppBar(
-        title: const Text('Еквалайзер'),
+        title: const Text('10-смуговий Еквалайзер'),
         backgroundColor: Colors.transparent,
         actions: [
+          if (isEnabled)
+            IconButton(
+              icon: const Icon(Icons.restart_alt),
+              tooltip: 'Скинути частоти',
+              onPressed: () {
+                provider.resetPreset();
+                setState(() => _activePreset = 'Звичайний');
+              },
+            ),
           Switch(
             value: isEnabled,
             onChanged: (val) => provider.toggleEqualizer(),

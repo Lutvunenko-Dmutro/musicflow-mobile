@@ -2,12 +2,12 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Release-v1.0.27%20(build%2028)-blue?style=for-the-badge&logo=android" alt="Version">
-  <img src="https://img.shields.io/badge/Tests-47%20Passing-brightgreen?style=for-the-badge&logo=flutter" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-54%20Passing-brightgreen?style=for-the-badge&logo=flutter" alt="Tests">
   <img src="https://img.shields.io/badge/Architecture-%3C200%20Lines%2FFile-purple?style=for-the-badge" alt="Architecture">
   <img src="https://img.shields.io/badge/License-MIT-orange?style=for-the-badge" alt="License">
 </p>
 
-> Сучасний музичний плеєр на Flutter із відтворенням локальних треків, YouTube стрімінгом, завантаженням пісень, синхронізованими текстами, реактивним FFT-візуалізатором та локальним сервером бездротових OTA-оновлень.
+> Сучасний музичний плеєр на Flutter із відтворенням локальних треків, YouTube стрімінгом, завантаженням пісень, синхронізованими текстами, реактивним FFT-візуалізатором та бездротовими OTA-оновленнями через GitHub Releases API.
 
 > 📥 **[Завантажити останній релізний APK (v1.0.27) →](https://github.com/Lutvunenko-Dmutro/musicflow-mobile/releases/latest)**  
 > 📖 **[Технічна документація проекту →](docs/README.md)**  
@@ -37,12 +37,13 @@
 | 📜 **Синхронізовані тексти** | Підтримка LRC, LRCLIB API, парсинг та калібрування таймінгів авто-субтитрів YouTube | ✅ |
 | 📊 **FFT-візуалізатор** | 60-смуговий спектрограф із Software (fftea) та Hardware (AudioEffect) ядрами, згладжуванням та +3dB headroom | ✅ |
 | 🎛️ **Екран налаштувань візуалізатора** | Закріплене живе прев'ю вгорі, 5 стилів відображення, швидкі пресети та повзунки фізики | ✅ |
-| 🎚️ **Native Еквалайзер** | Android-native через `AudioPipeline`, синхронізація на обидва плеєри, пресети та Bass Boost | ✅ |
+| 🎚️ **10-смуговий Еквалайзер** | 10 стандартних частот (31 Гц – 16 кГц), 12 пресетів (Рок, Поп, Bass Boost тощо), мапування на аудіочип, кнопка скидання | ✅ |
 | 🔀 **Справжній Crossfade** | Плавний перехід між треками без пауз завдяки архітектурі на двох `AudioPlayer` | ✅ |
-| 📡 **OTA-оновлення по Wi-Fi** | Автоматична перевірка, завантаження та встановлення APK безпосередньо з локального сервера | ✅ |
+| 📡 **Автономні OTA-оновлення** | Пряма перевірка релізів через GitHub Releases API без залежності від локального ПК, підтримка кастомного сервера розробника | ✅ |
 | 🛡️ **Телеметрія збоїв** | Збір діагностичних звітів збоїв за згодою користувача та зручний веб-дашборд | ✅ |
 | 🧹 **Керування пам'яттю** | Детальна статистика зайнятої пам'яті (обкладинки, LRC, SQLite, історія) та безпечне очищення | ✅ |
-| 🧪 **47 автоматичних тестів** | 47 unit-, service- та архітектурних тестів (< 200 рядків на файл, 0 analyzer issues) | ✅ |
+| 🧪 **54 автоматичних тести** | 54 unit-, service- та архітектурних тестів (< 200 рядків на файл, 0 analyzer issues) | ✅ |
+
 
 ---
 

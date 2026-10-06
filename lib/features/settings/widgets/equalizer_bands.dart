@@ -13,22 +13,31 @@ class EqualizerBandsWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primary = Theme.of(context).primaryColor;
+
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: List.generate(provider.bandCount, (index) {
           final gain = provider.bandGains[index];
           final min = provider.minDecibels;
           final max = provider.maxDecibels;
-          
+          final isModified = gain.abs() > 0.1;
+
           return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14.0),
+            padding: const EdgeInsets.symmetric(horizontal: 10.0),
             child: Column(
               children: [
                 Text(
-                  '${gain > 0 ? '+' : ''}${gain.toStringAsFixed(1)} dB',
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  '${gain > 0 ? '+' : ''}${gain.toStringAsFixed(1)}',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: isModified ? FontWeight.bold : FontWeight.normal,
+                    color: isModified ? primary : Colors.grey[500],
+                  ),
                 ),
                 const SizedBox(height: 8),
                 SizedBox(
@@ -37,10 +46,12 @@ class EqualizerBandsWidget extends StatelessWidget {
                     quarterTurns: 3,
                     child: SliderTheme(
                       data: SliderTheme.of(context).copyWith(
-                        activeTrackColor: Theme.of(context).primaryColor,
+                        activeTrackColor: primary,
                         inactiveTrackColor: Colors.grey[800],
-                        thumbColor: Colors.white,
-                        trackHeight: 4,
+                        thumbColor: isModified ? Colors.white : Colors.grey[400],
+                        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                        overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
+                        trackHeight: 3.5,
                       ),
                       child: Slider(
                         value: gain.clamp(min, max),
@@ -54,7 +65,11 @@ class EqualizerBandsWidget extends StatelessWidget {
                 const SizedBox(height: 8),
                 Text(
                   _formatHz(provider.getBandFrequency(index)),
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey),
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: isModified ? Colors.white : Colors.grey[400],
+                  ),
                 ),
               ],
             ),
@@ -66,7 +81,10 @@ class EqualizerBandsWidget extends StatelessWidget {
 
   String _formatHz(double hz) {
     if (hz >= 1000) {
-      return '${(hz / 1000).toStringAsFixed(0)}k';
+      final kVal = hz / 1000;
+      return kVal == kVal.roundToDouble()
+          ? '${kVal.toInt()}k'
+          : '${kVal.toStringAsFixed(1)}k';
     }
     return '${hz.toInt()}';
   }

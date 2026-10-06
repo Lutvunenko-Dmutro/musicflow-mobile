@@ -12,32 +12,33 @@ class EqualizerProvider extends ChangeNotifier {
   AndroidEqualizerParameters? _params1;
   AndroidEqualizerParameters? _params2;
   AndroidEqualizerParameters? get parameters => _params1;
-  
+
   bool _isEnabled = false;
   bool get isEnabled => _isEnabled;
-  
+
   double _bassBoost = 0.0;
   double get bassBoost => _bassBoost;
 
-  List<double> _bandGains = List.filled(5, 0.0);
+  double _virtualizer = 0.0;
+  double get virtualizer => _virtualizer;
+
+  List<double> _bandGains = List.filled(EqualizerSettingsStorage.totalBands, 0.0);
   List<double> get bandGains => _bandGains;
 
-  int get bandCount => _params1?.bands.length ?? 5;
+  int get bandCount => EqualizerSettingsStorage.totalBands;
   double get minDecibels => _params1?.minDecibels ?? -15.0;
   double get maxDecibels => _params1?.maxDecibels ?? 15.0;
 
   double getBandFrequency(int index) {
-    if (_params1 != null) return _params1!.bands[index].centerFrequency;
-    const mockFreqs = [60.0, 230.0, 910.0, 3600.0, 14000.0];
-    return index < mockFreqs.length ? mockFreqs[index] : 0.0;
+    if (index >= 0 && index < equalizerFrequencies.length) {
+      return equalizerFrequencies[index];
+    }
+    return 1000.0;
   }
 
   EqualizerProvider({required this.equalizer1, required this.equalizer2}) {
     _init();
   }
-
-  double _virtualizer = 0.0;
-  double get virtualizer => _virtualizer;
 
   Future<void> _init() async {
     await _loadSettings();
@@ -55,23 +56,13 @@ class EqualizerProvider extends ChangeNotifier {
 
   Future<void> _initParameters() async {
     try {
-      AppLogger.info('Initializing equalizer parameters...', 'EQ');
+      AppLogger.info('Ініціалізація 10-смугового еквалайзера...', 'EQ');
       _params1 = await equalizer1.parameters;
       _params2 = await equalizer2.parameters;
-      if (_params1 != null) {
-        final actualLength = _params1!.bands.length;
-        if (_bandGains.length != actualLength) {
-          final oldGains = List<double>.from(_bandGains);
-          _bandGains = List.filled(actualLength, 0.0);
-          for (int i = 0; i < actualLength && i < oldGains.length; i++) {
-            _bandGains[i] = oldGains[i];
-          }
-        }
-      }
       await _applyAllSettingsToHardware();
       notifyListeners();
     } catch (e) {
-      AppLogger.error('Equalizer init failed: $e', e, null, 'EQ');
+      AppLogger.error('Помилка ініціалізації еквалайзера: $e', e, null, 'EQ');
     }
   }
 
@@ -81,16 +72,7 @@ class EqualizerProvider extends ChangeNotifier {
 
   Future<void> _applyAllSettingsToHardware() async {
     await _applyEnabled();
-    await _applyBassBoost();
-    await _applyVirtualizer();
-
-    if (_params1 != null && _params2 != null) {
-      for (int i = 0; i < _params1!.bands.length; i++) {
-        final gain = i < _bandGains.length ? _bandGains[i] : 0.0;
-        await _params1!.bands[i].setGain(gain);
-        await _params2!.bands[i].setGain(gain);
-      }
-    }
+    await _applyGainsToHardware();
   }
 
   Future<void> toggleEqualizer() async {
@@ -99,82 +81,97 @@ class EqualizerProvider extends ChangeNotifier {
     await _applyEnabled();
     notifyListeners();
   }
-  
+
   Future<void> _applyEnabled() async {
     try {
       await equalizer1.setEnabled(_isEnabled);
       await equalizer2.setEnabled(_isEnabled);
     } catch (e) {
-      AppLogger.warning('Could not apply enabled state: $e', 'EQ');
+      AppLogger.warning('Не вдалося застосувати стан еквалайзера: $e', 'EQ');
     }
   }
 
   Future<void> setBassBoost(double value) async {
     _bassBoost = value;
     await EqualizerSettingsStorage.saveBass(value);
-    await _applyBassBoost();
+    await _applyGainsToHardware();
     notifyListeners();
-  }
-
-  Future<void> _applyBassBoost() async {
-    if (_params1 == null || _params2 == null) return;
-    try {
-      final maxD = _params1!.maxDecibels;
-      final minD = _params1!.minDecibels;
-      final bassGain = _bassBoost * maxD * 0.5; 
-      final virtGain = _virtualizer * maxD * 0.4;
-
-      for (int i = 0; i < _params1!.bands.length; i++) {
-        double currentGain = _bandGains[i];
-        if (i == 0) currentGain += bassGain;
-        if (i == 1) currentGain += bassGain * 0.5;
-        if (i == 3) currentGain += virtGain * 0.5;
-        if (i == 4) currentGain += virtGain;
-        final finalGain = currentGain.clamp(minD, maxD);
-        await _params1!.bands[i].setGain(finalGain);
-        await _params2!.bands[i].setGain(finalGain);
-      }
-    } catch (e) {
-      AppLogger.warning('Could not apply software effects: $e', 'EQ');
-    }
   }
 
   Future<void> setVirtualizer(double value) async {
     _virtualizer = value;
     await EqualizerSettingsStorage.saveVirtualizer(value);
-    await _applyVirtualizer();
-    await _applyEnabled();
+    await _applyGainsToHardware();
     notifyListeners();
   }
 
-  Future<void> _applyVirtualizer() => _applyBassBoost();
-
   Future<void> setBandGain(int bandIndex, double gain) async {
+    if (bandIndex < 0 || bandIndex >= _bandGains.length) return;
     _bandGains[bandIndex] = gain;
     await EqualizerSettingsStorage.saveBandGain(bandIndex, gain);
     notifyListeners();
+    await _applyGainsToHardware();
+  }
 
+  Future<void> _applyGainsToHardware() async {
     if (_params1 == null || _params2 == null) return;
     try {
-      await _params1!.bands[bandIndex].setGain(gain);
-      await _params2!.bands[bandIndex].setGain(gain);
+      final hwBands = _params1!.bands;
+      final minD = minDecibels;
+      final maxD = maxDecibels;
+      final bassAdd = _bassBoost * maxD * 0.45;
+      final virtAdd = _virtualizer * maxD * 0.35;
+
+      if (hwBands.length == 10) {
+        for (int i = 0; i < 10; i++) {
+          double g = _bandGains[i];
+          if (i <= 1) g += bassAdd;
+          if (i >= 8) g += virtAdd;
+          final clamped = g.clamp(minD, maxD);
+          await _params1!.bands[i].setGain(clamped);
+          await _params2!.bands[i].setGain(clamped);
+        }
+      } else if (hwBands.length == 5) {
+        final mapped = [
+          (_bandGains[0] * 0.4 + _bandGains[1] * 0.6) + bassAdd,
+          (_bandGains[2] * 0.5 + _bandGains[3] * 0.5) + bassAdd * 0.3,
+          (_bandGains[4] * 0.5 + _bandGains[5] * 0.5),
+          (_bandGains[6] * 0.5 + _bandGains[7] * 0.5) + virtAdd * 0.4,
+          (_bandGains[8] * 0.5 + _bandGains[9] * 0.5) + virtAdd,
+        ];
+        for (int i = 0; i < 5; i++) {
+          final clamped = mapped[i].clamp(minD, maxD);
+          await _params1!.bands[i].setGain(clamped);
+          await _params2!.bands[i].setGain(clamped);
+        }
+      }
     } catch (e) {
-      AppLogger.warning('Could not apply band gain: $e', 'EQ');
+      AppLogger.warning('Помилка застосування частот до аудіочипу: $e', 'EQ');
     }
   }
-  
+
   Future<void> applyPreset(String presetName) async {
     final presetGains = equalizerPresetsData[presetName];
     if (presetGains != null) {
       for (int i = 0; i < bandCount && i < presetGains.length; i++) {
-        await setBandGain(i, presetGains[i]);
+        _bandGains[i] = presetGains[i];
+        await EqualizerSettingsStorage.saveBandGain(i, presetGains[i]);
       }
+      notifyListeners();
+      await _applyGainsToHardware();
     }
   }
 
   Future<void> resetPreset() async {
-    await applyPreset('Налаштувати');
-    await setBassBoost(0.0);
-    await setVirtualizer(0.0);
+    for (int i = 0; i < bandCount; i++) {
+      _bandGains[i] = 0.0;
+      await EqualizerSettingsStorage.saveBandGain(i, 0.0);
+    }
+    _bassBoost = 0.0;
+    _virtualizer = 0.0;
+    await EqualizerSettingsStorage.saveBass(0.0);
+    await EqualizerSettingsStorage.saveVirtualizer(0.0);
+    notifyListeners();
+    await _applyGainsToHardware();
   }
 }

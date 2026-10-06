@@ -15,13 +15,15 @@ class EqualizerSavedSettings {
 }
 
 class EqualizerSettingsStorage {
+  static const int totalBands = 10;
+
   static Future<EqualizerSavedSettings> loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     final isEnabled = prefs.getBool('eq_enabled') ?? false;
     final bassBoost = prefs.getDouble('eq_bass') ?? 0.0;
     final virtualizer = prefs.getDouble('eq_virt') ?? 0.0;
-    final gains = List<double>.filled(5, 0.0);
-    for (int i = 0; i < 5; i++) {
+    final gains = List<double>.filled(totalBands, 0.0);
+    for (int i = 0; i < totalBands; i++) {
       gains[i] = prefs.getDouble('eq_band_$i') ?? 0.0;
     }
     return EqualizerSavedSettings(

@@ -3,70 +3,19 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
-import 'package:music_flow_mobile/models/release_history_item.dart';
+import 'package:music_flow_mobile/models/update_info.dart';
+import 'package:music_flow_mobile/services/github_update_client.dart';
 import 'package:music_flow_mobile/services/telemetry_service.dart';
 import 'package:music_flow_mobile/services/update_preferences.dart';
 import 'package:music_flow_mobile/utils/app_logger.dart';
 
-class UpdateInfo {
-  final String version;
-  final int buildNumber;
-  final String changelog;
-  final String downloadUrl;
-  final int fileSizeBytes;
-  final List<ReleaseHistoryItem> history;
-  final int userCurrentBuild;
-  final String channel;
-  final bool isChannelSwitch;
-
-  const UpdateInfo({
-    required this.version,
-    required this.buildNumber,
-    required this.changelog,
-    required this.downloadUrl,
-    required this.fileSizeBytes,
-    this.history = const [],
-    this.userCurrentBuild = 0,
-    this.channel = 'release',
-    this.isChannelSwitch = false,
-  });
-
-  factory UpdateInfo.fromJson(
-    Map<String, dynamic> json, {
-    int userCurrentBuild = 0,
-    bool isChannelSwitch = false,
-  }) {
-    final rawHistory = json['history'] as List<dynamic>?;
-    final historyList = rawHistory != null
-        ? rawHistory
-            .whereType<Map<String, dynamic>>()
-            .map(ReleaseHistoryItem.fromJson)
-            .toList()
-        : <ReleaseHistoryItem>[];
-
-    return UpdateInfo(
-      version: json['version'] as String? ?? '1.0.0',
-      buildNumber: json['buildNumber'] as int? ?? 1,
-      changelog: json['changelog'] as String? ?? 'Оновлення без опису',
-      downloadUrl: json['downloadUrl'] as String? ?? '',
-      fileSizeBytes: json['fileSizeBytes'] as int? ?? 0,
-      history: historyList,
-      userCurrentBuild: userCurrentBuild,
-      channel: json['channel'] as String? ?? 'release',
-      isChannelSwitch: isChannelSwitch,
-    );
-  }
-
-  List<ReleaseHistoryItem> get missedReleases {
-    if (history.isEmpty) return const [];
-    return history.where((h) => h.buildNumber > userCurrentBuild).toList();
-  }
-}
+export 'package:music_flow_mobile/models/update_info.dart';
 
 class UpdateService {
-  static const String currentVersion = '1.0.1';
-  static const int currentBuildNumber = 2;
-  static const MethodChannel _installerChannel = MethodChannel('com.example.music_flow_mobile/installer');
+  static const String currentVersion = '1.0.27';
+  static const int currentBuildNumber = 28;
+  static const MethodChannel _installerChannel =
+      MethodChannel('com.example.music_flow_mobile/installer');
 
   static UpdateService? _instance;
   static UpdateService get instance => _instance ??= UpdateService();
@@ -90,38 +39,59 @@ class UpdateService {
   }) async {
     try {
       final current = await getCurrentVersion();
-      final channel = await UpdatePreferences.getChannel();
-      final base = customServerUrl ?? await TelemetryService.instance.getServerUrl();
-      final url = Uri.parse(
-        '$base/api/update/check?currentBuild=${current.buildNumber}&channel=${channel.key}',
-      );
-      AppLogger.info('Перевірка оновлень на $url [${channel.key}]', 'UPDATER');
 
-      final response = await http.get(url).timeout(const Duration(seconds: 5));
+      // Якщо явно вказано власний сервер розробника — опитуємо його
+      if (customServerUrl != null) {
+        return await _checkCustomServer(customServerUrl, current, force, allowChannelSwitch);
+      }
+
+      // За замовчуванням — швидкий та надійний GitHub Releases API
+      final ghInfo = await GithubUpdateClient.instance.checkLatestRelease(
+        currentBuildNumber: current.buildNumber,
+        currentVersion: current.version,
+        force: force,
+      );
+      if (ghInfo != null) return ghInfo;
+
+      // Якщо на GitHub немає або виникла помилка зв'язку — перевіряємо локальний сервер, якщо налаштовано
+      final localServer = await TelemetryService.instance.getServerUrl();
+      if (localServer.isNotEmpty && !localServer.contains('0.0.0.0')) {
+        return await _checkCustomServer(localServer, current, force, allowChannelSwitch);
+      }
+    } catch (e) {
+      AppLogger.warning('Помилка перевірки оновлень: $e', 'UPDATER');
+    }
+    return null;
+  }
+
+  Future<UpdateInfo?> _checkCustomServer(
+    String baseUrl,
+    ({String version, int buildNumber}) current,
+    bool force,
+    bool allowChannelSwitch,
+  ) async {
+    try {
+      final channel = await UpdatePreferences.getChannel();
+      final url = Uri.parse(
+        '$baseUrl/api/update/check?currentBuild=${current.buildNumber}&channel=${channel.key}',
+      );
+      final response = await http.get(url).timeout(const Duration(seconds: 4));
       if (response.statusCode == 200) {
         final data = json.decode(response.body) as Map<String, dynamic>;
         final serverBuild = data['buildNumber'] as int? ?? 0;
-        final isDifferentChannel = (channel != UpdatePreferences.currentRunningChannel);
+        final isDiffChannel = (channel != UpdatePreferences.currentRunningChannel);
         final isNewer = serverBuild > current.buildNumber;
-        final isChannelSwitch = (force || allowChannelSwitch) && isDifferentChannel && serverBuild >= current.buildNumber;
+        final isSwitch = (force || allowChannelSwitch) && isDiffChannel && serverBuild >= current.buildNumber;
 
-        final info = UpdateInfo.fromJson(
-          data,
-          userCurrentBuild: current.buildNumber,
-          isChannelSwitch: isChannelSwitch,
-        );
-
-        if (isNewer || isChannelSwitch) {
-          AppLogger.success(
-            'Знайдено ${isNewer ? "новішу версію" : "зміну каналу"} v${info.version}+${info.buildNumber}',
-            'UPDATER',
+        if (isNewer || isSwitch || force) {
+          return UpdateInfo.fromJson(
+            data,
+            userCurrentBuild: current.buildNumber,
+            isChannelSwitch: isSwitch,
           );
-          return info;
         }
       }
-    } catch (e) {
-      AppLogger.warning('Не вдалося перевірити оновлення: $e', 'UPDATER');
-    }
+    } catch (_) {}
     return null;
   }
 
@@ -132,6 +102,8 @@ class UpdateService {
     final client = http.Client();
     try {
       final request = http.Request('GET', Uri.parse(info.downloadUrl));
+      request.followRedirects = true;
+      request.headers['User-Agent'] = 'MusicFlow-Mobile';
       final response = await client.send(request);
 
       if (response.statusCode != 200) {
@@ -139,7 +111,6 @@ class UpdateService {
       }
 
       final total = response.contentLength ?? info.fileSizeBytes;
-      // Використовуємо зовнішній кеш, щоб Android PackageInstaller мав гарантований доступ до читання APK
       final extDirs = await getExternalCacheDirectories();
       final dir = (extDirs != null && extDirs.isNotEmpty)
           ? extDirs.first
@@ -189,7 +160,7 @@ class UpdateService {
       });
       return result ?? false;
     } catch (e) {
-      AppLogger.warning('Не вдалося показати системне сповіщення: $e', 'UPDATER');
+      AppLogger.warning('Не вдалося показати сповіщення: $e', 'UPDATER');
       return false;
     }
   }

@@ -13,10 +13,10 @@ class EqualizerPresetsWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final presets = [
-      'Налаштувати', 'Звичайний', 'Класика',
-      'Танцювальна', 'Стандарт', 'Фолк',
-      'Метал', 'Хіп-хоп', 'Джаз',
-      'Поп', 'Рок'
+      'Звичайний', 'Рок', 'Поп',
+      'Джаз', 'Класика', 'Хіп-хоп',
+      'Метал', 'Танцювальна', 'Акустика',
+      'Вокал', 'Bass Boost', 'Налаштувати',
     ];
 
     return Padding(
@@ -35,8 +35,8 @@ class EqualizerPresetsWidget extends StatelessWidget {
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 3,
               childAspectRatio: 2.2,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
             ),
             itemCount: presets.length,
             itemBuilder: (context, index) {
@@ -46,8 +46,11 @@ class EqualizerPresetsWidget extends StatelessWidget {
                 onTap: () => onPresetSelected(preset),
                 child: Container(
                   decoration: BoxDecoration(
-                    color: isActive ? Theme.of(context).primaryColor : const Color(0xFF333333),
-                    borderRadius: BorderRadius.circular(8),
+                    color: isActive ? Theme.of(context).primaryColor : const Color(0xFF2C2C2C),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: isActive ? const Color(0x4DFFFFFF) : Colors.transparent,
+                    ),
                   ),
                   alignment: Alignment.center,
                   child: Text(

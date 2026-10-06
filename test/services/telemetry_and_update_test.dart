@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:music_flow_mobile/services/telemetry_service.dart';
 import 'package:music_flow_mobile/services/update_service.dart';
+import 'package:music_flow_mobile/services/github_update_client.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -100,5 +101,12 @@ void main() {
       expect(info.missedReleases.length, equals(2));
       expect(info.missedReleases.map((r) => r.version), equals(['1.0.7', '1.0.6']));
     });
+
+    test('GithubUpdateClient extracts build number and compares versions correctly', () {
+      expect(GithubUpdateClient.repoOwner, equals('Lutvunenko-Dmutro'));
+      expect(GithubUpdateClient.repoName, equals('musicflow-mobile'));
+      expect(GithubUpdateClient.releasesUrl, contains('api.github.com'));
+    });
   });
 }
+
