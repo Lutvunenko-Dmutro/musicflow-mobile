@@ -22,7 +22,7 @@ class _AmbientPlayerBackdropState extends State<AmbientPlayerBackdrop>
     super.initState();
     _pulseController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 8),
+      duration: const Duration(milliseconds: 4000),
     )..repeat(reverse: true);
 
     _pulseAnimation = CurvedAnimation(
@@ -42,6 +42,7 @@ class _AmbientPlayerBackdropState extends State<AmbientPlayerBackdrop>
     final theme = Theme.of(context);
     final primary = theme.primaryColor;
     final bg = theme.scaffoldBackgroundColor;
+    final accent = theme.colorScheme.secondary;
 
     return Stack(
       fit: StackFit.expand,
@@ -49,7 +50,7 @@ class _AmbientPlayerBackdropState extends State<AmbientPlayerBackdrop>
         // 1. Base dark background
         Container(color: bg),
 
-        // 2. Animated blurred album art with living flowing pulse
+        // 2. Animated vibrant cover art + moving light orbs
         AnimatedSwitcher(
           duration: const Duration(milliseconds: 650),
           switchInCurve: Curves.easeOut,
@@ -58,15 +59,67 @@ class _AmbientPlayerBackdropState extends State<AmbientPlayerBackdrop>
             key: ValueKey<String>('${widget.song.id}_${widget.song.coverUrl}'),
             animation: _pulseAnimation,
             builder: (context, child) {
-              final val = _pulseAnimation.value;
-              final scale = 1.10 + (val * 0.12);
-              final alignX = (val - 0.5) * 0.16;
-              final alignY = (0.5 - val) * 0.12;
+              final t = _pulseAnimation.value;
+              final scale = 1.25 + (t * 0.18);
+              final rot = (t - 0.5) * 0.16;
+              final orb1X = -30.0 + (t * 70.0);
+              final orb1Y = -40.0 + (t * 60.0);
+              final orb2X = 50.0 - (t * 80.0);
+              final orb2Y = 60.0 - (t * 70.0);
 
-              return Transform.scale(
-                scale: scale,
-                alignment: Alignment(alignX, alignY),
-                child: child,
+              return Stack(
+                fit: StackFit.expand,
+                children: [
+                  // Undulating cover artwork
+                  Transform(
+                    transform: Matrix4.identity()
+                      ..translate((t - 0.5) * 40.0, (0.5 - t) * 30.0)
+                      ..scale(scale)
+                      ..rotateZ(rot),
+                    alignment: Alignment.center,
+                    child: child,
+                  ),
+                  // Primary luminous floating light orb (Top-Left)
+                  Positioned(
+                    top: orb1Y,
+                    left: orb1X,
+                    width: 360,
+                    height: 360,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: RadialGradient(
+                          colors: [
+                            primary.withValues(alpha: 0.65 + (t * 0.25)),
+                            primary.withValues(alpha: 0.20),
+                            Colors.transparent,
+                          ],
+                          stops: const [0.0, 0.5, 1.0],
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Secondary accent floating light orb (Center-Right)
+                  Positioned(
+                    bottom: orb2Y,
+                    right: orb2X,
+                    width: 340,
+                    height: 340,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: RadialGradient(
+                          colors: [
+                            accent.withValues(alpha: 0.55 + ((1.0 - t) * 0.25)),
+                            Colors.orangeAccent.withValues(alpha: 0.20),
+                            Colors.transparent,
+                          ],
+                          stops: const [0.0, 0.45, 1.0],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               );
             },
             child: SizedBox.expand(
@@ -75,10 +128,10 @@ class _AmbientPlayerBackdropState extends State<AmbientPlayerBackdrop>
           ),
         ),
 
-        // 3. Deep blur filter to turn the cover art into an ambient light field
+        // 3. Silky 28px blur filter (preserves rich color luminescence & motion)
         Positioned.fill(
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 75.0, sigmaY: 75.0),
+            filter: ImageFilter.blur(sigmaX: 28.0, sigmaY: 28.0),
             child: const SizedBox.expand(),
           ),
         ),
@@ -91,12 +144,12 @@ class _AmbientPlayerBackdropState extends State<AmbientPlayerBackdrop>
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Colors.black.withValues(alpha: 0.55),
-                  Colors.black.withValues(alpha: 0.72),
-                  bg.withValues(alpha: 0.94),
-                  bg,
+                  Colors.black.withValues(alpha: 0.20),
+                  Colors.transparent,
+                  bg.withValues(alpha: 0.72),
+                  bg.withValues(alpha: 0.92),
                 ],
-                stops: const [0.0, 0.45, 0.85, 1.0],
+                stops: const [0.0, 0.35, 0.78, 1.0],
               ),
             ),
           ),

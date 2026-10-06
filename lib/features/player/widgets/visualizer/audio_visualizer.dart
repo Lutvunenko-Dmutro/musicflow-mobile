@@ -21,8 +21,8 @@ class AudioVisualizer extends StatefulWidget {
     super.key,
     this.barCount = 60,
     required this.isPlaying,
-    this.width = 240,
-    this.height = 48,
+    this.width = double.infinity,
+    this.height = 50,
     this.testMode = false,
   });
 
@@ -30,7 +30,8 @@ class AudioVisualizer extends StatefulWidget {
   State<AudioVisualizer> createState() => _AudioVisualizerState();
 }
 
-class _AudioVisualizerState extends State<AudioVisualizer> with SingleTickerProviderStateMixin, WidgetsBindingObserver {
+class _AudioVisualizerState extends State<AudioVisualizer>
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late List<double> _currentHeights;
   late List<double> _targetHeights;
   late List<double> _dotHeights;
@@ -51,13 +52,9 @@ class _AudioVisualizerState extends State<AudioVisualizer> with SingleTickerProv
     _targetHeights = List.filled(widget.barCount, 0.05);
     _dotHeights = List.filled(widget.barCount, 0.05);
     _dotVelocities = List.filled(widget.barCount, 0.0);
-
     _ticker = createTicker(_onTick);
-    if (widget.isPlaying) {
-      _startListening();
-    } else if (widget.testMode) {
-      _startTestSimulation();
-    }
+    if (widget.isPlaying) _startListening();
+    if (widget.testMode) _startTestSimulation();
   }
 
   @override
@@ -100,11 +97,11 @@ class _AudioVisualizerState extends State<AudioVisualizer> with SingleTickerProv
     if (_isStartingListening) return;
     _isStartingListening = true;
     try {
-      final hasPermission = await VisualizerPermissionHelper.checkOrRequestMicPermission();
-      if (hasPermission && mounted && widget.isPlaying) {
+      final hasPerm = await VisualizerPermissionHelper.checkOrRequestMicPermission();
+      if (hasPerm && mounted && widget.isPlaying) {
         final provider = context.read<AudioProvider>();
         await _visualizerSubscription?.cancel();
-        _visualizerSubscription = provider.visualizerStream.listen((dynamic event) {
+        _visualizerSubscription = provider.visualizerStream.listen((event) {
           if (event is List<dynamic> || event is List<int>) {
             _processWaveform((event as List).cast<int>());
           }
@@ -151,11 +148,10 @@ class _AudioVisualizerState extends State<AudioVisualizer> with SingleTickerProv
 
   void _processWaveform(List<int> raw) {
     if (!mounted) return;
-    if (_settings.core == VisualizerCore.hardware) {
-      _targetHeights = FftProcessor.processHardwareFft(raw, widget.barCount, amplitudeBoost: _settings.amplitudeBoost);
-    } else {
-      _targetHeights = FftProcessor.process(raw, widget.barCount, amplitudeBoost: _settings.amplitudeBoost);
-    }
+    final boost = _settings.amplitudeBoost;
+    _targetHeights = _settings.core == VisualizerCore.hardware
+        ? FftProcessor.processHardwareFft(raw, widget.barCount, amplitudeBoost: boost)
+        : FftProcessor.process(raw, widget.barCount, amplitudeBoost: boost);
   }
 
   @override

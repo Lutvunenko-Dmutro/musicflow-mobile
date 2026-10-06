@@ -6,7 +6,8 @@ class LibraryIndexHelper {
     List<SongModel> songs,
     SortOption sort,
   ) {
-    if (songs.length < 5) return const [];
+    // Алфавітний індекс логічний лише при сортуванні за назвою або автором
+    if (sort == SortOption.dateAdded || songs.length < 5) return const [];
     final letters = <String>{};
 
     for (final s in songs) {

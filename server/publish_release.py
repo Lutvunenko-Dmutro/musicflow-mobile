@@ -77,7 +77,7 @@ def git_commit_and_tag(version_tag, new_build, skip_git=False):
         return
     print(f"\n[5/6] 🏷️  Синхронізація з Git та GitHub (тег v{version_tag})...")
     try:
-        subprocess.run(["git", "add", "pubspec.yaml", "server/data/version.json"], cwd=PROJECT_DIR, shell=True)
+        subprocess.run(["git", "add", "-A"], cwd=PROJECT_DIR, shell=True)
         commit_msg = f"release: v{version_tag} (build {new_build})"
         subprocess.run(["git", "commit", "-m", commit_msg], cwd=PROJECT_DIR, shell=True)
         subprocess.run(["git", "tag", f"v{version_tag}"], cwd=PROJECT_DIR, shell=True)

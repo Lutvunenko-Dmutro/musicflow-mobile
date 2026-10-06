@@ -167,9 +167,14 @@ class PlayerScreen extends StatelessWidget {
     }
     return Flexible(
       child: SizedBox(
-        height: 60,
+        height: 50,
         width: double.infinity,
-        child: AudioVisualizer(isPlaying: audioProvider.isPlaying),
+        child: AudioVisualizer(
+          isPlaying: audioProvider.isPlaying,
+          width: double.infinity,
+          height: 50,
+          barCount: 60,
+        ),
       ),
     );
   }

@@ -7,6 +7,7 @@ void paintBars(Canvas canvas, Size size, {required bool isMirrored, required Lis
   
   double blockGap = isMirrored ? 0.0 : 12.0; 
   double totalGaps = blockGap * (numBlocks - 1); 
+  if (size.width <= totalGaps || size.height <= 0) return;
   
   double usableWidth = size.width - totalGaps;
   double barWidth = usableWidth / barCount;
