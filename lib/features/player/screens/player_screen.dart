@@ -7,6 +7,7 @@ import 'package:music_flow_mobile/features/player/widgets/player_controls.dart';
 import 'package:music_flow_mobile/features/player/screens/queue_screen.dart';
 import 'package:music_flow_mobile/features/lyrics/screens/lyrics_screen.dart';
 import 'package:music_flow_mobile/features/lyrics/widgets/inline_lyrics.dart';
+import 'package:music_flow_mobile/features/player/widgets/ambient_player_backdrop.dart';
 import 'package:music_flow_mobile/features/player/widgets/player_popup_menu.dart';
 
 class PlayerScreen extends StatelessWidget {
@@ -82,70 +83,63 @@ class PlayerScreen extends StatelessWidget {
             Navigator.pop(context);
           }
         },
-        child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Theme.of(context).primaryColor.withValues(alpha: 0.38),
-              Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.90),
-              Theme.of(context).scaffoldBackgroundColor,
-            ],
-            stops: const [0.0, 0.40, 1.0],
-          ),
-        ),
-        child: OrientationBuilder(
-          builder: (context, orientation) {
-            final isLandscape = orientation == Orientation.landscape;
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            AmbientPlayerBackdrop(song: song),
+            OrientationBuilder(
+              builder: (context, orientation) {
+                final isLandscape = orientation == Orientation.landscape;
 
-            if (isLandscape) {
-              return SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
-                  child: Row(
-                    children: [
-                      Expanded(flex: 1, child: PlayerHeader(song: song)),
-                      const SizedBox(width: 32),
-                      Expanded(
-                        flex: 1,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            if (audioProvider.showInlineLyrics && audioProvider.hasKaraokeLyrics)
-                              const InlineLyrics(),
-                            _buildVisualizerArea(audioProvider),
-                            PlayerControls(song: song),
-                          ],
-                        ),
+                if (isLandscape) {
+                  return SafeArea(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
+                      child: Row(
+                        children: [
+                          Expanded(flex: 1, child: PlayerHeader(song: song)),
+                          const SizedBox(width: 32),
+                          Expanded(
+                            flex: 1,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                if (audioProvider.showInlineLyrics && audioProvider.hasKaraokeLyrics)
+                                  const InlineLyrics(),
+                                _buildVisualizerArea(audioProvider),
+                                PlayerControls(song: song),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
-              );
-            }
+                    ),
+                  );
+                }
 
-            return SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    Expanded(flex: 7, child: PlayerHeader(song: song)),
-                    if (audioProvider.showInlineLyrics && audioProvider.hasKaraokeLyrics)
-                      const InlineLyrics(),
-                    _buildVisualizerArea(audioProvider),
-                    PlayerControls(song: song),
-                  ],
-                ),
-              ),
-            );
-          },
+                return SafeArea(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        Expanded(flex: 7, child: PlayerHeader(song: song)),
+                        if (audioProvider.showInlineLyrics && audioProvider.hasKaraokeLyrics)
+                          const InlineLyrics(),
+                        _buildVisualizerArea(audioProvider),
+                        PlayerControls(song: song),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
         ),
-      ),
       ),
     );
   }
+
 
   Widget _buildVisualizerArea(AudioProvider audioProvider) {
     if (!audioProvider.showVisualizer) return const SizedBox.shrink();

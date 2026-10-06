@@ -1,11 +1,17 @@
 {
-  "version": "1.0.27",
-  "buildNumber": 28,
+  "version": "1.0.28",
+  "buildNumber": 29,
   "releaseDate": "2026-10-06",
-  "changelog": "• Закріплений живий візуалізатор у налаштуваннях (завжди перед очима)\n• Калібровка 60 смуг прев'ю візуалізатора для 100% відповідності плеєру\n• Покращені підказки дозволу на встановлення оновлень",
+  "changelog": "• 🎚️ Додано 10-смуговий еквалайзер із пресетами\n• 📡 Автономні оновлення через GitHub Releases API",
   "apkFileName": "app-release.apk",
-  "fileSizeBytes": 69096796,
+  "fileSizeBytes": 69211572,
   "history": [
+    {
+      "version": "1.0.28",
+      "buildNumber": 29,
+      "releaseDate": "2026-10-06",
+      "changelog": "• 🎚️ Додано 10-смуговий еквалайзер із пресетами\n• 📡 Автономні оновлення через GitHub Releases API"
+    },
     {
       "version": "1.0.27",
       "buildNumber": 28,
