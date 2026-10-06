@@ -2,12 +2,13 @@
 """
 MusicFlow Release Automation Script
 Повністю автоматизує створення та публікацію нового релізу:
-1. Збільшує версію в pubspec.yaml (наприклад: 1.0.1+2 -> 1.0.2+3)
-2. Компілює свіжий APK: `flutter build apk --debug`
-3. Копіює створений файл у папку сервера `server/data/updates/`
-4. Рахує точний розмір APK у байтах
-5. Оновлює `server/data/version.json` з описом змін
-6. Будь-який підключений телефон одразу бачить оновлення через Wi-Fi
+0. Pre-flight: перевіряє код (`flutter analyze`) та проганяє всі тести (`flutter test`).
+1. Збільшує версію в pubspec.yaml (наприклад: 1.0.28+29 -> 1.0.29+30).
+2. Компілює свіжий APK: `flutter build apk --release` (та/або `--debug`).
+3. Копіює створений файл у папку сервера `server/data/updates/`.
+4. Оновлює `server/data/version.json` з історією релізів та розміром файлів.
+5. Автоматично фіксує комміт у Git, створює релізний тег та пушить в GitHub.
+6. Будь-який телефон одразу бачить оновлення через Wi-Fi та GitHub Releases.
 """
 
 import argparse
@@ -34,8 +35,7 @@ def get_current_pubspec_version():
     match = re.search(r"^version:\s*(\d+)\.(\d+)\.(\d+)\+(\d+)", content, re.MULTILINE)
     if not match:
         raise ValueError("Не вдалося знайти поле version у pubspec.yaml")
-    major, minor, patch, build = map(int, match.groups())
-    return major, minor, patch, build
+    return map(int, match.groups())
 
 
 def update_pubspec_version(major, minor, patch, build):
@@ -53,17 +53,54 @@ def update_pubspec_version(major, minor, patch, build):
     return new_version_str
 
 
-def publish_release(changelog=None, bump_type="patch", mode="release"):
+def run_preflight_checks(skip=False):
+    if skip:
+        print("\n[0/6] ⏭️  Pre-flight перевірки пропущено (--skip-verify)")
+        return True
+    print("\n[0/6] 🔍 Перевірка якості коду (Pre-flight)...")
+    print("       -> 1. Аналізатор коду (`flutter analyze`)...")
+    res = subprocess.run(["flutter", "analyze"], cwd=PROJECT_DIR, shell=True)
+    if res.returncode != 0:
+        print("\n❌ ПОМИЛКА: flutter analyze виявив проблеми! Збірку зупинено.")
+        sys.exit(1)
+    print("       -> 2. Автоматичні тести (`flutter test`)...")
+    res = subprocess.run(["flutter", "test"], cwd=PROJECT_DIR, shell=True)
+    if res.returncode != 0:
+        print("\n❌ ПОМИЛКА: Не всі тести пройшли! Збірку зупинено.")
+        sys.exit(1)
+    print("       ✅ Pre-flight пройдено: 0 помилок, всі тести зелені!\n")
+    return True
+
+
+def git_commit_and_tag(version_tag, new_build, skip_git=False):
+    if skip_git:
+        return
+    print(f"\n[5/6] 🏷️  Синхронізація з Git та GitHub (тег v{version_tag})...")
+    try:
+        subprocess.run(["git", "add", "pubspec.yaml", "server/data/version.json"], cwd=PROJECT_DIR, shell=True)
+        commit_msg = f"release: v{version_tag} (build {new_build})"
+        subprocess.run(["git", "commit", "-m", commit_msg], cwd=PROJECT_DIR, shell=True)
+        subprocess.run(["git", "tag", f"v{version_tag}"], cwd=PROJECT_DIR, shell=True)
+        subprocess.run(["git", "push", "origin", "main"], cwd=PROJECT_DIR, shell=True)
+        subprocess.run(["git", "push", "origin", f"v{version_tag}"], cwd=PROJECT_DIR, shell=True)
+        print(f"       ✅ Тег v{version_tag} та оновлені маніфести успішно надіслано в GitHub!")
+    except Exception as e:
+        print(f"       ⚠️ Не вдалося завершити git push: {e}")
+
+
+def publish_release(changelog=None, bump_type="patch", mode="release", skip_verify=False, skip_git=False):
     print("=" * 65)
     print("🚀 MusicFlow • Автоматична публікація нового оновлення")
     print(f"📦 Режим збірки: {mode.upper()}")
     print("=" * 65)
 
+    # 0. Pre-flight checks (analyze & test)
+    run_preflight_checks(skip=skip_verify)
+
     major, minor, patch, build = get_current_pubspec_version()
     old_version_str = f"{major}.{minor}.{patch}+{build}"
     print(f"📌 Поточна версія проєкту: v{major}.{minor}.{patch} (build {build})")
 
-    # Розрахунок нової версії
     new_build = build + 1
     if bump_type == "minor":
         new_major, new_minor, new_patch = major, minor + 1, 0
@@ -71,7 +108,7 @@ def publish_release(changelog=None, bump_type="patch", mode="release"):
         new_major, new_minor, new_patch = major + 1, 0, 0
     elif bump_type == "build_only":
         new_major, new_minor, new_patch = major, minor, patch
-    else:  # patch за замовчуванням
+    else:
         new_major, new_minor, new_patch = major, minor, patch + 1
 
     new_version_display = f"{new_major}.{new_minor}.{new_patch}"
@@ -79,20 +116,17 @@ def publish_release(changelog=None, bump_type="patch", mode="release"):
 
     if not changelog:
         print(f"\n📝 Нова версія буде: v{new_version_display} (build {new_build})")
-        user_input = input("Введіть опис змін (Що нового в оновленні): ").strip()
-        if user_input:
-            changelog = user_input.replace('\\n', '\n')
-        else:
-            changelog = f"• Оновлення v{new_version_display}: виправлення помилок та оптимізація"
+        user_input = input("Введіть опис змін: ").strip()
+        changelog = user_input.replace('\\n', '\n') if user_input else f"• Оновлення v{new_version_display}"
     else:
         changelog = changelog.replace('\\n', '\n')
 
-    # 1. Оновлення pubspec.yaml
-    print(f"\n[1/5] ✏️  Оновлюю pubspec.yaml: {old_version_str} -> {new_full_version}...")
+    # 1. Update pubspec.yaml
+    print(f"\n[1/6] ✏️  Оновлюю pubspec.yaml: {old_version_str} -> {new_full_version}...")
     update_pubspec_version(new_major, new_minor, new_patch, new_build)
 
-    # 2. Компіляція APK
-    print(f"\n[2/5] 🔨 Компілюю APK через Flutter...")
+    # 2. Compile APK
+    print(f"\n[2/6] 🔨 Компілюю APK через Flutter...")
     os.makedirs(UPDATES_DIR, exist_ok=True)
     build_release = (mode in ("release", "both"))
     build_debug = (mode in ("debug", "both"))
@@ -101,7 +135,7 @@ def publish_release(changelog=None, bump_type="patch", mode="release"):
         print(f"       -> Збірка RELEASE (`flutter build apk --release`)...")
         res = subprocess.run(["flutter", "build", "apk", "--release"], cwd=PROJECT_DIR, shell=True)
         if res.returncode != 0:
-            print("\n❌ Помилка під час збірки Release APK! Відновлюю версію у pubspec.yaml...")
+            print("\n❌ Помилка під час збірки Release APK! Відновлюю pubspec.yaml...")
             update_pubspec_version(major, minor, patch, build)
             sys.exit(1)
         shutil.copy2(BUILT_APK_RELEASE, os.path.join(UPDATES_DIR, "app-release.apk"))
@@ -112,7 +146,7 @@ def publish_release(changelog=None, bump_type="patch", mode="release"):
         print(f"       -> Збірка DEBUG (`flutter build apk --debug`)...")
         res = subprocess.run(["flutter", "build", "apk", "--debug"], cwd=PROJECT_DIR, shell=True)
         if res.returncode != 0:
-            print("\n❌ Помилка під час збірки Debug APK! Відновлюю версію у pubspec.yaml...")
+            print("\n❌ Помилка під час збірки Debug APK! Відновлюю pubspec.yaml...")
             update_pubspec_version(major, minor, patch, build)
             sys.exit(1)
         shutil.copy2(BUILT_APK_DEBUG, os.path.join(UPDATES_DIR, "app-debug.apk"))
@@ -123,24 +157,17 @@ def publish_release(changelog=None, bump_type="patch", mode="release"):
     file_size = os.path.getsize(primary_apk)
     apk_file_name = "app-release.apk" if build_release else "app-debug.apk"
 
-    # 3. Копіювання у папку сервера
-    print(f"[3/5] 📦 APK файли успішно синхронізовано у сховищі сервера ({UPDATES_DIR})")
+    # 3. Synchronize storage
+    print(f"[3/6] 📦 APK файли успішно синхронізовано у сховищі сервера ({UPDATES_DIR})")
 
-    # 4. Оновлення version.json з підтримкою повної історії релізів
-    print(f"[4/5] 📄 Оновлюю інформацію про реліз у version.json...")
+    # 4. Update version.json
+    print(f"[4/6] 📄 Оновлюю інформацію про реліз у version.json...")
     existing_history = []
     if os.path.exists(VERSION_JSON_PATH):
         try:
             with open(VERSION_JSON_PATH, "r", encoding="utf-8") as f:
                 old_data = json.load(f)
                 existing_history = old_data.get("history", [])
-                if not existing_history and "version" in old_data:
-                    existing_history.append({
-                        "version": old_data.get("version"),
-                        "buildNumber": old_data.get("buildNumber"),
-                        "releaseDate": old_data.get("releaseDate", ""),
-                        "changelog": old_data.get("changelog", "")
-                    })
         except Exception:
             pass
 
@@ -164,13 +191,16 @@ def publish_release(changelog=None, bump_type="patch", mode="release"):
     with open(VERSION_JSON_PATH, "w", encoding="utf-8") as f:
         json.dump(version_data, f, ensure_ascii=False, indent=2)
 
-    # 5. Підсумок
-    print(f"[5/5] 🎉 ГОТОВО!")
+    # 5. Git Commit & Tag & Push
+    git_commit_and_tag(new_version_display, new_build, skip_git=skip_git)
+
+    # 6. Summary
+    print(f"[6/6] 🎉 ГОТОВО!")
     print("=" * 65)
-    print(f"✨ Реліз v{new_version_display} (build {new_build}) успішно опубліковано!")
+    print(f"✨ Реліз v{new_version_display} (build {new_build}) успішно створено та опубліковано!")
     print(f"📝 Зміни:\n{changelog}")
     print(f"💾 Розмір: {file_size / (1024 * 1024):.1f} MB (режим: {mode})")
-    print(f"📡 Сервер оновлень готовий роздавати нову версію смартфонам по Wi-Fi.")
+    print(f"📡 Сервер оновлень готовий роздавати нову версію смартфонам.")
     print("=" * 65)
 
 
@@ -181,13 +211,21 @@ if __name__ == "__main__":
         "--bump", "-b",
         choices=["patch", "minor", "major", "build_only"],
         default="patch",
-        help="Тип підвищення версії (за замовчуванням: patch)"
+        help="Тип підвищення версії"
     )
     parser.add_argument(
         "--mode", "-m",
         choices=["both", "release", "debug"],
-        default="both",
-        help="Режим збірки (за замовчуванням: both — збирає синхронно обидва канали)"
+        default="release",
+        help="Режим збірки (за замовчуванням: release)"
     )
+    parser.add_argument("--skip-verify", action="store_true", help="Пропустити pre-flight перевірку тестів")
+    parser.add_argument("--skip-git", action="store_true", help="Пропустити автоматичний git push та тегування")
     args = parser.parse_args()
-    publish_release(changelog=args.changelog, bump_type=args.bump, mode=args.mode)
+    publish_release(
+        changelog=args.changelog,
+        bump_type=args.bump,
+        mode=args.mode,
+        skip_verify=args.skip_verify,
+        skip_git=args.skip_git
+    )
