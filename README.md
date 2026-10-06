@@ -1,7 +1,7 @@
 # MusicFlow Mobile 🎵
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Release-v1.0.27%20(build%2028)-blue?style=for-the-badge&logo=android" alt="Version">
+  <img src="https://img.shields.io/badge/Release-v1.0.32%20(build%2033)-blue?style=for-the-badge&logo=android" alt="Version">
   <img src="https://img.shields.io/badge/Tests-54%20Passing-brightgreen?style=for-the-badge&logo=flutter" alt="Tests">
   <img src="https://img.shields.io/badge/Architecture-%3C200%20Lines%2FFile-purple?style=for-the-badge" alt="Architecture">
   <img src="https://img.shields.io/badge/License-MIT-orange?style=for-the-badge" alt="License">
@@ -9,7 +9,8 @@
 
 > Сучасний музичний плеєр на Flutter із відтворенням локальних треків, YouTube стрімінгом, завантаженням пісень, синхронізованими текстами, реактивним FFT-візуалізатором та бездротовими OTA-оновленнями через GitHub Releases API.
 
-> 📥 **[Завантажити останній релізний APK (v1.0.27) →](https://github.com/Lutvunenko-Dmutro/musicflow-mobile/releases/latest)**  
+> 📋 **[Вимоги до продукту (PRD.md) →](PRD.md)**  
+> 📥 **[Завантажити останній релізний APK (v1.0.32) →](https://github.com/Lutvunenko-Dmutro/musicflow-mobile/releases/latest)**  
 > 📖 **[Технічна документація проекту →](docs/README.md)**  
 > 🔍 **[Результати аудиту системи →](docs/audit.md)**
 
@@ -39,6 +40,9 @@
 | 🎛️ **Екран налаштувань візуалізатора** | Закріплене живе прев'ю вгорі, 5 стилів відображення, швидкі пресети та повзунки фізики | ✅ |
 | 🎚️ **10-смуговий Еквалайзер** | 10 стандартних частот (31 Гц – 16 кГц), 12 пресетів (Рок, Поп, Bass Boost тощо), мапування на аудіочип, кнопка скидання | ✅ |
 | 🔀 **Справжній Crossfade** | Плавний перехід між треками без пауз завдяки архітектурі на двох `AudioPlayer` | ✅ |
+| 🌌 **Flowing Ambient Glow** | Живий шовковий 28px GPU фон плеєра з орбітальними сферами, що дихає в такт музиці | ✅ |
+| ✨ **Cover Sheen** | Інтерактивні відблиски на обкладинці треку при горизонтальному свайпі | ✅ |
+| 🔤 **Alphabet Index Bar** | Швидкий алфавітний скролер (#, A-Z, А-Я) з плаваючою бульбашкою та тактильним вібровідгуком | ✅ |
 | 📡 **Автономні OTA-оновлення** | Пряма перевірка релізів через GitHub Releases API без залежності від локального ПК, підтримка кастомного сервера розробника | ✅ |
 | 🛡️ **Телеметрія збоїв** | Збір діагностичних звітів збоїв за згодою користувача та зручний веб-дашборд | ✅ |
 | 🧹 **Керування пам'яттю** | Детальна статистика зайнятої пам'яті (обкладинки, LRC, SQLite, історія) та безпечне очищення | ✅ |
@@ -89,7 +93,7 @@ python server/publish_release.py -c "Опис змін" -b patch -m both
 
 ## Запуск та тестування
 
-### 1. Запуск unit-тестів (47 тестів)
+### 1. Запуск unit-тестів (54 тести)
 ```bash
 flutter test
 ```
