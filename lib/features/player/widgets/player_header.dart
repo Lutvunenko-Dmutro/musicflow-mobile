@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:music_flow_mobile/providers/audio_provider.dart';
 import 'package:music_flow_mobile/models/song_model.dart';
 import 'package:music_flow_mobile/features/player/widgets/smart_cover.dart';
+import 'package:music_flow_mobile/features/player/widgets/cover_sheen.dart';
 
 class PlayerHeader extends StatefulWidget {
   final SongModel song;
@@ -91,10 +92,13 @@ class _PlayerHeaderState extends State<PlayerHeader> with SingleTickerProviderSt
                           ),
                         ],
                       ),
-                      child: SmartCover(
-                        song: widget.song,
-                        size: 320,
+                      child: CoverSheen(
                         borderRadius: 16.0,
+                        child: SmartCover(
+                          song: widget.song,
+                          size: 320,
+                          borderRadius: 16.0,
+                        ),
                       ),
                     ),
                   ),

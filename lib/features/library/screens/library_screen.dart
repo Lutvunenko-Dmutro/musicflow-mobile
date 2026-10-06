@@ -7,7 +7,9 @@ import 'package:music_flow_mobile/providers/audio_provider.dart';
 import 'package:music_flow_mobile/providers/local_library_provider.dart';
 import 'package:music_flow_mobile/features/library/widgets/library_list_item.dart';
 import 'package:music_flow_mobile/features/library/widgets/library_app_bar.dart';
+import 'package:music_flow_mobile/features/library/widgets/alphabet_index_bar.dart';
 import 'package:music_flow_mobile/features/library/utils/library_actions_helper.dart';
+import 'package:music_flow_mobile/features/library/utils/library_index_helper.dart';
 import 'package:music_flow_mobile/utils/library_sorter.dart';
 import 'package:music_flow_mobile/locator.dart';
 
@@ -21,6 +23,7 @@ class LibraryScreen extends StatefulWidget {
 }
 
 class _LibraryScreenState extends State<LibraryScreen> {
+  final ScrollController _scrollController = ScrollController();
   List<SongModel> _songs = [];
   final Set<String> _selectedIds = {};
   SortOption _currentSort = SortOption.dateAdded;
@@ -38,6 +41,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
   @override
   void dispose() {
     locator<LocalLibraryProvider>().removeListener(_onProviderUpdate);
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -53,12 +57,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
   Future<void> _loadPrefs() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _currentSort = SortOption.values[prefs.getInt('library_sort_option') ?? SortOption.dateAdded.index];
+      _currentSort = SortOption.values[prefs.getInt('library_sort_option') ?? 0];
       _isDescending = prefs.getBool('library_sort_descending') ?? false;
     });
-    if (_songs.isNotEmpty) {
-      _applySorting();
-    }
+    if (_songs.isNotEmpty) _applySorting();
   }
 
   Future<void> _savePrefs() async {
@@ -71,21 +73,27 @@ class _LibraryScreenState extends State<LibraryScreen> {
     LibrarySorter.sortSongs(_songs, _currentSort, _isDescending);
   }
 
+  void _onLetterSelected(String letter) {
+    final idx = LibraryIndexHelper.findFirstIndexForLetter(_songs, _currentSort, letter);
+    if (idx != -1 && _scrollController.hasClients) {
+      const itemHeight = 72.0;
+      final target = (idx * itemHeight).clamp(0.0, _scrollController.position.maxScrollExtent);
+      _scrollController.jumpTo(target);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final bool isSelectionMode = _selectedIds.isNotEmpty;
+    final bool isSelection = _selectedIds.isNotEmpty;
     final provider = locator<LocalLibraryProvider>();
+    final letters = LibraryIndexHelper.getAvailableLetters(_songs, _currentSort);
 
     return Scaffold(
       appBar: LibraryAppBar(
         selectedCount: _selectedIds.length,
-        isSelectionMode: isSelectionMode,
+        isSelectionMode: isSelection,
         isDescending: _isDescending,
-        onClearSelection: () {
-          setState(() {
-            _selectedIds.clear();
-          });
-        },
+        onClearSelection: () => setState(() => _selectedIds.clear()),
         onDeleteSelected: () => _confirmDeleteSelected(context),
         onToggleSortDirection: () {
           setState(() {
@@ -94,90 +102,79 @@ class _LibraryScreenState extends State<LibraryScreen> {
           });
           _savePrefs();
         },
-        onSortSelected: (SortOption result) {
+        onSortSelected: (sort) {
           setState(() {
-            _currentSort = result;
+            _currentSort = sort;
             _applySorting();
           });
           _savePrefs();
         },
         onRefresh: () => provider.init(),
       ),
-      body: provider.isLoading 
+      body: provider.isLoading
           ? const Center(child: CircularProgressIndicator())
           : _songs.isEmpty
               ? const Center(child: Text('Ваша бібліотека порожня'))
-              : ListView.builder(
-                  itemCount: _songs.length,
-                  itemBuilder: (context, index) {
-                    final song = _songs[index];
-                    final isDeleting = _deletingIds.contains(song.id);
-                    
-                    return AnimatedSize(
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeInOut,
-                      child: isDeleting
-                          ? const SizedBox(width: double.infinity, height: 0)
-                          : LibraryListItem(
-                              song: song,
-                              isSelected: _selectedIds.contains(song.id),
-                              isSelectionMode: isSelectionMode,
-                              onLongPress: () {
-                                setState(() {
-                                  if (_selectedIds.contains(song.id)) {
-                                    _selectedIds.remove(song.id);
-                                  } else {
-                                    _selectedIds.add(song.id);
-                                  }
-                                });
-                              },
-                              onTap: () {
-                                if (isSelectionMode) {
-                                  setState(() {
-                                    if (_selectedIds.contains(song.id)) {
-                                      _selectedIds.remove(song.id);
-                                    } else {
-                                      _selectedIds.add(song.id);
-                                    }
-                                  });
-                                } else {
-                                  context.read<AudioProvider>().setQueue(_songs, initialIndex: index);
-                                }
-                              },
-                            ),
-                    );
-                  },
+              : Stack(
+                  children: [
+                    ListView.builder(
+                      controller: _scrollController,
+                      itemCount: _songs.length,
+                      itemBuilder: (context, index) => _buildSongItem(index, isSelection),
+                    ),
+                    if (!isSelection && letters.isNotEmpty)
+                      AlphabetIndexBar(
+                        availableLetters: letters,
+                        onLetterSelected: _onLetterSelected,
+                      ),
+                  ],
                 ),
     );
   }
 
-  Future<void> _confirmDeleteSelected(BuildContext context) async {
-    final audioProvider = context.read<AudioProvider>();
-    final confirm = await LibraryActionsHelper.confirmDeleteDialog(
-      context,
-      _selectedIds.length,
-    );
+  Widget _buildSongItem(int index, bool isSelection) {
+    final song = _songs[index];
+    final isDeleting = _deletingIds.contains(song.id);
 
-    if (confirm && mounted) {
-      final idsToDelete = List<String>.from(_selectedIds);
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      child: isDeleting
+          ? const SizedBox(width: double.infinity, height: 0)
+          : LibraryListItem(
+              song: song,
+              isSelected: _selectedIds.contains(song.id),
+              isSelectionMode: isSelection,
+              onLongPress: () => _toggleSelect(song.id),
+              onTap: () {
+                if (isSelection) {
+                  _toggleSelect(song.id);
+                } else {
+                  context.read<AudioProvider>().setQueue(_songs, initialIndex: index);
+                }
+              },
+            ),
+    );
+  }
+
+  void _toggleSelect(String id) {
+    setState(() {
+      _selectedIds.contains(id) ? _selectedIds.remove(id) : _selectedIds.add(id);
+    });
+  }
+
+  Future<void> _confirmDeleteSelected(BuildContext context) async {
+    final audio = context.read<AudioProvider>();
+    final ok = await LibraryActionsHelper.confirmDeleteDialog(context, _selectedIds.length);
+    if (ok && mounted) {
+      final ids = List<String>.from(_selectedIds);
       setState(() {
-        _deletingIds.addAll(idsToDelete);
+        _deletingIds.addAll(ids);
         _selectedIds.clear();
       });
-      
       await Future.delayed(const Duration(milliseconds: 300));
-      
-      await LibraryActionsHelper.deleteSongs(
-        audioProvider: audioProvider,
-        idsToDelete: idsToDelete,
-        songs: _songs,
-      );
-      
-      if (mounted) {
-        setState(() {
-          _deletingIds.removeAll(idsToDelete);
-        });
-      }
+      await LibraryActionsHelper.deleteSongs(audioProvider: audio, idsToDelete: ids, songs: _songs);
+      if (mounted) setState(() => _deletingIds.removeAll(ids));
     }
   }
 }

@@ -3,10 +3,39 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:music_flow_mobile/models/song_model.dart';
 
-class AmbientPlayerBackdrop extends StatelessWidget {
+class AmbientPlayerBackdrop extends StatefulWidget {
   final SongModel song;
 
   const AmbientPlayerBackdrop({super.key, required this.song});
+
+  @override
+  State<AmbientPlayerBackdrop> createState() => _AmbientPlayerBackdropState();
+}
+
+class _AmbientPlayerBackdropState extends State<AmbientPlayerBackdrop>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulseController;
+  late final Animation<double> _pulseAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 8),
+    )..repeat(reverse: true);
+
+    _pulseAnimation = CurvedAnimation(
+      parent: _pulseController,
+      curve: Curves.easeInOutSine,
+    );
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -20,14 +49,29 @@ class AmbientPlayerBackdrop extends StatelessWidget {
         // 1. Base dark background
         Container(color: bg),
 
-        // 2. Animated blurred album art / glow
+        // 2. Animated blurred album art with living flowing pulse
         AnimatedSwitcher(
           duration: const Duration(milliseconds: 650),
           switchInCurve: Curves.easeOut,
           switchOutCurve: Curves.easeIn,
-          child: SizedBox.expand(
-            key: ValueKey<String>('${song.id}_${song.coverUrl}'),
-            child: _buildCoverImage(primary),
+          child: AnimatedBuilder(
+            key: ValueKey<String>('${widget.song.id}_${widget.song.coverUrl}'),
+            animation: _pulseAnimation,
+            builder: (context, child) {
+              final val = _pulseAnimation.value;
+              final scale = 1.10 + (val * 0.12);
+              final alignX = (val - 0.5) * 0.16;
+              final alignY = (0.5 - val) * 0.12;
+
+              return Transform.scale(
+                scale: scale,
+                alignment: Alignment(alignX, alignY),
+                child: child,
+              );
+            },
+            child: SizedBox.expand(
+              child: _buildCoverImage(primary),
+            ),
           ),
         ),
 
@@ -62,17 +106,17 @@ class AmbientPlayerBackdrop extends StatelessWidget {
   }
 
   Widget _buildCoverImage(Color fallbackColor) {
-    if (song.coverBytes != null && song.coverBytes!.isNotEmpty) {
+    if (widget.song.coverBytes != null && widget.song.coverBytes!.isNotEmpty) {
       return Image.memory(
-        song.coverBytes!,
+        widget.song.coverBytes!,
         fit: BoxFit.cover,
         gaplessPlayback: true,
       );
     }
 
-    if (song.coverUrl.isNotEmpty) {
+    if (widget.song.coverUrl.isNotEmpty) {
       return CachedNetworkImage(
-        imageUrl: song.coverUrl,
+        imageUrl: widget.song.coverUrl,
         fit: BoxFit.cover,
         errorWidget: (_, __, ___) => _buildFallbackMesh(fallbackColor),
         placeholder: (_, __) => _buildFallbackMesh(fallbackColor),
