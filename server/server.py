@@ -52,6 +52,10 @@ class MusicFlowRequestHandler(http.server.SimpleHTTPRequestHandler):
         if path == "/api/update/check":
             query = parse_qs(parsed.query)
             channel = query.get("channel", ["release"])[0].lower()
+            if channel not in ("release", "debug"):
+                self.send_json({"error": "Недійсний канал. Дозволено: release, debug"}, status=400)
+                return
+
             apk_filename = "app-debug.apk" if channel == "debug" else "app-release.apk"
             info = get_version_info(apk_filename)
             local_ip = get_local_ip()
@@ -71,6 +75,10 @@ class MusicFlowRequestHandler(http.server.SimpleHTTPRequestHandler):
         if path == "/api/update/download":
             query = parse_qs(parsed.query)
             channel = query.get("channel", ["release"])[0].lower()
+            if channel not in ("release", "debug"):
+                self.send_json({"error": "Недійсний канал. Дозволено: release, debug"}, status=400)
+                return
+
             apk_filename = "app-debug.apk" if channel == "debug" else "app-release.apk"
             apk_path = find_best_apk_path(apk_filename)
             if apk_path and os.path.exists(apk_path):
