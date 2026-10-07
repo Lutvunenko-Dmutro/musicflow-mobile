@@ -149,8 +149,8 @@ class PlayerControls extends StatelessWidget {
                 ),
               ),
               _buildModeButton(
-                icon: audioProvider.repeatMode == RepeatMode.one ? Icons.repeat_one : Icons.repeat,
-                isActive: audioProvider.repeatMode != RepeatMode.off,
+                icon: audioProvider.repeatMode == AudioRepeatMode.one ? Icons.repeat_one : Icons.repeat,
+                isActive: audioProvider.repeatMode != AudioRepeatMode.off,
                 onTap: audioProvider.toggleRepeat,
                 primary: primary,
               ),

@@ -11,14 +11,14 @@ mixin QueueManagerMixin on ChangeNotifier {
   List<SongModel> _queue = [];
   int _currentIndex = -1;
   bool _isShuffleModeEnabled = false;
-  RepeatMode _repeatMode = RepeatMode.off;
+  AudioRepeatMode _repeatMode = AudioRepeatMode.off;
   bool _isPlayingNext = true;
   bool _isFetchingAutoContinue = false;
 
   bool get hasNext => true;
-  bool get hasPrevious => _queue.isNotEmpty && (_currentIndex > 0 || _repeatMode == RepeatMode.all || _isShuffleModeEnabled);
+  bool get hasPrevious => _queue.isNotEmpty && (_currentIndex > 0 || _repeatMode == AudioRepeatMode.all || _isShuffleModeEnabled);
   bool get isShuffleModeEnabled => _isShuffleModeEnabled;
-  RepeatMode get repeatMode => _repeatMode;
+  AudioRepeatMode get repeatMode => _repeatMode;
   List<SongModel> get queue => _queue;
   int get currentIndex => _currentIndex;
   bool get isPlayingNext => _isPlayingNext;
@@ -51,7 +51,7 @@ mixin QueueManagerMixin on ChangeNotifier {
   }
 
   void handleSongCompleted() {
-    if (_repeatMode == RepeatMode.one) {
+    if (_repeatMode == AudioRepeatMode.one) {
       player.seek(Duration.zero);
       player.play();
       return;
@@ -74,7 +74,7 @@ mixin QueueManagerMixin on ChangeNotifier {
       if (_currentIndex < _queue.length - 1) {
         _currentIndex++;
         await playSong(_queue[_currentIndex]);
-      } else if (_repeatMode == RepeatMode.all) {
+      } else if (_repeatMode == AudioRepeatMode.all) {
         _currentIndex = 0;
         await playSong(_queue[_currentIndex]);
       } else {
@@ -132,7 +132,7 @@ mixin QueueManagerMixin on ChangeNotifier {
       if (_currentIndex > 0) {
         _currentIndex--;
         await playSong(_queue[_currentIndex]);
-      } else if (_repeatMode == RepeatMode.all) {
+      } else if (_repeatMode == AudioRepeatMode.all) {
         _currentIndex = _queue.length - 1;
         await playSong(_queue[_currentIndex]);
       } else {
@@ -147,12 +147,12 @@ mixin QueueManagerMixin on ChangeNotifier {
   }
 
   void toggleRepeat() {
-    if (_repeatMode == RepeatMode.off) {
-      _repeatMode = RepeatMode.all;
-    } else if (_repeatMode == RepeatMode.all) {
-      _repeatMode = RepeatMode.one;
+    if (_repeatMode == AudioRepeatMode.off) {
+      _repeatMode = AudioRepeatMode.all;
+    } else if (_repeatMode == AudioRepeatMode.all) {
+      _repeatMode = AudioRepeatMode.one;
     } else {
-      _repeatMode = RepeatMode.off;
+      _repeatMode = AudioRepeatMode.off;
     }
     notifyListeners();
   }

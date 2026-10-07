@@ -1,1 +1,1 @@
-enum RepeatMode { off, all, one }
+enum AudioRepeatMode { off, all, one }
