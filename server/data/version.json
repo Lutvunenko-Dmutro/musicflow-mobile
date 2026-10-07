@@ -1,11 +1,19 @@
 {
-  "version": "1.0.32",
-  "buildNumber": 33,
+  "version": "1.0.33",
+  "buildNumber": 34,
   "releaseDate": "2026-10-07",
-  "changelog": "• Fix: Відновлено повнорозмірне відображення смужок візуалізатора (SizedBox.expand canvas) та захист від стискання\n• Sync: Однаковий масштаб та поведінка смужок на міні-барі та плеєрі\n• Glow: 28px шовковий блюр та яскраві рухомі світлові сфери фону",
+  "changelog": "• Visualizer: Повне виправлення відображення смужок (SizedBox.expand canvas)\n• Sync: 100% піксельна ідентичність смужок між міні-баром та великим плеєром\n• Tablet: Варіант А — адаптивний студійний спектр високої щільності (до 120 смужок)\n• Glow: 28px шовковий блюр та яскраві рухомі світлові сфери Ambient Glow\n• Quality: 58/58 тестів, 0 попереджень, повний Release Checklist та захист OTA",
   "apkFileName": "app-release.apk",
-  "fileSizeBytes": 69391796,
+  "fileSizeBytes": 69473588,
+  "sha256": "c1a73df99cc33f1cd60baf2be73bde738b0d5c81685be7b4367152de0ef9297c",
   "history": [
+    {
+      "version": "1.0.33",
+      "buildNumber": 34,
+      "releaseDate": "2026-10-07",
+      "changelog": "• Visualizer: Повне виправлення відображення смужок (SizedBox.expand canvas)\n• Sync: 100% піксельна ідентичність смужок між міні-баром та великим плеєром\n• Tablet: Варіант А — адаптивний студійний спектр високої щільності (до 120 смужок)\n• Glow: 28px шовковий блюр та яскраві рухомі світлові сфери Ambient Glow\n• Quality: 58/58 тестів, 0 попереджень, повний Release Checklist та захист OTA",
+      "sha256": "c1a73df99cc33f1cd60baf2be73bde738b0d5c81685be7b4367152de0ef9297c"
+    },
     {
       "version": "1.0.32",
       "buildNumber": 33,
@@ -205,6 +213,5 @@
       "releaseDate": "2026-10-05",
       "changelog": "• Початковий реліз MusicFlow: онлайн-пошук, кешування та локальний аудіоплеєр"
     }
-  ],
-  "sha256": "952476403e17f51f4846d00915409c3b142d3e6042a1dc933bf027065a5c455d"
+  ]
 }
