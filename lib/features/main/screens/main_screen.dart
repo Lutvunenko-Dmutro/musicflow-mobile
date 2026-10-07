@@ -76,8 +76,8 @@ class _MainScreenState extends State<MainScreen> {
                     children: _screens,
                   ),
                   Positioned(
-                    left: 0,
-                    right: 0,
+                    left: 24,
+                    right: 24,
                     bottom: 0,
                     child: IgnorePointer(
                       child: Consumer<AudioProvider>(
@@ -90,7 +90,6 @@ class _MainScreenState extends State<MainScreen> {
                                 isPlaying: true,
                                 width: double.infinity,
                                 height: 50,
-                                barCount: 60,
                               ),
                             );
                           }

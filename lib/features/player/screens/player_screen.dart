@@ -183,7 +183,6 @@ class PlayerScreen extends StatelessWidget {
           isPlaying: audioProvider.isPlaying,
           width: double.infinity,
           height: 50,
-          barCount: 60,
         ),
       ),
     );

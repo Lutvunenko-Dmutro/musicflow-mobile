@@ -11,7 +11,7 @@ import 'package:music_flow_mobile/providers/visualizer_settings_provider.dart';
 import 'package:music_flow_mobile/providers/audio_provider.dart';
 
 class AudioVisualizer extends StatefulWidget {
-  final int barCount;
+  final int? barCount;
   final bool isPlaying;
   final double width;
   final double height;
@@ -19,7 +19,7 @@ class AudioVisualizer extends StatefulWidget {
 
   const AudioVisualizer({
     super.key,
-    this.barCount = 60,
+    this.barCount,
     required this.isPlaying,
     this.width = double.infinity,
     this.height = 50,
@@ -32,11 +32,7 @@ class AudioVisualizer extends StatefulWidget {
 
 class _AudioVisualizerState extends State<AudioVisualizer>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
-  late List<double> _currentHeights;
-  late List<double> _targetHeights;
-  late List<double> _dotHeights;
-  late List<double> _dotVelocities;
-
+  late List<double> _currentHeights, _targetHeights, _dotHeights, _dotVelocities;
   Ticker? _ticker;
   Timer? _testTimer;
   final VisualizerMockGenerator _mockGenerator = VisualizerMockGenerator();
@@ -45,13 +41,26 @@ class _AudioVisualizerState extends State<AudioVisualizer>
   final ValueNotifier<int> _repaintNotifier = ValueNotifier<int>(0);
   bool _isStartingListening = false;
 
+  int get _count => _currentHeights.length;
+
+  int _resolveBars(double w) =>
+      widget.barCount ?? (w <= 420 ? 60 : (w <= 640 ? 80 : (w <= 900 ? 100 : 120)));
+
+  void _initBars(int c) {
+    _currentHeights = List.filled(c, 0.05);
+    _targetHeights = List.filled(c, 0.05);
+    _dotHeights = List.filled(c, 0.05);
+    _dotVelocities = List.filled(c, 0.0);
+  }
+
+  void _ensureBars(int c) {
+    if (_currentHeights.length != c) _initBars(c);
+  }
+
   @override
   void initState() {
     super.initState();
-    _currentHeights = List.filled(widget.barCount, 0.05);
-    _targetHeights = List.filled(widget.barCount, 0.05);
-    _dotHeights = List.filled(widget.barCount, 0.05);
-    _dotVelocities = List.filled(widget.barCount, 0.0);
+    _initBars(widget.barCount ?? 60);
     _ticker = createTicker(_onTick);
     if (widget.isPlaying) _startListening();
     if (widget.testMode) _startTestSimulation();
@@ -81,7 +90,7 @@ class _AudioVisualizerState extends State<AudioVisualizer>
   }
 
   void _startTestSimulation() {
-    _testTimer?.cancel();
+    _stopTestSimulation();
     if (_ticker != null && !_ticker!.isTicking) _ticker!.start();
     _testTimer = Timer.periodic(const Duration(milliseconds: 35), (_) {
       if (mounted) _processWaveform(_mockGenerator.generateNextFrame());
@@ -108,7 +117,7 @@ class _AudioVisualizerState extends State<AudioVisualizer>
         });
         if (_ticker != null && !_ticker!.isTicking) _ticker!.start();
       } else if (mounted) {
-        _targetHeights = List.filled(widget.barCount, 0.05);
+        _targetHeights = List.filled(_count, 0.05);
       }
     } finally {
       _isStartingListening = false;
@@ -120,7 +129,7 @@ class _AudioVisualizerState extends State<AudioVisualizer>
     _visualizerSubscription?.cancel();
     _visualizerSubscription = null;
     if (mounted) {
-      _targetHeights = List.filled(widget.barCount, 0.05);
+      _targetHeights = List.filled(_count, 0.05);
       Future.delayed(const Duration(milliseconds: 1500), () {
         if (mounted && !widget.isPlaying && _ticker != null && _ticker!.isTicking) {
           _ticker!.stop();
@@ -131,27 +140,19 @@ class _AudioVisualizerState extends State<AudioVisualizer>
 
   void _onTick(Duration elapsed) {
     VisualizerPhysics.updateHeights(
-      barCount: widget.barCount,
-      targetHeights: _targetHeights,
-      currentHeights: _currentHeights,
-      dotHeights: _dotHeights,
-      dotVelocities: _dotVelocities,
-      attack: _settings.attack,
-      release: _settings.release,
-      gravity: _settings.gravity,
-      bounce: _settings.bounce,
-      onRepaintNeeded: () {
-        if (mounted) _repaintNotifier.value++;
-      },
+      barCount: _count, targetHeights: _targetHeights, currentHeights: _currentHeights,
+      dotHeights: _dotHeights, dotVelocities: _dotVelocities, attack: _settings.attack,
+      release: _settings.release, gravity: _settings.gravity, bounce: _settings.bounce,
+      onRepaintNeeded: () { if (mounted) _repaintNotifier.value++; },
     );
   }
 
   void _processWaveform(List<int> raw) {
     if (!mounted) return;
-    final boost = _settings.amplitudeBoost;
+    final b = _settings.amplitudeBoost;
     _targetHeights = _settings.core == VisualizerCore.hardware
-        ? FftProcessor.processHardwareFft(raw, widget.barCount, amplitudeBoost: boost)
-        : FftProcessor.process(raw, widget.barCount, amplitudeBoost: boost);
+        ? FftProcessor.processHardwareFft(raw, _count, amplitudeBoost: b)
+        : FftProcessor.process(raw, _count, amplitudeBoost: b);
   }
 
   @override
@@ -170,17 +171,21 @@ class _AudioVisualizerState extends State<AudioVisualizer>
       height: widget.height,
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 420),
-          child: SizedBox.expand(
-            child: CustomPaint(
-              painter: VisualizerPainter(
-                heights: _currentHeights,
-                dotHeights: _dotHeights,
-                barCount: widget.barCount,
-                style: _settings.style,
-                repaint: _repaintNotifier,
-              ),
-            ),
+          constraints: const BoxConstraints(maxWidth: 960),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final w = constraints.maxWidth.isFinite ? constraints.maxWidth : MediaQuery.of(context).size.width;
+              final bars = _resolveBars(w);
+              _ensureBars(bars);
+              return SizedBox.expand(
+                child: CustomPaint(
+                  painter: VisualizerPainter(
+                    heights: _currentHeights, dotHeights: _dotHeights,
+                    barCount: bars, style: _settings.style, repaint: _repaintNotifier,
+                  ),
+                ),
+              );
+            },
           ),
         ),
       ),
