@@ -7,11 +7,14 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: write
+
 jobs:
-  quality-and-build:
-    name: Code Quality & Release Build
+  quality-gate:
+    name: Code Quality & Tests
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 20
 
     steps:
       - name: 📥 Checkout repository
@@ -38,7 +41,33 @@ jobs:
       - name: 🧪 Run Automated Tests (flutter test)
         run: flutter test --coverage
 
-      - name: 🔨 Compile Release APK (flutter build apk --release)
+  build-and-release:
+    name: Build & Publish Release
+    needs: quality-gate
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: ☕ Setup Java 17 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: 💙 Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.32.8'
+          cache: true
+
+      - name: 📦 Install dependencies
+        run: flutter pub get
+
+      - name: 🔨 Compile Release APK
         run: flutter build apk --release
 
       - name: 📦 Upload Release APK Artifact
@@ -47,3 +76,11 @@ jobs:
           name: app-release
           path: build/app/outputs/flutter-apk/app-release.apk
           retention-days: 14
+
+      - name: 🚀 Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build/app/outputs/flutter-apk/app-release.apk
+          name: MusicFlow ${{ github.ref_name }}
+          generate_release_notes: true
