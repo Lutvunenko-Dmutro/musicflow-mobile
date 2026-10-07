@@ -36,23 +36,34 @@ android {
         versionName = flutter.versionName
     }
 
+    val keystoreFile = file(keystoreProperties.getProperty("storeFile") ?: "release.keystore")
+    val hasKeystore = keystoreFile.exists()
+
     signingConfigs {
-        create("release") {
-            keyAlias = keystoreProperties.getProperty("keyAlias") ?: "musicflow"
-            keyPassword = keystoreProperties.getProperty("keyPassword") ?: ""
-            storeFile = file(keystoreProperties.getProperty("storeFile") ?: "release.keystore")
-            storePassword = keystoreProperties.getProperty("storePassword") ?: ""
+        if (hasKeystore) {
+            create("release") {
+                keyAlias = keystoreProperties.getProperty("keyAlias") ?: "musicflow"
+                keyPassword = keystoreProperties.getProperty("keyPassword") ?: ""
+                storeFile = keystoreFile
+                storePassword = keystoreProperties.getProperty("storePassword") ?: ""
+            }
         }
     }
 
     buildTypes {
         debug {
-            // Підписуємо офіційним ключем MusicFlow (CN=MusicFlow, Kyiv, UA)
-            signingConfig = signingConfigs.getByName("release")
+            // Підписуємо офіційним ключем MusicFlow (якщо присутній)
+            if (hasKeystore) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
         release {
-            // Підписуємо тим самим ключем MusicFlow для 100% сумісності та відсутності конфліктів
-            signingConfig = signingConfigs.getByName("release")
+            // Підписуємо офіційним ключем локально або debug підписом у хмарі (CI/CD)
+            if (hasKeystore) {
+                signingConfig = signingConfigs.getByName("release")
+            } else {
+                signingConfig = signingConfigs.getByName("debug")
+            }
         }
     }
 }
