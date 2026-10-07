@@ -17,6 +17,7 @@ import os
 import re
 import shutil
 import subprocess
+import hashlib
 import sys
 from datetime import datetime
 
@@ -27,6 +28,16 @@ UPDATES_DIR = os.path.join(BASE_DIR, "data", "updates")
 VERSION_JSON_PATH = os.path.join(BASE_DIR, "data", "version.json")
 BUILT_APK_DEBUG = os.path.join(PROJECT_DIR, "build", "app", "outputs", "flutter-apk", "app-debug.apk")
 BUILT_APK_RELEASE = os.path.join(PROJECT_DIR, "build", "app", "outputs", "flutter-apk", "app-release.apk")
+
+
+def calculate_sha256(filepath):
+    if not filepath or not os.path.exists(filepath):
+        return ""
+    sha = hashlib.sha256()
+    with open(filepath, "rb") as f:
+        while chunk := f.read(64 * 1024):
+            sha.update(chunk)
+    return sha.hexdigest()
 
 
 def get_current_pubspec_version():
@@ -171,11 +182,15 @@ def publish_release(changelog=None, bump_type="patch", mode="release", skip_veri
         except Exception:
             pass
 
+    apk_sha256 = calculate_sha256(primary_apk)
+    print(f"       🔒 SHA-256: {apk_sha256}")
+
     new_release_entry = {
         "version": new_version_display,
         "buildNumber": new_build,
         "releaseDate": datetime.now().strftime("%Y-%m-%d"),
-        "changelog": changelog
+        "changelog": changelog,
+        "sha256": apk_sha256
     }
     updated_history = [new_release_entry] + [h for h in existing_history if h.get("buildNumber") != new_build]
 
@@ -186,6 +201,7 @@ def publish_release(changelog=None, bump_type="patch", mode="release", skip_veri
         "changelog": changelog,
         "apkFileName": apk_file_name,
         "fileSizeBytes": file_size,
+        "sha256": apk_sha256,
         "history": updated_history
     }
     with open(VERSION_JSON_PATH, "w", encoding="utf-8") as f:

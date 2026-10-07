@@ -61,6 +61,9 @@ class GithubUpdateClient {
       final isNewer = remoteBuild > currentBuildNumber ||
           _compareVersions(cleanVersion, currentVersion) > 0;
 
+      final shaMatch = RegExp(r'sha-?256[:\s]+([a-f0-9]{64})', caseSensitive: false).firstMatch(body);
+      final sha256Hash = shaMatch?.group(1);
+
       if (isNewer || force) {
         AppLogger.success('Знайдено реліз на GitHub: v$cleanVersion (build $remoteBuild)', 'UPDATER');
         return UpdateInfo(
@@ -72,6 +75,7 @@ class GithubUpdateClient {
           history: history,
           userCurrentBuild: currentBuildNumber,
           channel: 'release',
+          sha256: sha256Hash,
         );
       }
     } catch (e) {

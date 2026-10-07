@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:crypto/crypto.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
@@ -12,8 +13,8 @@ import 'package:music_flow_mobile/utils/app_logger.dart';
 export 'package:music_flow_mobile/models/update_info.dart';
 
 class UpdateService {
-  static const String currentVersion = '1.0.27';
-  static const int currentBuildNumber = 28;
+  static const String currentVersion = '1.0.32';
+  static const int currentBuildNumber = 33;
   static const MethodChannel _installerChannel =
       MethodChannel('com.example.music_flow_mobile/installer');
 
@@ -129,6 +130,19 @@ class UpdateService {
       }).asFuture();
 
       await sink.close();
+
+      if (info.sha256 != null && info.sha256!.isNotEmpty) {
+        final digest = await sha256.bind(apkFile.openRead()).first;
+        final actualSha = digest.toString().toLowerCase();
+        final expectedSha = info.sha256!.trim().toLowerCase();
+        if (actualSha != expectedSha) {
+          if (await apkFile.exists()) await apkFile.delete();
+          AppLogger.error('Порушення цілісності: SHA-256 $actualSha != $expectedSha', null, null, 'UPDATER');
+          throw const FormatException('Помилка безпеки: контрольна сума SHA-256 не збігається. Файл відхилено.');
+        }
+        AppLogger.success('Контрольну суму SHA-256 підтверджено: $actualSha', 'UPDATER');
+      }
+
       AppLogger.success('APK успішно завантажено: ${apkFile.path}', 'UPDATER');
       return apkFile;
     } finally {

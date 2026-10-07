@@ -2,7 +2,8 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Release-v1.0.32%20(build%2033)-blue?style=for-the-badge&logo=android" alt="Version">
-  <img src="https://img.shields.io/badge/Tests-54%20Passing-brightgreen?style=for-the-badge&logo=flutter" alt="Tests">
+  <img src="https://github.com/Lutvunenko-Dmutro/musicflow-mobile/actions/workflows/ci.yml/badge.svg" alt="CI/CD Status">
+  <img src="https://img.shields.io/badge/Tests-55%20Passing-brightgreen?style=for-the-badge&logo=flutter" alt="Tests">
   <img src="https://img.shields.io/badge/Architecture-%3C200%20Lines%2FFile-purple?style=for-the-badge" alt="Architecture">
   <img src="https://img.shields.io/badge/License-MIT-orange?style=for-the-badge" alt="License">
 </p>
@@ -13,6 +14,8 @@
 > 🏗️ **[Системна архітектура (ARCHITECTURE.md) →](ARCHITECTURE.md)**  
 > 🗺️ **[План реалізації та Roadmap (PLAN.md) →](PLAN.md)**  
 > 🤖 **[ШІ-Оркестрація та Агенти (ORCHESTRATION.md) →](ORCHESTRATION.md)**  
+> 🛡️ **[Матриця сумісності та План відкату (COMPATIBILITY_AND_ROLLBACK.md) →](docs/COMPATIBILITY_AND_ROLLBACK.md)**  
+> 📜 **[Журнал змін (CHANGELOG.md) →](CHANGELOG.md)**  
 > 📥 **[Завантажити останній релізний APK (v1.0.32) →](https://github.com/Lutvunenko-Dmutro/musicflow-mobile/releases/latest)**  
 > 📖 **[Технічна документація проекту →](docs/README.md)**  
 > 🔍 **[Результати аудиту системи →](docs/audit.md)**
@@ -49,7 +52,7 @@
 | 📡 **Автономні OTA-оновлення** | Пряма перевірка релізів через GitHub Releases API без залежності від локального ПК, підтримка кастомного сервера розробника | ✅ |
 | 🛡️ **Телеметрія збоїв** | Збір діагностичних звітів збоїв за згодою користувача та зручний веб-дашборд | ✅ |
 | 🧹 **Керування пам'яттю** | Детальна статистика зайнятої пам'яті (обкладинки, LRC, SQLite, історія) та безпечне очищення | ✅ |
-| 🧪 **54 автоматичних тести** | 54 unit-, service- та архітектурних тестів (< 200 рядків на файл, 0 analyzer issues) | ✅ |
+| 🧪 **55 автоматичних тестів** | 55 unit-, service- та архітектурних тестів (< 200 рядків на файл, 0 analyzer issues) | ✅ |
 
 
 ---
@@ -96,7 +99,7 @@ python server/publish_release.py -c "Опис змін" -b patch -m both
 
 ## Запуск та тестування
 
-### 1. Запуск unit-тестів (54 тести)
+### 1. Запуск unit-тестів (55 тестів)
 ```bash
 flutter test
 ```

@@ -10,6 +10,7 @@ class UpdateInfo {
   final int userCurrentBuild;
   final String channel;
   final bool isChannelSwitch;
+  final String? sha256;
 
   const UpdateInfo({
     required this.version,
@@ -21,6 +22,7 @@ class UpdateInfo {
     this.userCurrentBuild = 0,
     this.channel = 'release',
     this.isChannelSwitch = false,
+    this.sha256,
   });
 
   factory UpdateInfo.fromJson(
@@ -46,6 +48,7 @@ class UpdateInfo {
       userCurrentBuild: userCurrentBuild,
       channel: json['channel'] as String? ?? 'release',
       isChannelSwitch: isChannelSwitch,
+      sha256: json['sha256'] as String?,
     );
   }
 

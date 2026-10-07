@@ -147,20 +147,30 @@ class PlayerScreen extends StatelessWidget {
       return SizedBox(
         height: 50,
         child: Center(
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.wifi_off, color: Colors.redAccent, size: 18),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Text(
-                  audioProvider.playbackError!,
-                  style: const TextStyle(color: Colors.redAccent, fontSize: 13),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+          child: InkWell(
+            onTap: () {
+              final song = audioProvider.currentSong;
+              if (song != null) audioProvider.playSong(song);
+            },
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.refresh, color: Colors.amberAccent, size: 16),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      '${audioProvider.playbackError!} • Натисніть для повтору',
+                      style: const TextStyle(color: Colors.amberAccent, fontSize: 12),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       );

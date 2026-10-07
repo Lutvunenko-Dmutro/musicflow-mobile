@@ -1,0 +1,49 @@
+name: MusicFlow CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  quality-and-build:
+    name: Code Quality & Release Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: ☕ Setup Java 17 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: 💙 Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: 📦 Install dependencies
+        run: flutter pub get
+
+      - name: 🔍 Run Static Code Analysis (flutter analyze)
+        run: flutter analyze
+
+      - name: 🧪 Run Automated Tests (flutter test)
+        run: flutter test --coverage
+
+      - name: 🔨 Compile Release APK (flutter build apk --release)
+        run: flutter build apk --release
+
+      - name: 📦 Upload Release APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 14

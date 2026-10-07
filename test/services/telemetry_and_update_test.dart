@@ -102,10 +102,23 @@ void main() {
       expect(info.missedReleases.map((r) => r.version), equals(['1.0.7', '1.0.6']));
     });
 
-    test('GithubUpdateClient extracts build number and compares versions correctly', () {
+    test('GithubUpdateClient extracts repo constants', () {
       expect(GithubUpdateClient.repoOwner, equals('Lutvunenko-Dmutro'));
       expect(GithubUpdateClient.repoName, equals('musicflow-mobile'));
       expect(GithubUpdateClient.releasesUrl, contains('api.github.com'));
+    });
+
+    test('UpdateInfo parses and preserves sha256 checksum', () {
+      final json = {
+        'version': '1.0.32',
+        'buildNumber': 33,
+        'changelog': '• Release',
+        'downloadUrl': 'http://127.0.0.1:8080/api/update/download',
+        'fileSizeBytes': 66000000,
+        'sha256': '952476403e17f51f4846d00915409c3b142d3e6042a1dc933bf027065a5c455d',
+      };
+      final info = UpdateInfo.fromJson(json);
+      expect(info.sha256, equals('952476403e17f51f4846d00915409c3b142d3e6042a1dc933bf027065a5c455d'));
     });
   });
 }

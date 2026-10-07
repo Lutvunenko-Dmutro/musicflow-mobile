@@ -9,11 +9,14 @@ MusicFlow Local Update & Telemetry Server
 
 import http.server
 import html
+import hashlib
 import json
 import os
+import re
 import socket
 import socketserver
 import sys
+import time
 from datetime import datetime
 from urllib.parse import parse_qs, urlparse
 
@@ -55,6 +58,45 @@ def get_local_ip():
     return ip
 
 
+RATE_LIMIT_STORE = {}
+MAX_REQUESTS_PER_MINUTE = 120
+
+
+def is_rate_limited(ip):
+    now = time.time()
+    timestamps = RATE_LIMIT_STORE.get(ip, [])
+    timestamps = [t for t in timestamps if now - t < 60]
+    if len(timestamps) >= MAX_REQUESTS_PER_MINUTE:
+        RATE_LIMIT_STORE[ip] = timestamps
+        return True
+    timestamps.append(now)
+    RATE_LIMIT_STORE[ip] = timestamps
+    return False
+
+
+def calculate_sha256(filepath):
+    if not filepath or not os.path.exists(filepath):
+        return None
+    sha = hashlib.sha256()
+    with open(filepath, "rb") as f:
+        while chunk := f.read(64 * 1024):
+            sha.update(chunk)
+    return sha.hexdigest()
+
+
+def sanitize_telemetry(data):
+    if not isinstance(data, dict):
+        return data
+    cleaned = dict(data)
+    for key in ("error", "stackTrace", "message", "deviceInfo", "device"):
+        val = cleaned.get(key)
+        if isinstance(val, str):
+            val = re.sub(r'([A-Za-z]:\\Users\\)[^\\]+(\\)', r'\1***\2', val)
+            val = re.sub(r'(/home/)[^/]+(/)', r'\1***\2', val)
+            cleaned[key] = val
+    return cleaned
+
+
 def find_best_apk_path(filename="app-release.apk"):
     paths = [
         os.path.join(UPDATES_DIR, filename),
@@ -77,6 +119,8 @@ def get_version_info(apk_filename=None):
         if apk_path:
             data["fileSizeBytes"] = os.path.getsize(apk_path)
             data["resolvedApkPath"] = apk_path
+            if not data.get("sha256"):
+                data["sha256"] = calculate_sha256(apk_path)
         return data
     except Exception:
         return {"version": "1.0.0", "buildNumber": 1, "changelog": "Початковий реліз", "fileSizeBytes": 0}
@@ -209,6 +253,11 @@ class MusicFlowRequestHandler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self):
+        client_ip = self.client_address[0]
+        if is_rate_limited(client_ip):
+            self.send_json({"error": "Забагато запитів. Зачекайте хвилину."}, status=429)
+            return
+
         parsed = urlparse(self.path)
         path = parsed.path
 
@@ -285,6 +334,11 @@ class MusicFlowRequestHandler(http.server.SimpleHTTPRequestHandler):
         self.send_error(404, "Endpoint not found")
 
     def do_POST(self):
+        client_ip = self.client_address[0]
+        if is_rate_limited(client_ip):
+            self.send_json({"error": "Забагато запитів. Зачекайте хвилину."}, status=429)
+            return
+
         parsed = urlparse(self.path)
         path = parsed.path
 
@@ -300,6 +354,8 @@ class MusicFlowRequestHandler(http.server.SimpleHTTPRequestHandler):
             except Exception:
                 self.send_json({"error": "Invalid JSON"}, status=400)
                 return
+
+            data = sanitize_telemetry(data)
 
             timestamp = datetime.now()
             report_id = timestamp.strftime("%Y%m%d_%H%M%S_%f")[:19]
