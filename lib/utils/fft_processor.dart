@@ -81,11 +81,17 @@ class FftProcessor {
         prevFreq = i > 0 ? FftTuning.barFrequencies[i - 1] : targetFreq * 0.8;
         nextFreq = i < 59 ? FftTuning.barFrequencies[i + 1] : targetFreq * 1.2;
       } else {
-        const minF = 35.0;
-        const maxF = 12000.0;
-        targetFreq = minF * pow(maxF / minF, i / (numBands - 1));
-        prevFreq = targetFreq * 0.85;
-        nextFreq = targetFreq * 1.15;
+        final double pos = (i / (numBands - 1)) * 59.0;
+        final int lo = pos.floor();
+        final int hi = min(59, lo + 1);
+        final double fr = pos - lo;
+        targetFreq = FftTuning.barFrequencies[lo] * (1.0 - fr) +
+            FftTuning.barFrequencies[hi] * fr;
+        final double delta = hi > lo
+            ? (FftTuning.barFrequencies[hi] - FftTuning.barFrequencies[lo])
+            : targetFreq * 0.12;
+        prevFreq = targetFreq - delta * 0.5;
+        nextFreq = targetFreq + delta * 0.5;
       }
 
       final double exactStartBin = (prevFreq + targetFreq) / 2.0 / binHz;
@@ -100,6 +106,11 @@ class FftProcessor {
         peak = magnitudes[left] * (1.0 - frac) + magnitudes[right] * frac;
         if (exactBin < 1.0) {
           peak *= (exactBin / 1.0).clamp(0.45, 1.0);
+        }
+        // Micro-detune for expanded bar counts to keep bass bars independent
+        if (numBands != 60 && (i / numBands) < 0.40) {
+          final double detune = sin((i * 1.618) + (peak * 3.14)) * 0.12;
+          peak = (peak * (1.0 + detune)).clamp(0.02, 1.0);
         }
       } else {
         final int bLow = exactStartBin.floor().clamp(1, halfBins - 1);

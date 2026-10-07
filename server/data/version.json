@@ -1,12 +1,19 @@
 {
-  "version": "1.0.33",
-  "buildNumber": 34,
+  "version": "1.0.34",
+  "buildNumber": 35,
   "releaseDate": "2026-10-07",
-  "changelog": "• Visualizer: Повне виправлення відображення смужок (SizedBox.expand canvas)\n• Sync: 100% піксельна ідентичність смужок між міні-баром та великим плеєром\n• Tablet: Варіант А — адаптивний студійний спектр високої щільності (до 120 смужок)\n• Glow: 28px шовковий блюр та яскраві рухомі світлові сфери Ambient Glow\n• Quality: 58/58 тестів, 0 попереджень, повний Release Checklist та захист OTA",
+  "changelog": "Оновлено тестовий синтезатор музики з реалістичними басами та покращено динаміку смуг візуалізатора в альбомному режимі",
   "apkFileName": "app-release.apk",
-  "fileSizeBytes": 69473588,
-  "sha256": "c1a73df99cc33f1cd60baf2be73bde738b0d5c81685be7b4367152de0ef9297c",
+  "fileSizeBytes": 69473584,
+  "sha256": "efcde33a7a5282d4e189b09ec77751f6c169de60f3300d1a64c38e5ff2efcacc",
   "history": [
+    {
+      "version": "1.0.34",
+      "buildNumber": 35,
+      "releaseDate": "2026-10-07",
+      "changelog": "Оновлено тестовий синтезатор музики з реалістичними басами та покращено динаміку смуг візуалізатора в альбомному режимі",
+      "sha256": "efcde33a7a5282d4e189b09ec77751f6c169de60f3300d1a64c38e5ff2efcacc"
+    },
     {
       "version": "1.0.33",
       "buildNumber": 34,
