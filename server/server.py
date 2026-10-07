@@ -14,6 +14,13 @@ from urllib.parse import parse_qs, urlparse
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", line_buffering=True)
+        sys.stderr.reconfigure(encoding="utf-8", line_buffering=True)
+    except Exception:
+        pass
+
 from dashboard_template import render_dashboard
 from security import is_rate_limited, sanitize_telemetry
 from storage import (
@@ -159,7 +166,25 @@ class MusicFlowRequestHandler(http.server.SimpleHTTPRequestHandler):
         self.wfile.write(body)
 
 
+def kill_port_owner(port):
+    if sys.platform == "win32":
+        try:
+            import subprocess
+            out = subprocess.check_output(f'netstat -aon | findstr :{port} | findstr LISTENING', shell=True).decode()
+            for line in out.strip().splitlines():
+                parts = line.split()
+                if len(parts) >= 5:
+                    pid = parts[-1]
+                    if pid != str(os.getpid()):
+                        subprocess.run(f"taskkill /f /pid {pid}", shell=True, capture_output=True)
+        except Exception:
+            pass
+
+
 def main():
+    import time
+    kill_port_owner(PORT)
+    time.sleep(0.3)
     local_ip = get_local_ip()
     print("=" * 65)
     print("🎵 MusicFlow Update & Telemetry Server")
@@ -167,8 +192,31 @@ def main():
     print(f"💻 На цьому ПК:      http://localhost:{PORT}")
     print(f"📊 Дашборд помилок:  http://{local_ip}:{PORT}/dashboard")
     print("=" * 65)
-    socketserver.ThreadingTCPServer.allow_reuse_address = True
-    with socketserver.ThreadingTCPServer(("0.0.0.0", PORT), MusicFlowRequestHandler) as httpd:
+
+    if sys.platform != "win32":
+        socketserver.ThreadingTCPServer.allow_reuse_address = True
+    else:
+        socketserver.ThreadingTCPServer.allow_reuse_address = False
+
+    httpd = None
+    for attempt in range(3):
+        try:
+            httpd = socketserver.ThreadingTCPServer(("0.0.0.0", PORT), MusicFlowRequestHandler)
+            break
+        except OSError as e:
+            if e.errno in (10048, 98):
+                print(f"⚠️ Порт {PORT} зайнято попереднім процесом. Звільняю...")
+                kill_port_owner(PORT)
+                time.sleep(1.0)
+            else:
+                raise
+
+    if not httpd:
+        print(f"❌ Не вдалося відкрити порт {PORT}.")
+        return
+
+    print("🟢 Сервер успішно запущено та очікує підключень...")
+    with httpd:
         try:
             httpd.serve_forever()
         except KeyboardInterrupt:
