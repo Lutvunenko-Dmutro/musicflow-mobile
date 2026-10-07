@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:music_flow_mobile/providers/visualizer_settings_provider.dart';
@@ -7,6 +8,11 @@ void main() {
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+          const MethodChannel('com.example.music_flow_mobile/visualizer_method'),
+          (MethodCall methodCall) async => null,
+        );
   });
 
   group('VisualizerSettingsProvider Unit Tests', () {
