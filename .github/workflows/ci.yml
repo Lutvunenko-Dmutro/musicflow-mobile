@@ -3,27 +3,14 @@ name: MusicFlow CI/CD Pipeline
 on:
   push:
     branches: [ main ]
-    tags: [ 'v*' ]
   pull_request:
     branches: [ main ]
-  # Дозволяє запускати збірку та реліз вручну через кнопку на GitHub
   workflow_dispatch:
-    inputs:
-      release_version:
-        description: 'Версія релізу (наприклад: v1.0.34)'
-        required: true
-        default: 'v1.0.34'
-      build_number:
-        description: 'Номер білда (наприклад: 35)'
-        required: true
-        default: '35'
-      release_notes:
-        description: 'Що нового в цій версії?'
-        required: false
-        default: 'Bug fixes and performance improvements.'
 
 permissions:
   contents: write
+  issues: write
+  pull-requests: write
 
 jobs:
   quality-gate:
@@ -67,14 +54,15 @@ jobs:
   build-and-release:
     name: Build & Publish Release
     needs: quality-gate
-    # Запускаємо якщо це пуш тегу, АБО якщо це ручний запуск (workflow_dispatch)
-    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
     steps:
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: ☕ Setup Java 17 (Temurin)
         uses: actions/setup-java@v4
@@ -116,56 +104,36 @@ jobs:
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
 
-      - name: 🔨 Compile Release APK
-        run: |
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            VERSION_NAME="${{ github.event.inputs.release_version }}"
-            BUILD_NUM="${{ github.event.inputs.build_number }}"
-          else
-            VERSION_NAME="${GITHUB_REF_NAME#v}"
-            BUILD_NUM="${{ github.run_number }}"
-          fi
-          
-          echo "Building APK with Version Name: $VERSION_NAME, Build Number: $BUILD_NUM"
-          flutter build apk --release --build-name=$VERSION_NAME --build-number=$BUILD_NUM
-          
-          # Зберігаємо для наступних кроків
-          echo "BUILD_NUM=$BUILD_NUM" >> $GITHUB_ENV
-
-      - name: 🔒 Calculate SHA-256 Checksum
-        id: calc_sha
-        run: |
-          APK_PATH="build/app/outputs/flutter-apk/app-release.apk"
-          SHA256=$(sha256sum $APK_PATH | awk '{ print $1 }')
-          echo "SHA256=$SHA256" >> $GITHUB_ENV
-          echo "APK SHA-256: $SHA256"
-
-      - name: 📝 Prepare Release Notes
-        id: prep_notes
-        run: |
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            NOTES="${{ github.event.inputs.release_notes }}\n\n**SHA-256:** \`${{ env.SHA256 }}\`"
-            TAG_NAME="${{ github.event.inputs.release_version }}"
-            RELEASE_NAME="MusicFlow ${TAG_NAME} (build ${{ env.BUILD_NUM }})"
-          else
-            NOTES="Оновлення з GitHub Releases.\n\n**SHA-256:** \`${{ env.SHA256 }}\`"
-            TAG_NAME="${{ github.ref_name }}"
-            RELEASE_NAME="MusicFlow ${{ github.ref_name }} (build ${{ env.BUILD_NUM }})"
-          fi
-          
-          # Екранування для багаторядкового виводу в GITHUB_ENV
-          echo "RELEASE_NOTES<<EOF" >> $GITHUB_ENV
-          echo -e "$NOTES" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
-          
-          echo "TAG_NAME=$TAG_NAME" >> $GITHUB_ENV
-          echo "RELEASE_NAME=$RELEASE_NAME" >> $GITHUB_ENV
-
-      - name: 🚀 Publish GitHub Release
-        uses: softprops/action-gh-release@v2
+      - name: 🚀 Setup Node.js (for Semantic Release)
+        uses: actions/setup-node@v4
         with:
-          files: build/app/outputs/flutter-apk/app-release.apk
-          tag_name: ${{ env.TAG_NAME }}
-          name: ${{ env.RELEASE_NAME }}
-          body: ${{ env.RELEASE_NOTES }}
-          generate_release_notes: false
+          node-version: 'lts/*'
+
+      - name: 🔨 Install Semantic Release
+        run: npm ci
+
+      - name: 🎯 Run Semantic Release & Build APK
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # 1. Запускаємо semantic-release у режимі "сухого прогону" (dry-run)
+          # щоб дізнатися, яку версію він згенерує, але нічого не публікуємо.
+          export NEXT_VERSION=$(npx semantic-release --dry-run | grep -oP 'Published release \K[0-9]+\.[0-9]+\.[0-9]+' || echo "")
+          
+          if [ -z "$NEXT_VERSION" ]; then
+            echo "Немає нових 'feat' або 'fix' комітів. Оновлення не потрібне."
+            exit 0
+          fi
+          
+          echo "Semantic Release вирахував нову версію: $NEXT_VERSION"
+          BUILD_NUM=${{ github.run_number }}
+          
+          # 2. Збираємо APK з цією версією
+          echo "Building APK: Version $NEXT_VERSION, Build $BUILD_NUM"
+          flutter build apk --release --build-name=$NEXT_VERSION --build-number=$BUILD_NUM
+          
+          # 3. Рахуємо SHA-256 і додаємо його в релізні нотатки через скрипт (опціонально)
+          # Semantic-release сам візьме APK з папки і додасть його в реліз.
+          
+          # 4. Справжній запуск Semantic Release
+          npx semantic-release
