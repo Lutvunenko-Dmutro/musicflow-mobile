@@ -21,7 +21,7 @@ class NativeCrashHandler(private val context: Context) {
         private const val TAG = "NativeCrashHandler"
         private const val CHANNEL = "com.example.music_flow_mobile/native_crash"
         private const val CRASH_FILE_NAME = "pending_native_crash.json"
-        private const val DEFAULT_SERVER_URL = "http://192.168.0.103:8080"
+        private const val DEFAULT_SERVER_URL = "http://localhost:8080"
         private var isInstalled = false
 
         fun install(context: Context) {

@@ -115,6 +115,23 @@ class MusicFlowRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.send_json({"error": "Забагато запитів. Зачекайте хвилину."}, status=429)
             return
 
+        if urlparse(self.path).path == "/api/telemetry/events":
+            content_length = int(self.headers.get("Content-Length", 0))
+            if content_length == 0:
+                self.send_json({"error": "Empty body"}, status=400)
+                return
+            try:
+                data = json.loads(self.rfile.read(content_length).decode("utf-8"))
+            except Exception:
+                self.send_json({"error": "Invalid JSON"}, status=400)
+                return
+
+            now = datetime.now()
+            event_name = data.get("event", "unknown_event")
+            print(f"[{now.strftime('%Y-%m-%d %H:%M:%S')}] 📈 Подія від {data.get('device')}: {event_name}")
+            self.send_json({"status": "received", "event": event_name})
+            return
+
         if urlparse(self.path).path == "/api/telemetry/crash-report":
             content_length = int(self.headers.get("Content-Length", 0))
             if content_length == 0:

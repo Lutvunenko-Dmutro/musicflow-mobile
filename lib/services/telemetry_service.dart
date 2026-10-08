@@ -7,7 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:music_flow_mobile/utils/app_logger.dart';
 
 class TelemetryService {
-  static const String defaultServerUrl = 'http://192.168.0.103:8080';
+  static const String defaultServerUrl = 'http://localhost:8080';
   static const String consentKey = 'telemetry_consent';
   static const String serverUrlKey = 'telemetry_server_url';
 
@@ -116,8 +116,7 @@ class TelemetryService {
       };
 
       final base = await getServerUrl();
-      // Тут можна додати окремий endpoint для івентів, поки що відправляємо як краш для логування
-      final url = Uri.parse('$base/api/telemetry/crash-report');
+      final url = Uri.parse('$base/api/telemetry/events');
 
       await http.post(
         url,
