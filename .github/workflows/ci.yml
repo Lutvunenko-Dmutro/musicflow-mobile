@@ -119,12 +119,18 @@ jobs:
       - name: 🔨 Compile Release APK
         run: |
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            # Якщо запуск ручний, компілюємо з вказаним build-name та build-number
-            flutter build apk --release --build-name=${{ github.event.inputs.release_version }} --build-number=${{ github.event.inputs.build_number }}
+            VERSION_NAME="${{ github.event.inputs.release_version }}"
+            BUILD_NUM="${{ github.event.inputs.build_number }}"
           else
-            # Звичайний білд для тегів
-            flutter build apk --release
+            VERSION_NAME="${GITHUB_REF_NAME#v}"
+            BUILD_NUM="${{ github.run_number }}"
           fi
+          
+          echo "Building APK with Version Name: $VERSION_NAME, Build Number: $BUILD_NUM"
+          flutter build apk --release --build-name=$VERSION_NAME --build-number=$BUILD_NUM
+          
+          # Зберігаємо для наступних кроків
+          echo "BUILD_NUM=$BUILD_NUM" >> $GITHUB_ENV
 
       - name: 🔒 Calculate SHA-256 Checksum
         id: calc_sha
@@ -140,11 +146,11 @@ jobs:
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
             NOTES="${{ github.event.inputs.release_notes }}\n\n**SHA-256:** \`${{ env.SHA256 }}\`"
             TAG_NAME="${{ github.event.inputs.release_version }}"
-            RELEASE_NAME="MusicFlow ${TAG_NAME} (build ${{ github.event.inputs.build_number }})"
+            RELEASE_NAME="MusicFlow ${TAG_NAME} (build ${{ env.BUILD_NUM }})"
           else
             NOTES="Оновлення з GitHub Releases.\n\n**SHA-256:** \`${{ env.SHA256 }}\`"
             TAG_NAME="${{ github.ref_name }}"
-            RELEASE_NAME="MusicFlow ${{ github.ref_name }}"
+            RELEASE_NAME="MusicFlow ${{ github.ref_name }} (build ${{ env.BUILD_NUM }})"
           fi
           
           # Екранування для багаторядкового виводу в GITHUB_ENV
