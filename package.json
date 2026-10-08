@@ -1,0 +1,31 @@
+{
+  "name": "music_flow_mobile",
+  "version": "1.0.0",
+  "description": "<p align=\"center\">   <img src=\"https://img.shields.io/badge/Release-v1.0.32%20(build%2033)-blue?style=for-the-badge&logo=android\" alt=\"Version\">   <img src=\"https://github.com/Lutvunenko-Dmutro/musicflow-mobile/actions/workflows/ci.yml/badge.svg\" alt=\"CI/CD Status\">   <img src=\"https://img.shields.io/badge/Tests-58%20Passing-brightgreen?style=for-the-badge&logo=flutter\" alt=\"Tests\">   <img src=\"https://img.shields.io/badge/Architecture-%3C200%20Lines%2FFile-purple?style=for-the-badge\" alt=\"Architecture\">   <img src=\"https://img.shields.io/badge/License-MIT-orange?style=for-the-badge\" alt=\"License\"> </p>",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "lib": "lib",
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Lutvunenko-Dmutro/musicflow-mobile.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Lutvunenko-Dmutro/musicflow-mobile/issues"
+  },
+  "homepage": "https://github.com/Lutvunenko-Dmutro/musicflow-mobile#readme",
+  "devDependencies": {
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/exec": "^7.1.0",
+    "@semantic-release/git": "^10.0.1",
+    "semantic-release": "^25.0.9"
+  }
+}
