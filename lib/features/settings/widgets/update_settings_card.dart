@@ -15,7 +15,7 @@ class UpdateSettingsCard extends StatefulWidget {
 
 class _UpdateSettingsCardState extends State<UpdateSettingsCard> {
   bool _isChecking = false;
-  String _installedVersion = UpdateService.currentVersion;
+  String _installedVersion = '...';
   bool _autoCheck = true;
   UpdateFrequency _frequency = UpdateFrequency.onLaunch;
   UpdateChannel _channel = UpdateChannel.release;

@@ -105,6 +105,30 @@ class TelemetryService {
     }
   }
 
+  Future<void> logEvent(String eventName, [Map<String, dynamic>? extra]) async {
+    if (!await isConsentGranted()) return;
+    try {
+      final payload = {
+        'device': '${Platform.operatingSystem} ${Platform.operatingSystemVersion}',
+        'timestamp': DateTime.now().toIso8601String(),
+        'event': eventName,
+        if (extra != null) ...extra,
+      };
+
+      final base = await getServerUrl();
+      // Тут можна додати окремий endpoint для івентів, поки що відправляємо як краш для логування
+      final url = Uri.parse('$base/api/telemetry/crash-report');
+
+      await http.post(
+        url,
+        headers: {'Content-Type': 'application/json; charset=utf-8'},
+        body: json.encode(payload),
+      ).timeout(const Duration(seconds: 3));
+    } catch (_) {
+      // Ігноруємо помилки мережі при відправці аналітики
+    }
+  }
+
   static const MethodChannel _nativeCrashChannel =
       MethodChannel('com.example.music_flow_mobile/native_crash');
 
@@ -168,4 +192,3 @@ class TelemetryService {
     };
   }
 }
-

@@ -49,7 +49,7 @@ class _UpdateDialogState extends State<UpdateDialog> {
           _isDownloading = false;
           _statusText = 'Готово! Відкриваємо інсталятор...';
         });
-        final ok = await UpdateService.instance.installApk(file);
+        final ok = await UpdateService.instance.installApk(file, widget.info);
         if (mounted) {
           if (ok) {
             Navigator.pop(context);
@@ -153,7 +153,7 @@ class _UpdateDialogState extends State<UpdateDialog> {
             ],
             const SizedBox(height: 18),
             ElevatedButton.icon(
-              onPressed: _isDownloading ? null : (_downloadedFile != null ? () => UpdateService.instance.installApk(_downloadedFile!) : _startDownload),
+              onPressed: _isDownloading ? null : (_downloadedFile != null ? () => UpdateService.instance.installApk(_downloadedFile!, widget.info) : _startDownload),
               icon: Icon(_downloadedFile != null ? Icons.install_mobile_rounded : Icons.download_rounded, size: 20),
               label: Text(
                 _downloadedFile != null
