@@ -52,11 +52,27 @@ if "!BUILD_MODE!"=="2" goto GITHUB_BUILD
 :: ЛОКАЛЬНА ЗБІРКА (ОПЦІЯ 1)
 :: ==========================================
 echo.
-echo ⏳ [1/4] Оновлюю pubspec.yaml...
+echo ⏳ [1/5] Оновлюю pubspec.yaml...
 python -c "import re; content = open('pubspec.yaml', 'r', encoding='utf-8').read(); content = re.sub(r'version: .*', f'version: !VERSION_NAME!+!BUILD_NUM!', content); open('pubspec.yaml', 'w', encoding='utf-8').write(content)"
 
 echo.
-echo ⏳ [2/4] Збираю Release та Debug APK...
+echo ⏳ [2/5] Проганяю тести та аналіз коду...
+call flutter analyze
+if %errorlevel% neq 0 (
+    echo ❌ Помилка аналізу коду (flutter analyze). Виправте помилки перед релізом!
+    pause
+    exit /b 1
+)
+
+call flutter test
+if %errorlevel% neq 0 (
+    echo ❌ Деякі тести не пройшли (flutter test). Виправте їх перед релізом!
+    pause
+    exit /b 1
+)
+
+echo.
+echo ⏳ [3/5] Збираю Release та Debug APK...
 call flutter build apk --release --build-name=!VERSION_NAME! --build-number=!BUILD_NUM!
 if %errorlevel% neq 0 (
     echo ❌ Помилка збірки Release!
@@ -72,13 +88,13 @@ if %errorlevel% neq 0 (
 )
 
 echo.
-echo ⏳ [3/4] Розрахунок SHA-256...
+echo ⏳ [4/5] Розрахунок SHA-256...
 for /f "tokens=*" %%a in ('certutil -hashfile "build\app\outputs\flutter-apk\app-release.apk" SHA256 ^| findstr /v "hash"') do set SHA256=%%a
 set SHA256=!SHA256: =!
 echo ✅ SHA-256: !SHA256!
 
 echo.
-echo ⏳ [4/4] Відправляю код та створюю реліз на GitHub...
+echo ⏳ [5/5] Відправляю код та створюю реліз на GitHub...
 git add pubspec.yaml
 git commit -m "chore: bump version to v!VERSION_NAME!"
 git push origin main
