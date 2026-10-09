@@ -98,8 +98,13 @@ void main() {
       // Користувач на build 6 (пропустив версії 7 та 8)
       final info = UpdateInfo.fromJson(json, userCurrentBuild: 6);
       expect(info.history.length, equals(4));
-      expect(info.missedReleases.length, equals(2));
-      expect(info.missedReleases.map((r) => r.version), equals(['1.0.7', '1.0.6']));
+      // В info версія 1.0.8. Версія 1.0.7 (build 7) - пропущена.
+      // 1.0.8 - не враховується, бо version == info.version.
+      // 1.0.6 - build 6 (не > 6).
+      // 1.0.5 - build 5 (не > 6).
+      // Отже, missedReleases має бути тільки 1 (це 1.0.7).
+      expect(info.missedReleases.length, equals(1));
+      expect(info.missedReleases.map((r) => r.version), equals(['1.0.7']));
     });
 
     test('GithubUpdateClient extracts repo constants', () {

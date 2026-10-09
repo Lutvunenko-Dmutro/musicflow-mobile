@@ -54,6 +54,13 @@ class UpdateInfo {
 
   List<ReleaseHistoryItem> get missedReleases {
     if (history.isEmpty) return const [];
-    return history.where((h) => h.buildNumber > userCurrentBuild).toList();
+    // Змінимо логіку "пропущених" версій: 
+    // порівнюємо не по Build Number (який збився через GitHub Actions),
+    // а просто повертаємо останні релізи, версія яких не співпадає з поточною.
+    // Щоб не заплутувати юзера цифрами "пропущено 27", беремо максимум 5 останніх
+    return history
+        .where((h) => h.version != version && h.buildNumber > userCurrentBuild)
+        .take(5)
+        .toList();
   }
 }

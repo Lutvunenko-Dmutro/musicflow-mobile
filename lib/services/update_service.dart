@@ -53,11 +53,15 @@ class UpdateService {
     if (customServerUrl != null) {
       attempts.add(() => _checkCustomServer(customServerUrl, current, force, allowChannelSwitch));
     } else {
-      attempts.add(() => GithubUpdateClient.instance.checkLatestRelease(
-            currentBuildNumber: current.buildNumber,
-            currentVersion: current.version,
-            force: force,
-          ));
+      attempts.add(() async {
+        final channel = await UpdatePreferences.getChannel();
+        return GithubUpdateClient.instance.checkLatestRelease(
+          currentBuildNumber: current.buildNumber,
+          currentVersion: current.version,
+          targetChannel: channel.key,
+          force: force,
+        );
+      });
           
       attempts.add(() async {
         final localServer = await TelemetryService.instance.getServerUrl();

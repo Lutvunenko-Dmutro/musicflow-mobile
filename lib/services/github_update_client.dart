@@ -16,6 +16,7 @@ class GithubUpdateClient {
   Future<UpdateInfo?> checkLatestRelease({
     required int currentBuildNumber,
     required String currentVersion,
+    required String targetChannel,
     bool force = false,
   }) async {
     try {
@@ -45,15 +46,18 @@ class GithubUpdateClient {
       final remoteBuild = _extractBuildNumber(releaseName, rawTag, cleanVersion);
 
       final assets = (latest['assets'] as List<dynamic>?) ?? [];
+      
+      final targetApkName = targetChannel.toLowerCase() == 'debug' ? 'debug.apk' : 'release.apk';
+      
       final apkAsset = assets.cast<Map<String, dynamic>>().firstWhere(
-            (a) => (a['name'] as String? ?? '').endsWith('.apk'),
+            (a) => (a['name'] as String? ?? '').endsWith(targetApkName),
             orElse: () => <String, dynamic>{},
           );
 
       final downloadUrl = apkAsset['browser_download_url'] as String? ?? '';
       final fileSize = apkAsset['size'] as int? ?? 0;
       if (downloadUrl.isEmpty) {
-        AppLogger.warning('У релізі $rawTag не знайдено APK файлу', 'UPDATER');
+        AppLogger.warning('У релізі $rawTag не знайдено $targetApkName файлу', 'UPDATER');
         return null;
       }
 
@@ -74,7 +78,7 @@ class GithubUpdateClient {
           fileSizeBytes: fileSize,
           history: history,
           userCurrentBuild: currentBuildNumber,
-          channel: 'release',
+          channel: targetChannel.toLowerCase(),
           sha256: sha256Hash,
         );
       }
