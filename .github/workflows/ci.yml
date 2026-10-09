@@ -95,14 +95,31 @@ jobs:
           storeFile=app/release.keystore
           EOF
 
-      - name: 🔨 Compile Release APK
+      - name: 📝 Update pubspec.yaml (Manual Run)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          VERSION="${{ github.event.inputs.release_version }}"
+          VERSION=${VERSION#v}
+          BUILD="${{ github.event.inputs.build_number }}"
+          sed -i -E "s/^version: .*/version: $VERSION+$BUILD/" pubspec.yaml
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add pubspec.yaml
+          git commit -m "chore: bump version to $VERSION+$BUILD [skip ci]" || echo "No changes to commit"
+          git push origin HEAD:main
+
+      - name: 🔨 Compile APKs (Release & Debug)
         run: |
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
             # Якщо запуск ручний, компілюємо з вказаним build-name та build-number
-            flutter build apk --release --build-name=${{ github.event.inputs.release_version }} --build-number=${{ github.event.inputs.build_number }}
+            VERSION="${{ github.event.inputs.release_version }}"
+            VERSION=${VERSION#v}
+            flutter build apk --release --build-name=$VERSION --build-number=${{ github.event.inputs.build_number }}
+            flutter build apk --debug --build-name=$VERSION --build-number=${{ github.event.inputs.build_number }}
           else
             # Звичайний білд для тегів
             flutter build apk --release
+            flutter build apk --debug
           fi
 
       - name: 🔒 Calculate SHA-256 Checksum
@@ -137,7 +154,9 @@ jobs:
       - name: 🚀 Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: build/app/outputs/flutter-apk/app-release.apk
+          files: |
+            build/app/outputs/flutter-apk/app-release.apk
+            build/app/outputs/flutter-apk/app-debug.apk
           tag_name: ${{ env.TAG_NAME }}
           name: ${{ env.RELEASE_NAME }}
           body: ${{ env.RELEASE_NOTES }}
