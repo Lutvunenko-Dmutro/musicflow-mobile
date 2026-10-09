@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:music_flow_mobile/models/release_history_item.dart';
 import 'package:music_flow_mobile/models/update_info.dart';
+import 'package:music_flow_mobile/services/update_preferences.dart';
 import 'package:music_flow_mobile/utils/app_logger.dart';
 
 class GithubUpdateClient {
@@ -18,6 +19,7 @@ class GithubUpdateClient {
     required String currentVersion,
     required String targetChannel,
     bool force = false,
+    bool allowChannelSwitch = true,
   }) async {
     try {
       final uri = Uri.parse(releasesUrl);
@@ -65,10 +67,20 @@ class GithubUpdateClient {
       final isNewer = remoteBuild > currentBuildNumber ||
           _compareVersions(cleanVersion, currentVersion) > 0;
 
-      final shaMatch = RegExp(r'sha-?256[:\s]+([a-f0-9]{64})', caseSensitive: false).firstMatch(body);
+      final currentRunning = UpdatePreferences.currentRunningChannel;
+      final isChannelSwitch = targetChannel.toLowerCase() != currentRunning.key.toLowerCase();
+
+      final isTargetDebug = targetChannel.toLowerCase() == 'debug';
+      final channelRegex = isTargetDebug
+          ? RegExp(r'sha-?256[^\n]*debug[^\n]*[:\s]+`?([a-f0-9]{64})`?', caseSensitive: false)
+          : RegExp(r'sha-?256[^\n]*release[^\n]*[:\s]+`?([a-f0-9]{64})`?', caseSensitive: false);
+      var shaMatch = channelRegex.firstMatch(body);
+      shaMatch ??= RegExp(r'sha-?256[:\s]+`?([a-f0-9]{64})`?', caseSensitive: false).firstMatch(body);
       final sha256Hash = shaMatch?.group(1);
 
-      if (isNewer || force) {
+      final shouldTrigger = isNewer || force || (allowChannelSwitch && isChannelSwitch);
+
+      if (shouldTrigger) {
         AppLogger.success('Знайдено реліз на GitHub: v$cleanVersion (build $remoteBuild)', 'UPDATER');
         return UpdateInfo(
           version: cleanVersion,
@@ -79,6 +91,7 @@ class GithubUpdateClient {
           history: history,
           userCurrentBuild: currentBuildNumber,
           channel: targetChannel.toLowerCase(),
+          isChannelSwitch: isChannelSwitch,
           sha256: sha256Hash,
         );
       }

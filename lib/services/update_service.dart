@@ -43,7 +43,7 @@ class UpdateService {
   Future<UpdateInfo?> checkForUpdate({
     String? customServerUrl,
     bool force = false,
-    bool allowChannelSwitch = false,
+    bool allowChannelSwitch = true,
   }) async {
     final current = await getCurrentVersion();
     
@@ -60,6 +60,7 @@ class UpdateService {
           currentVersion: current.version,
           targetChannel: channel.key,
           force: force,
+          allowChannelSwitch: allowChannelSwitch,
         );
       });
           
@@ -107,7 +108,7 @@ class UpdateService {
       final serverBuild = data['buildNumber'] as int? ?? 0;
       final isDiffChannel = (channel != UpdatePreferences.currentRunningChannel);
       final isNewer = serverBuild > current.buildNumber;
-      final isSwitch = (force || allowChannelSwitch) && isDiffChannel && serverBuild >= current.buildNumber;
+      final isSwitch = (force || allowChannelSwitch) && isDiffChannel;
 
       if (isNewer || isSwitch || force) {
         return UpdateInfo.fromJson(

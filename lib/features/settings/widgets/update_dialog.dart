@@ -102,7 +102,9 @@ class _UpdateDialogState extends State<UpdateDialog> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        widget.info.isChannelSwitch ? 'Зміна каналу оновлення' : 'Нове оновлення!',
+                        widget.info.isChannelSwitch
+                            ? 'Зміна каналу (${widget.info.channel.toUpperCase()})'
+                            : 'Нове оновлення!',
                         style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
                       ),
                       const SizedBox(height: 4),
@@ -142,6 +144,19 @@ class _UpdateDialogState extends State<UpdateDialog> {
             ),
             const SizedBox(height: 18),
             UpdateChangelogView(info: widget.info),
+            if (widget.info.sha256 != null && widget.info.sha256!.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Icon(Icons.verified_outlined, size: 12, color: Colors.white38),
+                  const SizedBox(width: 4),
+                  Text(
+                    'SHA-256: ${widget.info.sha256!.substring(0, 8)}...${widget.info.sha256!.substring(widget.info.sha256!.length - 8)}',
+                    style: const TextStyle(fontSize: 10, color: Colors.white38, fontFamily: 'monospace'),
+                  ),
+                ],
+              ),
+            ],
             if (_isDownloading || _statusText.isNotEmpty) ...[
               const SizedBox(height: 14),
               ClipRRect(

@@ -7,11 +7,62 @@ class UpdateChangelogView extends StatelessWidget {
 
   const UpdateChangelogView({super.key, required this.info});
 
-  List<String> _parseChangelog(String text) => text
-      .split('\n')
-      .map((l) => l.replaceAll(RegExp(r'^[•\-\*]\s*'), '').trim())
-      .where((l) => l.isNotEmpty)
-      .toList();
+  List<String> _parseChangelog(String text) {
+    final lines = text.split('\n');
+    final result = <String>[];
+
+    for (var line in lines) {
+      line = line.trim();
+      if (line.isEmpty) continue;
+
+      // Ігноруємо заголовки markdown (#, ##, ###)
+      if (line.startsWith('#')) continue;
+
+      // Ігноруємо SHA-256 та контрольні суми
+      final lower = line.toLowerCase();
+      if (lower.contains('sha-256') || lower.contains('sha256') || lower.contains('md5:')) {
+        continue;
+      }
+
+      // Ігноруємо службові підзаголовки
+      final headerCheck = line
+          .replaceAll('*', '')
+          .replaceAll('_', '')
+          .replaceAll('`', '')
+          .replaceAll('#', '')
+          .trim()
+          .toLowerCase();
+      if (headerCheck.startsWith('зміни у цій версії') ||
+          headerCheck.startsWith('оновлення musicflow') ||
+          headerCheck.startsWith('changelog') ||
+          headerCheck.startsWith('що нового') ||
+          headerCheck == 'зміни:' ||
+          headerCheck == 'changes:') {
+        continue;
+      }
+
+      // Знімаємо маркер списку на початку (*, -, •, +, 1.)
+      var cleaned = line.replaceFirst(RegExp(r'^([•\-\*\+]|\d+[\.\)])\s*'), '').trim();
+
+      // Знімаємо всі залишки markdown: **, __, `, залишки зірочок на краях
+      cleaned = cleaned
+          .replaceAll('**', '')
+          .replaceAll('__', '')
+          .replaceAll('`', '')
+          .replaceAll(RegExp(r'^\*+|\*+$'), '')
+          .trim();
+
+      if (cleaned.isNotEmpty) {
+        result.add(cleaned);
+      }
+    }
+
+    if (result.isEmpty) {
+      return const ['Покращення стабільності та оптимізація додатку'];
+    }
+
+    return result;
+  }
 
   @override
   Widget build(BuildContext context) {

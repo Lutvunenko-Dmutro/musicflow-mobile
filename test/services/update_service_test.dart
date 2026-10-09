@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/services.dart';
 import 'package:music_flow_mobile/services/update_service.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -18,6 +19,17 @@ void main() {
     );
     
     SharedPreferences.setMockInitialValues({});
+
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+      const MethodChannel('com.example.music_flow_mobile/installer'),
+      (MethodCall methodCall) async {
+        if (methodCall.method == 'installApk') {
+          return true;
+        }
+        return null;
+      },
+    );
   });
 
   group('UpdateService Version Validation', () {
@@ -61,9 +73,25 @@ void main() {
 
       final result = await UpdateService.instance.installApk(fakeFile, upgradeInfo);
       
-      // Тут MethodChannel поверне null (бо він не за-mock'аний), що призведе до false.
-      // Але важливо, що воно не зупинилось на етапі перевірки версії.
-      expect(result, isFalse); 
+      // MethodChannel успішно викликається та повертає true
+      expect(result, isTrue); 
+    });
+
+    test('installApk should allow installation of same or lower version when isChannelSwitch is true', () async {
+      final fakeFile = File('fake.apk');
+      
+      final switchInfo = UpdateInfo(
+        version: '1.0.30',
+        buildNumber: 30, // Поточний 33, але зміна каналу
+        fileSizeBytes: 1000,
+        downloadUrl: 'http://test',
+        changelog: 'Test',
+        userCurrentBuild: 33,
+        isChannelSwitch: true,
+      );
+
+      final result = await UpdateService.instance.installApk(fakeFile, switchInfo);
+      expect(result, isTrue);
     });
   });
 }
