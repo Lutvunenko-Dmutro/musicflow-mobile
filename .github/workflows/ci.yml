@@ -3,14 +3,27 @@ name: MusicFlow CI/CD Pipeline
 on:
   push:
     branches: [ main ]
+    tags: [ 'v*' ]
   pull_request:
     branches: [ main ]
+  # Дозволяє запускати збірку та реліз вручну через кнопку на GitHub
   workflow_dispatch:
+    inputs:
+      release_version:
+        description: 'Версія релізу (наприклад: v1.0.34)'
+        required: true
+        default: 'v1.0.34'
+      build_number:
+        description: 'Номер білда (наприклад: 35)'
+        required: true
+        default: '35'
+      release_notes:
+        description: 'Що нового в цій версії?'
+        required: false
+        default: 'Bug fixes and performance improvements.'
 
 permissions:
   contents: write
-  issues: write
-  pull-requests: write
 
 jobs:
   quality-gate:
@@ -34,14 +47,6 @@ jobs:
           flutter-version: '3.32.8'
           cache: true
 
-      - name: 📦 Cache Pub Dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.pub-cache
-          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-pub-
-
       - name: 📦 Install dependencies
         run: flutter pub get
 
@@ -54,15 +59,14 @@ jobs:
   build-and-release:
     name: Build & Publish Release
     needs: quality-gate
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # Запускаємо якщо це пуш тегу, АБО якщо це ручний запуск (workflow_dispatch)
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
     steps:
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: ☕ Setup Java 17 (Temurin)
         uses: actions/setup-java@v4
@@ -75,14 +79,6 @@ jobs:
         with:
           flutter-version: '3.32.8'
           cache: true
-
-      - name: 📦 Cache Pub Dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.pub-cache
-          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-pub-
 
       - name: 📦 Install dependencies
         run: flutter pub get
@@ -99,47 +95,50 @@ jobs:
           storeFile=app/release.keystore
           EOF
 
-      - name: 🐘 Setup Gradle Cache
-        uses: gradle/actions/setup-gradle@v3
-        with:
-          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
-
-      - name: 🚀 Setup Node.js (for Semantic Release)
-        uses: actions/setup-node@v4
-        with:
-          node-version: 'lts/*'
-
-      - name: 🔨 Install Semantic Release
-        run: npm ci
-
-      - name: 🎯 Run Semantic Release & Build APK
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: 🔨 Compile Release APK
         run: |
-          # 1. Запускаємо semantic-release у режимі "сухого прогону" (dry-run)
-          # щоб дізнатися, яку версію він згенерує, але нічого не публікуємо.
-          export NEXT_VERSION=$(npx semantic-release --dry-run | grep -oP 'Published release \K[0-9]+\.[0-9]+\.[0-9]+' || echo "")
-          
-          if [ -z "$NEXT_VERSION" ]; then
-            echo "Немає нових 'feat' або 'fix' комітів. Оновлення не потрібне."
-            exit 0
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            # Якщо запуск ручний, компілюємо з вказаним build-name та build-number
+            flutter build apk --release --build-name=${{ github.event.inputs.release_version }} --build-number=${{ github.event.inputs.build_number }}
+          else
+            # Звичайний білд для тегів
+            flutter build apk --release
+          fi
+
+      - name: 🔒 Calculate SHA-256 Checksum
+        id: calc_sha
+        run: |
+          APK_PATH="build/app/outputs/flutter-apk/app-release.apk"
+          SHA256=$(sha256sum $APK_PATH | awk '{ print $1 }')
+          echo "SHA256=$SHA256" >> $GITHUB_ENV
+          echo "APK SHA-256: $SHA256"
+
+      - name: 📝 Prepare Release Notes
+        id: prep_notes
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            NOTES="${{ github.event.inputs.release_notes }}\n\n**SHA-256:** \`${{ env.SHA256 }}\`"
+            TAG_NAME="${{ github.event.inputs.release_version }}"
+            RELEASE_NAME="MusicFlow ${TAG_NAME} (build ${{ github.event.inputs.build_number }})"
+          else
+            NOTES="Оновлення з GitHub Releases.\n\n**SHA-256:** \`${{ env.SHA256 }}\`"
+            TAG_NAME="${{ github.ref_name }}"
+            RELEASE_NAME="MusicFlow ${{ github.ref_name }}"
           fi
           
-          echo "Semantic Release вирахував нову версію: $NEXT_VERSION"
-          BUILD_NUM=${{ github.run_number }}
+          # Екранування для багаторядкового виводу в GITHUB_ENV
+          echo "RELEASE_NOTES<<EOF" >> $GITHUB_ENV
+          echo -e "$NOTES" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
           
-          # 2. Збираємо APK з цією версією
-          echo "Building Release APK: Version $NEXT_VERSION, Build $BUILD_NUM"
-          flutter build apk --release --build-name=$NEXT_VERSION --build-number=$BUILD_NUM
-          
-          echo "Building Debug APK: Version $NEXT_VERSION, Build $BUILD_NUM"
-          flutter build apk --debug --build-name=$NEXT_VERSION --build-number=$BUILD_NUM
-          
-          # 3. Рахуємо SHA-256 (чисто для логів пайплайну)
-          SHA256_REL=$(sha256sum build/app/outputs/flutter-apk/app-release.apk | awk '{ print $1 }')
-          SHA256_DBG=$(sha256sum build/app/outputs/flutter-apk/app-debug.apk | awk '{ print $1 }')
-          echo "Release SHA-256: $SHA256_REL"
-          echo "Debug SHA-256: $SHA256_DBG"
-          
-          # 4. Справжній запуск Semantic Release
-          npx semantic-release
+          echo "TAG_NAME=$TAG_NAME" >> $GITHUB_ENV
+          echo "RELEASE_NAME=$RELEASE_NAME" >> $GITHUB_ENV
+
+      - name: 🚀 Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build/app/outputs/flutter-apk/app-release.apk
+          tag_name: ${{ env.TAG_NAME }}
+          name: ${{ env.RELEASE_NAME }}
+          body: ${{ env.RELEASE_NOTES }}
+          generate_release_notes: false
