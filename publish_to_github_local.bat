@@ -10,12 +10,16 @@ echo [1] Local Build (Fast, uses your PC)
 echo [2] GitHub Actions (Runs on GitHub servers)
 echo.
 set /p BUILD_MODE="Your choice (1 or 2): "
+set BUILD_MODE=!BUILD_MODE: =!
 
-if "!BUILD_MODE!" neq "1" if "!BUILD_MODE!" neq "2" (
-    echo ERROR: Invalid choice!
-    pause
-    exit /b 1
-)
+if "!BUILD_MODE!"=="1" goto START_PROCESS
+if "!BUILD_MODE!"=="2" goto START_PROCESS
+
+echo ERROR: Invalid choice!
+pause
+exit /b 1
+
+:START_PROCESS
 
 where gh >nul 2>nul
 if %errorlevel% neq 0 (
@@ -52,32 +56,36 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-echo [2/5] Running tests...
-call flutter analyze
+echo [2/5] Running tests... (saving output to build_log.txt)
+echo --- FLUTTER ANALYZE --- > build_log.txt
+call flutter analyze >> build_log.txt 2>&1
 if %errorlevel% neq 0 (
-    echo ERROR: flutter analyze failed!
+    echo ERROR: flutter analyze failed! Check build_log.txt for details.
     pause
     exit /b 1
 )
 
-call flutter test
+echo --- FLUTTER TEST --- >> build_log.txt
+call flutter test >> build_log.txt 2>&1
 if %errorlevel% neq 0 (
-    echo ERROR: flutter test failed!
+    echo ERROR: flutter test failed! Check build_log.txt for details.
     pause
     exit /b 1
 )
 
-echo [3/5] Building APKs...
-call flutter build apk --release --build-name=!VERSION_NAME! --build-number=!BUILD_NUM!
+echo [3/5] Building APKs... (saving output to build_log.txt)
+echo --- BUILD RELEASE APK --- >> build_log.txt
+call flutter build apk --release --build-name=!VERSION_NAME! --build-number=!BUILD_NUM! >> build_log.txt 2>&1
 if %errorlevel% neq 0 (
-    echo ERROR: Release build failed!
+    echo ERROR: Release build failed! Check build_log.txt for details.
     pause
     exit /b 1
 )
 
-call flutter build apk --debug --build-name=!VERSION_NAME! --build-number=!BUILD_NUM!
+echo --- BUILD DEBUG APK --- >> build_log.txt
+call flutter build apk --debug --build-name=!VERSION_NAME! --build-number=!BUILD_NUM! >> build_log.txt 2>&1
 if %errorlevel% neq 0 (
-    echo ERROR: Debug build failed!
+    echo ERROR: Debug build failed! Check build_log.txt for details.
     pause
     exit /b 1
 )
