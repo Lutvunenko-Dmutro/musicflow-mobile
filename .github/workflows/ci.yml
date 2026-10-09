@@ -129,11 +129,17 @@ jobs:
           BUILD_NUM=${{ github.run_number }}
           
           # 2. Збираємо APK з цією версією
-          echo "Building APK: Version $NEXT_VERSION, Build $BUILD_NUM"
+          echo "Building Release APK: Version $NEXT_VERSION, Build $BUILD_NUM"
           flutter build apk --release --build-name=$NEXT_VERSION --build-number=$BUILD_NUM
           
-          # 3. Рахуємо SHA-256 і додаємо його в релізні нотатки через скрипт (опціонально)
-          # Semantic-release сам візьме APK з папки і додасть його в реліз.
+          echo "Building Debug APK: Version $NEXT_VERSION, Build $BUILD_NUM"
+          flutter build apk --debug --build-name=$NEXT_VERSION --build-number=$BUILD_NUM
+          
+          # 3. Рахуємо SHA-256 (чисто для логів пайплайну)
+          SHA256_REL=$(sha256sum build/app/outputs/flutter-apk/app-release.apk | awk '{ print $1 }')
+          SHA256_DBG=$(sha256sum build/app/outputs/flutter-apk/app-debug.apk | awk '{ print $1 }')
+          echo "Release SHA-256: $SHA256_REL"
+          echo "Debug SHA-256: $SHA256_DBG"
           
           # 4. Справжній запуск Semantic Release
           npx semantic-release
