@@ -62,27 +62,33 @@ void main() {
 
     test('UpdateInfo parses history and filters missed releases', () {
       final json = {
-        'version': '1.0.7',
+        'version': '1.0.8',
         'buildNumber': 8,
-        'changelog': '• Зміни в 1.0.7',
+        'changelog': '• Зміни в 1.0.8',
         'downloadUrl': 'http://192.168.0.103:8080/api/update/download',
         'fileSizeBytes': 200000000,
         'history': [
           {
-            'version': '1.0.7',
+            'version': '1.0.8',
             'buildNumber': 8,
+            'releaseDate': '2026-10-06',
+            'changelog': '• Зміни в 1.0.8',
+          },
+          {
+            'version': '1.0.7',
+            'buildNumber': 7,
             'releaseDate': '2026-10-05',
             'changelog': '• Зміни в 1.0.7',
           },
           {
             'version': '1.0.6',
-            'buildNumber': 7,
+            'buildNumber': 6,
             'releaseDate': '2026-10-05',
             'changelog': '• Зміни в 1.0.6',
           },
           {
             'version': '1.0.5',
-            'buildNumber': 6,
+            'buildNumber': 5,
             'releaseDate': '2026-10-05',
             'changelog': '• Зміни в 1.0.5',
           },
@@ -97,7 +103,7 @@ void main() {
 
       // Користувач на build 6 (пропустив версії 7 та 8)
       final info = UpdateInfo.fromJson(json, userCurrentBuild: 6);
-      expect(info.history.length, equals(4));
+      expect(info.history.length, equals(5));
       // В info версія 1.0.8. Версія 1.0.7 (build 7) - пропущена.
       // 1.0.8 - не враховується, бо version == info.version.
       // 1.0.6 - build 6 (не > 6).
