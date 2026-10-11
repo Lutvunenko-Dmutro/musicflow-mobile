@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:music_flow_mobile/models/update_info.dart';
 import 'package:music_flow_mobile/services/telemetry_service.dart';
 import 'package:music_flow_mobile/utils/app_logger.dart';
@@ -12,15 +11,8 @@ class UpdateDownloader {
     UpdateInfo info, {
     required void Function(double progress, int receivedBytes, int totalBytes) onProgress,
   }) async {
-    if (Platform.isAndroid) {
-      final status = await Permission.storage.status;
-      if (!status.isGranted) {
-        final newStatus = await Permission.storage.request();
-        if (!newStatus.isGranted && !newStatus.isLimited) {
-          throw Exception('Дозвіл на доступ до сховища відхилено');
-        }
-      }
-    }
+    // Кеш-директорії додатку (getExternalCacheDirectories / getTemporaryDirectory)
+    // не потребують системного дозволу READ/WRITE_EXTERNAL_STORAGE на жодній версії Android.
 
     final extDirs = await getExternalCacheDirectories();
     final dir = (extDirs != null && extDirs.isNotEmpty)
