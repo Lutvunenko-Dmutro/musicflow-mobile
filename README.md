@@ -10,10 +10,10 @@
 
 > Сучасний музичний плеєр на Flutter із відтворенням локальних треків, YouTube стрімінгом, завантаженням пісень, синхронізованими текстами, реактивним FFT-візуалізатором та бездротовими OTA-оновленнями через GitHub Releases API.
 
-> 📋 **[Вимоги до продукту (PRD.md) →](PRD.md)**  
-> 🏗️ **[Системна архітектура (ARCHITECTURE.md) →](ARCHITECTURE.md)**  
-> 🗺️ **[План реалізації та Roadmap (PLAN.md) →](PLAN.md)**  
-> 🤖 **[ШІ-Оркестрація та Агенти (ORCHESTRATION.md) →](ORCHESTRATION.md)**  
+> 📋 **[Вимоги до продукту (PRD.md) →](docs/planning/PRD.md)**  
+> 🏗️ **[Системна архітектура (ARCHITECTURE.md) →](docs/architecture/ARCHITECTURE.md)**  
+> 🗺️ **[План реалізації та Roadmap (PLAN.md) →](docs/planning/PLAN.md)**  
+> 🤖 **[ШІ-Оркестрація та Агенти (ORCHESTRATION.md) →](docs/planning/ORCHESTRATION.md)**  
 > 🚀 **[Архітектура оновлень та UML (UPDATE_SYSTEM_ARCHITECTURE.md) →](docs/architecture/UPDATE_SYSTEM_ARCHITECTURE.md)**  
 > 🛡️ **[Матриця сумісності та План відкату (COMPATIBILITY_AND_ROLLBACK.md) →](docs/release/COMPATIBILITY_AND_ROLLBACK.md)**  
 > 📋 **[Чек-лист випуску релізу (RELEASE_CHECKLIST.md) →](docs/release/RELEASE_CHECKLIST.md)**  

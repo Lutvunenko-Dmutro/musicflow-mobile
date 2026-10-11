@@ -9,6 +9,7 @@
 ```
 docs/
 ├── architecture/      # Системна архітектура, UML, аудіо-ядро, FFT-візуалізатор та сервіси
+├── planning/          # Вимоги до продукту (PRD), дорожня карта (PLAN) та оркестрація
 ├── release/           # Пайплайн оновлень, чек-листи, безпека, відкат та локальний сервер
 ├── quality/           # Аудит кодової бази, метрики SLA та відомі проблеми/TODO
 └── README.md          # Головний навігатор документації (цей файл)
@@ -20,14 +21,25 @@ docs/
 
 | Документ | Опис | Ключові теми |
 |---|---|---|
-| [UPDATE_SYSTEM_ARCHITECTURE.md](architecture/UPDATE_SYSTEM_ARCHITECTURE.md) | Комплексна архітектура системи оновлень з UML-діаграмами | Component/Sequence/State діаграми, перемикання Release/Debug, SHA-256 |
+| [ARCHITECTURE.md](architecture/ARCHITECTURE.md) | Загальна системна архітектура | Багаторівнева структура, модульні міксини, Impeller, SQLite |
+| [UPDATE_SYSTEM_ARCHITECTURE.md](architecture/UPDATE_SYSTEM_ARCHITECTURE.md) | Архітектура оновлень з UML-діаграмами | Component/Sequence/State діаграми, перемикання Release/Debug, SHA-256 |
 | [architecture_audio_provider.md](architecture/architecture_audio_provider.md) | Ядро відтворення та стан аудіоплеєра | `AudioProvider`, модульні міксини, потік відтворення треків |
 | [visualizer_system.md](architecture/visualizer_system.md) | FFT-візуалізатор спектру частот | Software (fftea) + Hardware (Android Visualizer), оптимізація 60 FPS |
 | [services.md](architecture/services.md) | Каталог сервісів додатку | YouTube, SQLite база даних, Download, Lyrics, Native Handlers |
 
 ---
 
-## 🚀 2. Релізи, CI/CD та Розгортання (`release/`)
+## 📋 2. Планування та Вимоги (`planning/`)
+
+| Документ | Опис | Ключові теми |
+|---|---|---|
+| [PRD.md](planning/PRD.md) | Product Requirements Document | Продуктові вимоги, цільова аудиторія, сценарії використання |
+| [PLAN.md](planning/PLAN.md) | Дорожня карта та план реалізації | Етапи розробки, спринти, завершені та заплановані задачі |
+| [ORCHESTRATION.md](planning/ORCHESTRATION.md) | ШІ-Оркестрація та агенти | Ролі агентів, робочі процеси та протоколи автоматизації |
+
+---
+
+## 🚀 3. Релізи, CI/CD та Розгортання (`release/`)
 
 | Документ | Опис | Ключові теми |
 |---|---|---|
@@ -38,7 +50,7 @@ docs/
 
 ---
 
-## 🎯 3. Якість, Аудит та Метрики (`quality/`)
+## 🎯 4. Якість, Аудит та Метрики (`quality/`)
 
 | Документ | Опис | Ключові теми |
 |---|---|---|
@@ -51,7 +63,7 @@ docs/
 ## 🧭 З чого почати знайомство з проектом?
 
 1. **Загальний огляд:** [README.md](../README.md) у корені репозиторію.
-2. **Вимоги та цілі:** [PRD.md](../PRD.md) та [PLAN.md](../PLAN.md).
-3. **Архітектура коду:** [ARCHITECTURE.md](../ARCHITECTURE.md) та [architecture_audio_provider.md](architecture/architecture_audio_provider.md).
+2. **Вимоги та цілі:** [PRD.md](planning/PRD.md) та [PLAN.md](planning/PLAN.md).
+3. **Архітектура коду:** [ARCHITECTURE.md](architecture/ARCHITECTURE.md) та [architecture_audio_provider.md](architecture/architecture_audio_provider.md).
 4. **Система оновлень:** [UPDATE_SYSTEM_ARCHITECTURE.md](architecture/UPDATE_SYSTEM_ARCHITECTURE.md).
 5. **Перед внесенням змін:** [known_issues_todo.md](quality/known_issues_todo.md) та [RELEASE_CHECKLIST.md](release/RELEASE_CHECKLIST.md).
