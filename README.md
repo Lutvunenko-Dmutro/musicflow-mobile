@@ -1,27 +1,32 @@
 # MusicFlow Mobile 🎵
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Release-v1.0.32%20(build%2033)-blue?style=for-the-badge&logo=android" alt="Version">
-  <img src="https://github.com/Lutvunenko-Dmutro/musicflow-mobile/actions/workflows/ci.yml/badge.svg" alt="CI/CD Status">
-  <img src="https://img.shields.io/badge/Tests-58%20Passing-brightgreen?style=for-the-badge&logo=flutter" alt="Tests">
-  <img src="https://img.shields.io/badge/Architecture-%3C200%20Lines%2FFile-purple?style=for-the-badge" alt="Architecture">
-  <img src="https://img.shields.io/badge/License-MIT-orange?style=for-the-badge" alt="License">
+  <a href="https://github.com/Lutvunenko-Dmutro/musicflow-mobile/releases/latest"><img src="https://img.shields.io/badge/Release-v0.1.2-2ea44f?style=for-the-badge&logo=android" alt="Version"></a>
+  <a href="test/"><img src="https://img.shields.io/badge/Tests-66%20Passing-brightgreen?style=for-the-badge&logo=flutter" alt="Tests"></a>
+  <a href="docs/architecture/ARCHITECTURE.md"><img src="https://img.shields.io/badge/Architecture-%3C200%20Lines%2FFile-purple?style=for-the-badge" alt="Architecture"></a>
+  <a href="https://github.com/Lutvunenko-Dmutro/musicflow-mobile/actions"><img src="https://img.shields.io/badge/CI%2FCD-Active-blue?style=for-the-badge&logo=githubactions" alt="CI/CD Status"></a>
 </p>
 
-> Сучасний музичний плеєр на Flutter із відтворенням локальних треків, YouTube стрімінгом, завантаженням пісень, синхронізованими текстами, реактивним FFT-візуалізатором та бездротовими OTA-оновленнями через GitHub Releases API.
+<p align="center">
+  <b>Сучасний Hi-Fi плеєр на Flutter з реактивним FFT-візуалізатором та бездротовими OTA-оновленнями</b><br>
+  <a href="https://github.com/Lutvunenko-Dmutro/musicflow-mobile/releases/latest">📦 Завантажити APK</a> •
+  <a href="docs/README.md">📚 Каталог документації</a> •
+  <a href="CHANGELOG.md">📜 Журнал змін</a> •
+  <a href="publish.bat">🚀 Збірка в 1 клік</a>
+</p>
 
-> 📋 **[Вимоги до продукту (PRD.md) →](docs/planning/PRD.md)**  
-> 🏗️ **[Системна архітектура (ARCHITECTURE.md) →](docs/architecture/ARCHITECTURE.md)**  
-> 🗺️ **[План реалізації та Roadmap (PLAN.md) →](docs/planning/PLAN.md)**  
-> 🤖 **[ШІ-Оркестрація та Агенти (ORCHESTRATION.md) →](docs/planning/ORCHESTRATION.md)**  
-> 🚀 **[Архітектура оновлень та UML (UPDATE_SYSTEM_ARCHITECTURE.md) →](docs/architecture/UPDATE_SYSTEM_ARCHITECTURE.md)**  
-> 🛡️ **[Матриця сумісності та План відкату (COMPATIBILITY_AND_ROLLBACK.md) →](docs/release/COMPATIBILITY_AND_ROLLBACK.md)**  
-> 📋 **[Чек-лист випуску релізу (RELEASE_CHECKLIST.md) →](docs/release/RELEASE_CHECKLIST.md)**  
-> 🎯 **[Ключові метрики якості SLA (QUALITY_METRICS.md) →](docs/quality/QUALITY_METRICS.md)**  
-> 📜 **[Журнал змін (CHANGELOG.md) →](CHANGELOG.md)**  
-> 📥 **[Завантажити останній релізний APK (v1.0.32) →](https://github.com/Lutvunenko-Dmutro/musicflow-mobile/releases/latest)**  
-> 📖 **[Технічна документація проекту →](docs/README.md)**  
-> 🔍 **[Результати аудиту системи →](docs/quality/audit.md)**
+---
+
+## 🧭 Навігатор («Куди мені піти?»):
+
+| 🎯 Ваша ціль | 📂 Куди дивитися | 💡 Що всередині |
+|---|---|---|
+| **Випустити новий реліз / зібрати APK** | 🚀 [**publish.bat**](publish.bat)<br>📋 [Чек-лист релізу](docs/release/RELEASE_CHECKLIST.md) | Автоматична збірка, тести, SHA-256 та реліз на GitHub в 1 команду |
+| **Зрозуміти як працюють оновлення та канали** | 🗺️ [**Архітектура оновлень UML**](docs/architecture/UPDATE_SYSTEM_ARCHITECTURE.md)<br>🛡️ [Матриця відкату](docs/release/COMPATIBILITY_AND_ROLLBACK.md) | UML Component/Sequence діаграми, перемикання Release ⇄ Debug |
+| **Змінити логіку відтворення чи чергу** | 🎧 [AudioProvider & Міксини](docs/architecture/architecture_audio_provider.md)<br>🏗️ [Системна архітектура](docs/architecture/ARCHITECTURE.md) | Потік аудіо, міксини, фоновий сервіс, відновлення стрімів |
+| **Налаштувати візуалізатор чи FFT** | 📊 [Система візуалізатора](docs/architecture/visualizer_system.md) | ШПФ на `fftea`, Android AudioEffect API, оптимізація 60 FPS |
+| **Подивитися вимоги та дорожню карту** | 📋 [Вимоги (PRD)](docs/planning/PRD.md)<br>🗺️ [Дорожня карта (PLAN)](docs/planning/PLAN.md)<br>🤖 [ШІ-Оркестрація](docs/planning/ORCHESTRATION.md) | Сценарії користувача, етапи розробки, стек та інтеграції |
+| **Перевірити відомі баги чи аудит коду** | ⚠️ [Відомі проблеми (TODO)](docs/quality/known_issues_todo.md)<br>🔍 [Аудит безпеки](docs/quality/audit.md)<br>🎯 [Метрики SLA](docs/quality/QUALITY_METRICS.md) | Список багів, споживання пам'яті, швидкість холодного старту |
 
 ---
 
