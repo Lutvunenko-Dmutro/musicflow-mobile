@@ -26,6 +26,8 @@ def update_pubspec_version(pubspec_path, major, minor, patch, build):
 
 
 def compute_next_version(major, minor, patch, build, bump_type):
+    if bump_type in ("none", "current"):
+        return major, minor, patch, build
     new_build = build + 1
     if bump_type == "minor":
         return major, minor + 1, 0, new_build

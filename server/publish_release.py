@@ -116,7 +116,7 @@ def publish_release(changelog=None, bump_type="patch", mode="release", skip_veri
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Автоматична публікація релізів MusicFlow")
     parser.add_argument("--changelog", "-c", type=str, default=None, help="Опис змін")
-    parser.add_argument("--bump", "-b", choices=["patch", "minor", "major", "build_only"], default="patch")
+    parser.add_argument("--bump", "-b", choices=["patch", "minor", "major", "build_only", "none", "current"], default="patch")
     parser.add_argument("--mode", "-m", choices=["both", "release", "debug"], default="release")
     parser.add_argument("--skip-verify", action="store_true", help="Пропустити тести")
     parser.add_argument("--skip-git", action="store_true", help="Пропустити git push")
