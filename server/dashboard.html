@@ -44,6 +44,9 @@
     .badge-offline { background: rgba(66, 66, 66, 0.2); border: 1px solid #555; color: #aaa; font-size: 11px; padding: 3px 8px; border-radius: 12px; }
     .pulse-dot { width: 8px; height: 8px; background: #69f0ae; border-radius: 50%; box-shadow: 0 0 8px #69f0ae; display: inline-block; animation: pulse 1.5s infinite; }
     @keyframes pulse { 0% { opacity: 0.4; transform: scale(0.9); } 50% { opacity: 1; transform: scale(1.2); } 100% { opacity: 0.4; transform: scale(0.9); } }
+    .btn-copy { background: #282828; color: #eee; border: 1px solid #444; border-radius: 6px; padding: 4px 10px; font-size: 11px; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 5px; font-weight: 500; }
+    .btn-copy:hover { background: #383838; border-color: var(--primary); color: #fff; }
+    .btn-copy.copied { background: #1b5e20 !important; border-color: #4caf50 !important; color: #fff !important; }
   </style>
 </head>
 <body>
@@ -110,12 +113,59 @@
     </div>
 
     <div class="card">
-      <h2>🛡️ Звіти про помилки (Телеметрія за згодою) <span style="font-size: 12px; color: var(--text-muted);">({{CRASH_COUNT}} отримано)</span></h2>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+        <h2 style="margin-bottom: 0;">🛡️ Звіти про помилки (Телеметрія за згодою) <span style="font-size: 12px; color: var(--text-muted);">({{CRASH_COUNT}} отримано)</span></h2>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          {{COPY_ALL_BUTTON}}
+          <label style="font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 5px; cursor: pointer; user-select: none;">
+            <input type="checkbox" id="auto-refresh-check" checked onchange="toggleAutoRefresh()"> Автооновлення (5с)
+          </label>
+        </div>
+      </div>
       <div id="crashes-list">{{CRASHES_HTML}}</div>
     </div>
   </div>
 
   <script>
+    let refreshTimer = null;
+    function scheduleRefresh() {
+      const cb = document.getElementById("auto-refresh-check");
+      if (cb && !cb.checked) return;
+      if (refreshTimer) clearTimeout(refreshTimer);
+      refreshTimer = setTimeout(() => { location.reload(); }, 5000);
+    }
+    function toggleAutoRefresh() {
+      if (refreshTimer) clearTimeout(refreshTimer);
+      scheduleRefresh();
+    }
+    function pauseRefresh() {
+      if (refreshTimer) clearTimeout(refreshTimer);
+    }
+    function resumeRefresh() {
+      scheduleRefresh();
+    }
+    function copyElemText(elemId, btn) {
+      const el = document.getElementById(elemId);
+      if (!el) return;
+      const text = el.value || el.innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        const orig = btn.innerHTML;
+        btn.innerHTML = "✅ Скопійовано!";
+        btn.classList.add("copied");
+        setTimeout(() => { btn.innerHTML = orig; btn.classList.remove("copied"); }, 2000);
+      });
+    }
+    function copyAllCrashes(btn) {
+      const els = document.querySelectorAll(".raw-crash-text");
+      if (!els.length) return;
+      const combined = Array.from(els).map(e => e.value).join("\n\n" + "=".repeat(50) + "\n\n");
+      navigator.clipboard.writeText(combined).then(() => {
+        const orig = btn.innerHTML;
+        btn.innerHTML = "✅ Всі звіти скопійовано!";
+        btn.classList.add("copied");
+        setTimeout(() => { btn.innerHTML = orig; btn.classList.remove("copied"); }, 2000);
+      });
+    }
     function triggerScan() {
       const btn = document.getElementById("scan-btn");
       if (btn) btn.innerText = "⏳ Сканування...";
@@ -123,11 +173,7 @@
         .then(() => { location.reload(); })
         .catch(() => { location.reload(); });
     }
-
-    // Автоматичне фонове оновлення дашборду кожні 4 секунди
-    setTimeout(function() {
-      location.reload();
-    }, 4000);
+    scheduleRefresh();
   </script>
 </body>
 </html>

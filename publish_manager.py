@@ -83,13 +83,13 @@ def build_and_publish_local(version_name, build_num, changelog):
     if not run_command_with_log(build_rel_cmd, "Flutter Build Release APK"):
         return 1
 
-    time.sleep(2.0)
+    time.sleep(3.0)
     dbg_apk_ready = False
     build_dbg_cmd = ["flutter", "build", "apk", "--debug", f"--build-name={version_name}", f"--build-number={build_num}"]
-    if run_command_with_log(build_dbg_cmd, "Flutter Build Debug APK"):
+    if run_command_with_log(build_dbg_cmd, "Flutter Build Debug APK", is_optional=True):
         dbg_apk_ready = True
     else:
-        print("\n[УВАГА] Debug APK пропущено через блокування файлів. Продовжуємо з Release APK...")
+        print("\n[УВАГА] Debug APK пропущено. Продовжуємо з Release APK...")
 
     print("\n[4/5] Розрахунок SHA-256 контрольної суми...")
     release_apk = os.path.join("build", "app", "outputs", "flutter-apk", "app-release.apk")

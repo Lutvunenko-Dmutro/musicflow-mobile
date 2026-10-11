@@ -14,7 +14,7 @@ def log(msg, also_print=True):
         print(msg)
 
 
-def run_command_with_log(cmd, step_name):
+def run_command_with_log(cmd, step_name, is_optional=False):
     print(f"\n>> {step_name}...")
     log(f"\n{'='*50}\n[COMMAND]: {' '.join(cmd)}\n{'='*50}\n", also_print=False)
     try:
@@ -35,8 +35,11 @@ def run_command_with_log(cmd, step_name):
 
         process.wait()
         if process.returncode != 0:
-            print(f"\n[ПОМИЛКА] {step_name} завершився з кодом {process.returncode}!")
-            print(f"Деталі помилки записано у файл: {os.path.abspath(LOG_FILE)}")
+            if is_optional:
+                print(f"\n[ПРОПУЩЕНО] {step_name} завершився з кодом {process.returncode} (не є критичним для релізу).")
+            else:
+                print(f"\n[ПОМИЛКА] {step_name} завершився з кодом {process.returncode}!")
+                print(f"Деталі помилки записано у файл: {os.path.abspath(LOG_FILE)}")
             return False
         print(f"[УСПІШНО] {step_name} завершено!")
         return True

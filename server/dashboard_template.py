@@ -64,26 +64,77 @@ def _build_devices_table(device_rows):
     </table>"""
 
 
+def _format_crash_text(c, stack, logs):
+    lines = [
+        f"MusicFlow Crash Report #{c.get('reportId', 'N/A')}",
+        f"Час: {c.get('receivedAt', '')}",
+        f"Пристрій: {c.get('device', 'Невідомий')} (v{c.get('appVersion', '1.0')})",
+        f"Канал: {c.get('channel', 'RELEASE')}",
+        f"Помилка: {c.get('error', 'Невідома помилка')}",
+    ]
+    if stack:
+        lines.extend(["\n--- СТЕК-ТРЕЙС ---", stack])
+    if logs:
+        lines.extend(["\n--- ОСТАННІ ДІЇ ---"] + logs)
+    return "\n".join(lines)
+
+
+def _clean_logs(raw_logs):
+    cleaned = []
+    for line in (raw_logs or [])[:30]:
+        s = str(line).strip()
+        cleaned.append(s[:300] + "..." if len(s) > 300 else s)
+    return cleaned
+
+
 def _build_crashes_html(crashes):
     if not crashes:
         return '<div class="empty-state">🎉 Звітів про помилки поки немає. Все працює стабільно!</div>'
-    crashes_html = ""
-    for c in crashes[:20]:
-        stack = html.escape(c.get("stackTrace", "").strip())
-        trace_box = f'<pre class="crash-trace">{stack}</pre>' if stack else ""
-        logs = c.get("recentLogs", [])
+    items = []
+    for idx, c in enumerate(crashes[:20]):
+        raw_stack = (c.get("stackTrace") or "").strip()
+        if len(raw_stack) > 3500:
+            raw_stack = raw_stack[:3500] + "\n... [обрізано для дашборду]"
+        stack_esc = html.escape(raw_stack)
+        logs = _clean_logs(c.get("recentLogs", []))
+        full_text = _format_crash_text(c, raw_stack, logs)
+        full_esc = html.escape(full_text)
+
+        trace_box = ""
+        if stack_esc:
+            trace_box = f"""
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
+              <span style="font-size:11px; color:var(--text-muted);">Стек викликів:</span>
+              <button class="btn-copy" style="font-size:10px; padding:2px 6px;" onclick="copyElemText('trace_raw_{idx}', this)">📋 Стек</button>
+            </div>
+            <pre class="crash-trace">{stack_esc}</pre>
+            <textarea id="trace_raw_{idx}" style="display:none;">{stack_esc}</textarea>"""
+
         logs_html = ""
         if logs:
             logs_formatted = html.escape("\n".join(logs))
-            logs_html = f'<details style="margin-top:6px; font-size:11px; color:#aaa;"><summary style="cursor:pointer;">Дії ({len(logs)} рядків)</summary><pre class="crash-trace" style="color:#81c784;">{logs_formatted}</pre></details>'
-        crashes_html += f"""
-        <div class="crash-card">
-          <div class="crash-header"><span>#{html.escape(str(c.get('reportId', 'N/A')))}</span><span>{html.escape(str(c.get('receivedAt', '')))}</span></div>
+            logs_html = f"""
+            <details style="margin-top:6px; font-size:11px; color:#aaa;">
+              <summary style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+                <span>Дії ({len(logs)} рядків)</span>
+                <button class="btn-copy" style="font-size:10px; padding:2px 6px;" onclick="event.stopPropagation(); copyElemText('logs_raw_{idx}', this)">📋 Дії</button>
+              </summary>
+              <pre class="crash-trace" style="color:#81c784;">{logs_formatted}</pre>
+            </details>
+            <textarea id="logs_raw_{idx}" style="display:none;">{logs_formatted}</textarea>"""
+
+        items.append(f"""
+        <div class="crash-card" onmouseenter="pauseRefresh()" onmouseleave="resumeRefresh()">
+          <div class="crash-header">
+            <span>#{html.escape(str(c.get('reportId', 'N/A')))} • {html.escape(str(c.get('receivedAt', '')))}</span>
+            <button class="btn-copy" onclick="copyElemText('crash_full_{idx}', this)">📋 Скопіювати звіт</button>
+          </div>
           <div class="crash-title">❌ {html.escape(str(c.get('error', 'Невідома помилка')))}</div>
           <div class="crash-device">📱 {html.escape(str(c.get('device', 'Невідомий')))} • v{html.escape(str(c.get('appVersion', '1.0')))}</div>
           {trace_box}{logs_html}
-        </div>"""
-    return crashes_html
+          <textarea id="crash_full_{idx}" class="raw-crash-text" style="display:none;">{full_esc}</textarea>
+        </div>""")
+    return "".join(items)
 
 
 def _build_history_html(history):
@@ -105,6 +156,7 @@ def render_dashboard(info, local_ip, port, crashes, updates_dir, devices=None):
     device_rows, online_count = _build_device_rows(devices, now)
     devices_table_html = _build_devices_table(device_rows)
     crashes_html = _build_crashes_html(crashes)
+    copy_all_btn = '<button class="btn-copy" onclick="copyAllCrashes(this)" style="font-size:12px; padding:5px 12px;">📋 Скопіювати всі звіти</button>' if crashes else ''
     history = info.get("history", [])
     history_html = _build_history_html(history)
 
@@ -120,6 +172,7 @@ def render_dashboard(info, local_ip, port, crashes, updates_dir, devices=None):
         ("{{CHANGELOG}}", str(info.get("changelog", "Немає опису"))),
         ("{{HISTORY_COUNT}}", str(len(history))), ("{{HISTORY_HTML}}", history_html),
         ("{{CRASH_COUNT}}", str(len(crashes))), ("{{CRASHES_HTML}}", crashes_html),
+        ("{{COPY_ALL_BUTTON}}", copy_all_btn),
     ]
     for k, v in replacements:
         html_page = html_page.replace(k, v)
