@@ -23,6 +23,7 @@ docs/
 |---|---|---|
 | [ARCHITECTURE.md](architecture/ARCHITECTURE.md) | Загальна системна архітектура | Багаторівнева структура, модульні міксини, Impeller, SQLite |
 | [UPDATE_SYSTEM_ARCHITECTURE.md](architecture/UPDATE_SYSTEM_ARCHITECTURE.md) | Архітектура оновлень з UML-діаграмами | Component/Sequence/State діаграми, перемикання Release/Debug, SHA-256 |
+| [LOCAL_SERVER_AND_DEVICE_TELEMETRY.md](architecture/LOCAL_SERVER_AND_DEVICE_TELEMETRY.md) | Моніторинг пристроїв та Heartbeat | Прямий зв'язок додатку з сервером, життєвий цикл, State Machine, API |
 | [architecture_audio_provider.md](architecture/architecture_audio_provider.md) | Ядро відтворення та стан аудіоплеєра | `AudioProvider`, модульні міксини, потік відтворення треків |
 | [visualizer_system.md](architecture/visualizer_system.md) | FFT-візуалізатор спектру частот | Software (fftea) + Hardware (Android Visualizer), оптимізація 60 FPS |
 | [services.md](architecture/services.md) | Каталог сервісів додатку | YouTube, SQLite база даних, Download, Lyrics, Native Handlers |
