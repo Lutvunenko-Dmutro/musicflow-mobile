@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:music_flow_mobile/features/settings/widgets/update_changelog_view.dart';
 import 'package:music_flow_mobile/services/update_service.dart';
+import 'package:music_flow_mobile/services/telemetry_service.dart';
 
 class UpdateDialog extends StatefulWidget {
   final UpdateInfo info;
@@ -60,7 +61,8 @@ class _UpdateDialogState extends State<UpdateDialog> {
           }
         }
       }
-    } catch (e) {
+    } catch (e, stack) {
+      TelemetryService.instance.sendCrashReport(error: 'Update download failed: $e', stack: stack);
       if (mounted) {
         setState(() {
           _isDownloading = false;
