@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:music_flow_mobile/core/widgets/custom_card.dart';
 import 'package:music_flow_mobile/services/telemetry_service.dart';
+import 'package:music_flow_mobile/l10n/app_strings.dart';
 
 class TelemetrySettingsCard extends StatefulWidget {
   const TelemetrySettingsCard({super.key});
@@ -30,18 +31,20 @@ class _TelemetrySettingsCardState extends State<TelemetrySettingsCard> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = context.l10n;
+
     return CustomCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Конфіденційність та діагностика', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          Text(strings.privacyAndDiagnostics, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
-            title: const Text('Згода на збір звітів про помилки'),
-            subtitle: const Text(
-              'Анонімно передавати технічні звіти про збої розробнику для швидкого виправлення помилок',
-              style: TextStyle(fontSize: 12),
+            title: Text(strings.crashConsentTitle),
+            subtitle: Text(
+              strings.crashConsentSubtitle,
+              style: const TextStyle(fontSize: 12),
             ),
             value: _consent,
             activeColor: Theme.of(context).primaryColor,

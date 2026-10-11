@@ -12,13 +12,25 @@ abstract class AppStrings {
   String get history;
   String get settings;
 
-  // Player
+  // Player & Menu
   String get nowPlaying;
   String get queue;
   String get visualizer;
   String get equalizer;
   String get shuffle;
   String get repeat;
+  String get searchKaraoke;
+  String get showMiniKaraoke;
+  String get hideMiniKaraoke;
+  String get showVisualizer;
+  String get hideVisualizer;
+  String get visualizerSettings;
+  String get sleepTimer;
+  String get sleepTimerDesc;
+  String get sleepTimerActiveUntil;
+  String get turnOffTimer;
+  String get minutesSuffix;
+  String get timerSetTo;
 
   // Settings
   String get settingsTitle;
@@ -36,6 +48,36 @@ abstract class AppStrings {
   String get mediaNotificationSubtitle;
   String get downloadFolderTitle;
   String get defaultFolder;
+  String get downloadSettingsTitle;
+  String get embedLyricsTitle;
+  String get embedLyricsSubtitle;
+  String get highQualityTitle;
+  String get highQualitySubtitle;
+  String get privacyAndDiagnostics;
+  String get crashConsentTitle;
+  String get crashConsentSubtitle;
+
+  // Search
+  String get searchPrompt;
+  String get searchPlaceholder;
+  String get searchPasteTooltip;
+  String get searchButton;
+  String get filter;
+  String get inLibrary;
+  String get searchingYoutube;
+  String get nothingFound;
+  String get nothingFoundHint;
+
+  // Library & History
+  String get selected;
+  String get sortDirection;
+  String get sortByTitle;
+  String get sortByArtist;
+  String get sortByDate;
+  String get refresh;
+  String get deleteSelected;
+  String get emptyHistory;
+  String get emptyLibrary;
 
   // Dialogs & Actions
   String get cancel;

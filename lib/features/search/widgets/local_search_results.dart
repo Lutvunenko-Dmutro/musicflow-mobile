@@ -5,6 +5,8 @@ import 'package:music_flow_mobile/core/widgets/custom_card.dart';
 import 'package:music_flow_mobile/core/widgets/song_list_item.dart';
 import 'package:music_flow_mobile/providers/audio_provider.dart';
 
+import 'package:music_flow_mobile/l10n/app_strings.dart';
+
 class LocalSearchResults extends StatelessWidget {
   final List<SongModel> localResults;
 
@@ -24,9 +26,9 @@ class LocalSearchResults extends StatelessWidget {
             children: [
               Icon(Icons.library_music, color: Theme.of(context).primaryColor, size: 18),
               const SizedBox(width: 8),
-              const Text(
-                'В бібліотеці',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              Text(
+                context.l10n.inLibrary,
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               const SizedBox(width: 8),
               Container(

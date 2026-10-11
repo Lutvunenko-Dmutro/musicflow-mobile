@@ -4,6 +4,7 @@ import 'package:music_flow_mobile/models/song_model.dart';
 import 'package:music_flow_mobile/core/widgets/custom_card.dart';
 import 'package:music_flow_mobile/core/widgets/song_list_item.dart';
 import 'package:music_flow_mobile/providers/audio_provider.dart';
+import 'package:music_flow_mobile/l10n/app_strings.dart';
 
 class YoutubeSearchResults extends StatelessWidget {
   final List<SongModel> results;
@@ -17,6 +18,8 @@ class YoutubeSearchResults extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = context.l10n;
+
     return CustomCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -41,21 +44,21 @@ class YoutubeSearchResults extends StatelessWidget {
                 valueColor: const AlwaysStoppedAnimation<Color>(Colors.red),
               ),
             ),
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 28.0),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 28.0),
               child: Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    SizedBox(
+                    const SizedBox(
                       width: 28,
                       height: 28,
                       child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.red),
                     ),
-                    SizedBox(height: 12),
+                    const SizedBox(height: 12),
                     Text(
-                      'Пошук треків на YouTube...',
-                      style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
+                      strings.searchingYoutube,
+                      style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
                     ),
                   ],
                 ),
@@ -63,10 +66,10 @@ class YoutubeSearchResults extends StatelessWidget {
             ),
           ]
           else if (results.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16.0),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16.0),
               child: Center(
-                child: Text('Нічого не знайдено', style: TextStyle(color: Colors.white54)),
+                child: Text(strings.nothingFound, style: const TextStyle(color: Colors.white54)),
               ),
             )
           else

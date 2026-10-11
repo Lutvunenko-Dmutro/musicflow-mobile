@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:music_flow_mobile/core/widgets/custom_card.dart';
 import 'package:music_flow_mobile/models/search_filter_model.dart';
+import 'package:music_flow_mobile/l10n/app_strings.dart';
 
 class SearchInputCard extends StatelessWidget {
   final TextEditingController controller;
@@ -34,13 +35,14 @@ class SearchInputCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final primary = Theme.of(context).primaryColor;
+    final strings = context.l10n;
 
     return CustomCard(
       child: Column(
         children: [
-          const Text(
-            'Пошук треків або посилання з YouTube',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: -0.2),
+          Text(
+            strings.searchPrompt,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: -0.2),
           ),
           const SizedBox(height: 16),
           Row(
@@ -60,7 +62,7 @@ class SearchInputCard extends StatelessWidget {
                             onPressed: () => controller.clear(),
                           ),
                         IconButton(
-                          tooltip: 'Вставити з буфера',
+                          tooltip: strings.searchPasteTooltip,
                           icon: const Icon(Icons.content_paste_rounded, size: 18, color: Colors.white70),
                           onPressed: isSearching
                               ? null
@@ -75,7 +77,7 @@ class SearchInputCard extends StatelessWidget {
                         ),
                       ],
                     ),
-                    hintText: 'Введіть назву або посилання...',
+                    hintText: strings.searchPlaceholder,
                     hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.35)),
                     filled: true,
                     fillColor: Colors.black.withValues(alpha: 0.3),
@@ -93,7 +95,7 @@ class SearchInputCard extends StatelessWidget {
                 icon: isSearching
                     ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                     : const Icon(Icons.search_rounded, size: 18),
-                label: const Text('Пошук', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                label: Text(strings.searchButton, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: primary,
                   foregroundColor: Colors.white,
@@ -124,7 +126,7 @@ class SearchInputCard extends StatelessWidget {
                 ActionChip(
                   avatar: Icon(Icons.tune_rounded, size: 16, color: filter.activeFiltersCount > 0 ? primary : Colors.grey[400]),
                   label: Text(
-                    filter.activeFiltersCount > 0 ? 'Фільтри (${filter.activeFiltersCount})' : 'Фільтр',
+                    filter.activeFiltersCount > 0 ? '${strings.filter} (${filter.activeFiltersCount})' : strings.filter,
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: filter.activeFiltersCount > 0 ? FontWeight.bold : FontWeight.normal,

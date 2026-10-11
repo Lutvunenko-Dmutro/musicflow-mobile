@@ -13,7 +13,7 @@ class StringsEn implements AppStrings {
   @override
   String get settings => 'Settings';
 
-  // Player
+  // Player & Menu
   @override
   String get nowPlaying => 'Now Playing';
   @override
@@ -26,6 +26,30 @@ class StringsEn implements AppStrings {
   String get shuffle => 'Shuffle';
   @override
   String get repeat => 'Repeat';
+  @override
+  String get searchKaraoke => 'Find other karaoke';
+  @override
+  String get showMiniKaraoke => 'Show mini-karaoke';
+  @override
+  String get hideMiniKaraoke => 'Hide mini-karaoke';
+  @override
+  String get showVisualizer => 'Show visualizer';
+  @override
+  String get hideVisualizer => 'Hide visualizer';
+  @override
+  String get visualizerSettings => 'Visualizer settings';
+  @override
+  String get sleepTimer => 'Sleep timer';
+  @override
+  String get sleepTimerDesc => 'Music will stop automatically after selected time.';
+  @override
+  String get sleepTimerActiveUntil => 'Timer active until';
+  @override
+  String get turnOffTimer => 'Turn off timer';
+  @override
+  String get minutesSuffix => 'minutes';
+  @override
+  String get timerSetTo => 'Timer set to';
 
   // Settings
   @override
@@ -59,6 +83,63 @@ class StringsEn implements AppStrings {
   String get downloadFolderTitle => 'Download folder';
   @override
   String get defaultFolder => 'Default (Internal Storage)';
+  @override
+  String get downloadSettingsTitle => 'Download Options';
+  @override
+  String get embedLyricsTitle => 'Embed Lyrics';
+  @override
+  String get embedLyricsSubtitle => 'Automatically fetch lyrics and save into file';
+  @override
+  String get highQualityTitle => 'Best Audio Quality';
+  @override
+  String get highQualitySubtitle => 'Download highest bitrate available (uses more storage)';
+  @override
+  String get privacyAndDiagnostics => 'Privacy & Diagnostics';
+  @override
+  String get crashConsentTitle => 'Consent to crash reports';
+  @override
+  String get crashConsentSubtitle =>
+      'Anonymously send crash reports to developer for fast issue resolution';
+
+  // Search
+  @override
+  String get searchPrompt => 'Search tracks or paste YouTube link';
+  @override
+  String get searchPlaceholder => 'Enter title or link...';
+  @override
+  String get searchPasteTooltip => 'Paste from clipboard';
+  @override
+  String get searchButton => 'Search';
+  @override
+  String get filter => 'Filter';
+  @override
+  String get inLibrary => 'In Library';
+  @override
+  String get searchingYoutube => 'Searching tracks on YouTube...';
+  @override
+  String get nothingFound => 'Nothing found';
+  @override
+  String get nothingFoundHint => 'Try changing search query or reset filters';
+
+  // Library & History
+  @override
+  String get selected => 'selected';
+  @override
+  String get sortDirection => 'Change direction';
+  @override
+  String get sortByTitle => 'By title';
+  @override
+  String get sortByArtist => 'By artist';
+  @override
+  String get sortByDate => 'By date added';
+  @override
+  String get refresh => 'Refresh';
+  @override
+  String get deleteSelected => 'Delete selected';
+  @override
+  String get emptyHistory => 'You have not listened to anything yet';
+  @override
+  String get emptyLibrary => 'No tracks in your library yet';
 
   // Dialogs & Actions
   @override

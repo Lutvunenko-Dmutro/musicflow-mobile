@@ -6,6 +6,7 @@ import 'package:music_flow_mobile/providers/audio_provider.dart';
 import 'package:music_flow_mobile/models/song_model.dart';
 import 'package:music_flow_mobile/locator.dart';
 import 'package:music_flow_mobile/features/library/widgets/history_list_item.dart';
+import 'package:music_flow_mobile/l10n/app_strings.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -103,11 +104,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final strings = context.l10n;
     final isSelectionMode = _selectedIds.isNotEmpty;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isSelectionMode ? 'Вибрано: ${_selectedIds.length}' : 'Історія'),
+        title: Text(isSelectionMode ? '${strings.selected}: ${_selectedIds.length}' : strings.history),
         leading: isSelectionMode
             ? IconButton(icon: const Icon(Icons.close), onPressed: () => setState(() => _selectedIds.clear()))
             : null,
@@ -128,7 +130,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
             ),
             IconButton(
               icon: const Icon(Icons.delete_outline),
-              tooltip: 'Видалити вибране',
+              tooltip: strings.deleteSelected,
               onPressed: _confirmDeleteSelected,
             ),
           ],
@@ -137,7 +139,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _history.isEmpty
-              ? const Center(child: Text('Ви ще нічого не слухали'))
+              ? Center(child: Text(strings.emptyHistory))
               : ListView.builder(
                   itemCount: _history.length,
                   itemBuilder: (context, index) {

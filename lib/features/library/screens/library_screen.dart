@@ -12,6 +12,7 @@ import 'package:music_flow_mobile/features/library/utils/library_actions_helper.
 import 'package:music_flow_mobile/features/library/utils/library_index_helper.dart';
 import 'package:music_flow_mobile/utils/library_sorter.dart';
 import 'package:music_flow_mobile/locator.dart';
+import 'package:music_flow_mobile/l10n/app_strings.dart';
 
 export 'package:music_flow_mobile/models/sort_option.dart';
 
@@ -114,7 +115,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
       body: provider.isLoading
           ? const Center(child: CircularProgressIndicator())
           : _songs.isEmpty
-              ? const Center(child: Text('Ваша бібліотека порожня'))
+              ? Center(child: Text(context.l10n.emptyLibrary))
               : Stack(
                   children: [
                     ListView.builder(

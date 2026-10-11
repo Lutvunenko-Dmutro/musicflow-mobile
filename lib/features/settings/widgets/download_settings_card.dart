@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:music_flow_mobile/core/widgets/custom_card.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:music_flow_mobile/l10n/app_strings.dart';
 
 class DownloadSettingsCard extends StatefulWidget {
   const DownloadSettingsCard({super.key});
@@ -32,17 +33,18 @@ class _DownloadSettingsCardState extends State<DownloadSettingsCard> {
   @override
   Widget build(BuildContext context) {
     final primary = Theme.of(context).primaryColor;
+    final strings = context.l10n;
 
     return CustomCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Опції завантаження', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          Text(strings.downloadSettingsTitle, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 16),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
-            title: const Text('Вшити текст пісні'),
-            subtitle: const Text('Автоматично шукати текст і зберігати у файл', style: TextStyle(fontSize: 12)),
+            title: Text(strings.embedLyricsTitle),
+            subtitle: Text(strings.embedLyricsSubtitle, style: const TextStyle(fontSize: 12)),
             value: _embedLyrics,
             activeColor: primary,
             onChanged: (val) async {
@@ -53,8 +55,8 @@ class _DownloadSettingsCardState extends State<DownloadSettingsCard> {
           ),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
-            title: const Text('Найкраща якість аудіо'),
-            subtitle: const Text('Завантажувати найбільший бітрейт (потребує більше пам\'яті)', style: TextStyle(fontSize: 12)),
+            title: Text(strings.highQualityTitle),
+            subtitle: Text(strings.highQualitySubtitle, style: const TextStyle(fontSize: 12)),
             value: _highQuality,
             activeColor: primary,
             onChanged: (val) async {

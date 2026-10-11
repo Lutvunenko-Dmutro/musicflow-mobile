@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../screens/library_screen.dart' show SortOption;
+import 'package:music_flow_mobile/l10n/app_strings.dart';
 
 class LibraryAppBar extends StatelessWidget implements PreferredSizeWidget {
   final int selectedCount;
@@ -25,8 +26,10 @@ class LibraryAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = context.l10n;
+
     return AppBar(
-      title: Text(isSelectionMode ? '$selectedCount вибрано' : 'Бібліотека'),
+      title: Text(isSelectionMode ? '$selectedCount ${strings.selected}' : strings.library),
       leading: isSelectionMode
           ? IconButton(
               icon: const Icon(Icons.close),
@@ -42,29 +45,30 @@ class LibraryAppBar extends StatelessWidget implements PreferredSizeWidget {
         else ...[
           IconButton(
             icon: Icon(isDescending ? Icons.arrow_downward : Icons.arrow_upward),
-            tooltip: 'Змінити напрямок',
+            tooltip: strings.sortDirection,
             onPressed: onToggleSortDirection,
           ),
           PopupMenuButton<SortOption>(
             icon: const Icon(Icons.sort),
             onSelected: onSortSelected,
             itemBuilder: (BuildContext context) => <PopupMenuEntry<SortOption>>[
-              const PopupMenuItem<SortOption>(
+              PopupMenuItem<SortOption>(
                 value: SortOption.title,
-                child: Text('За назвою'),
+                child: Text(strings.sortByTitle),
               ),
-              const PopupMenuItem<SortOption>(
+              PopupMenuItem<SortOption>(
                 value: SortOption.author,
-                child: Text('За автором'),
+                child: Text(strings.sortByArtist),
               ),
-              const PopupMenuItem<SortOption>(
+              PopupMenuItem<SortOption>(
                 value: SortOption.dateAdded,
-                child: Text('За часом додавання'),
+                child: Text(strings.sortByDate),
               ),
             ],
           ),
           IconButton(
             icon: const Icon(Icons.refresh),
+            tooltip: strings.refresh,
             onPressed: onRefresh,
           ),
         ],

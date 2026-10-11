@@ -44,6 +44,12 @@ void main() {
       expect(uk.settings, 'Налаштування');
       expect(uk.nowPlaying, 'Зараз грає');
       expect(uk.playback, 'Відтворення');
+      expect(uk.downloadSettingsTitle, 'Опції завантаження');
+      expect(uk.searchPrompt, 'Пошук треків або посилання з YouTube');
+      expect(uk.inLibrary, 'В бібліотеці');
+      expect(uk.sleepTimer, 'Таймер сну');
+      expect(uk.emptyLibrary, 'У вашій бібліотеці ще немає треків');
+      expect(uk.emptyHistory, 'Ви ще нічого не слухали');
     });
 
     test('English strings match expected translations', () {
@@ -54,6 +60,12 @@ void main() {
       expect(en.settings, 'Settings');
       expect(en.nowPlaying, 'Now Playing');
       expect(en.playback, 'Playback');
+      expect(en.downloadSettingsTitle, 'Download Options');
+      expect(en.searchPrompt, 'Search tracks or paste YouTube link');
+      expect(en.inLibrary, 'In Library');
+      expect(en.sleepTimer, 'Sleep timer');
+      expect(en.emptyLibrary, 'No tracks in your library yet');
+      expect(en.emptyHistory, 'You have not listened to anything yet');
     });
   });
 

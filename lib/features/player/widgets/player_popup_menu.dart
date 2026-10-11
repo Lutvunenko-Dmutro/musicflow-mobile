@@ -4,6 +4,7 @@ import 'package:music_flow_mobile/features/settings/screens/visualizer_settings_
 import 'package:music_flow_mobile/features/settings/screens/equalizer_screen.dart';
 import 'package:music_flow_mobile/features/player/widgets/sleep_timer_dialog.dart';
 import 'package:music_flow_mobile/features/lyrics/widgets/lyrics_search_sheet.dart';
+import 'package:music_flow_mobile/l10n/app_strings.dart';
 
 class PlayerPopupMenu extends StatelessWidget {
   final AudioProvider audioProvider;
@@ -12,6 +13,8 @@ class PlayerPopupMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final strings = context.l10n;
+
     return PopupMenuButton<String>(
       icon: const Icon(Icons.more_vert, size: 28),
       onSelected: (value) {
@@ -54,13 +57,13 @@ class PlayerPopupMenu extends StatelessWidget {
         }
       },
       itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-        const PopupMenuItem<String>(
+        PopupMenuItem<String>(
           value: 'search_lyrics',
           child: Row(
             children: [
-              Icon(Icons.manage_search_rounded, size: 20),
-              SizedBox(width: 12),
-              Text('Знайти інше караоке'),
+              const Icon(Icons.manage_search_rounded, size: 20),
+              const SizedBox(width: 12),
+              Text(strings.searchKaraoke),
             ],
           ),
         ),
@@ -92,7 +95,7 @@ class PlayerPopupMenu extends StatelessWidget {
                 size: 20
               ),
               const SizedBox(width: 12),
-              Text(audioProvider.showInlineLyrics ? 'Приховати міні-караоке' : 'Показати міні-караоке'),
+              Text(audioProvider.showInlineLyrics ? strings.hideMiniKaraoke : strings.showMiniKaraoke),
             ],
           ),
         ),
@@ -105,37 +108,37 @@ class PlayerPopupMenu extends StatelessWidget {
                 size: 20
               ),
               const SizedBox(width: 12),
-              Text(audioProvider.showVisualizer ? 'Приховати візуалізатор' : 'Показати візуалізатор'),
+              Text(audioProvider.showVisualizer ? strings.hideVisualizer : strings.showVisualizer),
             ],
           ),
         ),
-        const PopupMenuItem<String>(
+        PopupMenuItem<String>(
           value: 'visualizer_settings',
           child: Row(
             children: [
-              Icon(Icons.tune, size: 20),
-              SizedBox(width: 12),
-              Text('Налаштування візуалізатора'),
+              const Icon(Icons.tune, size: 20),
+              const SizedBox(width: 12),
+              Text(strings.visualizerSettings),
             ],
           ),
         ),
-        const PopupMenuItem<String>(
+        PopupMenuItem<String>(
           value: 'sleep_timer',
           child: Row(
             children: [
-              Icon(Icons.timer_outlined, size: 20),
-              SizedBox(width: 12),
-              Text('Таймер сну'),
+              const Icon(Icons.timer_outlined, size: 20),
+              const SizedBox(width: 12),
+              Text(strings.sleepTimer),
             ],
           ),
         ),
-        const PopupMenuItem<String>(
+        PopupMenuItem<String>(
           value: 'equalizer',
           child: Row(
             children: [
-              Icon(Icons.equalizer, size: 20),
-              SizedBox(width: 12),
-              Text('Еквалайзер'),
+              const Icon(Icons.equalizer, size: 20),
+              const SizedBox(width: 12),
+              Text(strings.equalizer),
             ],
           ),
         ),
