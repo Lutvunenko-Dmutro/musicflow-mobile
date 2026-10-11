@@ -1,48 +1,91 @@
 import 'package:flutter/material.dart';
+import 'package:music_flow_mobile/core/app_colors.dart';
 import 'dart:math' as math;
 
-void paintCircle(Canvas canvas, Size size, {required List<double> heights, required List<double> dotHeights, required int barCount}) {
+void paintCircle(
+  Canvas canvas,
+  Size size, {
+  required List<double> heights,
+  required List<double> dotHeights,
+  required int barCount,
+}) {
+  if (size.width <= 0 || size.height <= 0 || barCount <= 0) return;
+
   final center = Offset(size.width / 2, size.height / 2);
-  final radius = math.min(size.width, size.height) / 2 * 0.8;
-  
-  final Paint paint = Paint()
+  final minDim = math.min(size.width, size.height);
+  final baseRadius = minDim * 0.22;
+  final maxBarLength = minDim * 0.23;
+
+  final List<Color> barColors = [
+    AppColors.primary,
+    AppColors.accentOrange,
+    AppColors.accentYellow,
+    AppColors.accentBlue,
+    AppColors.accentDeepBlue,
+  ];
+
+  final List<Color> dotColors = [
+    AppColors.dotRed,
+    AppColors.dotOrange,
+    AppColors.dotYellow,
+    AppColors.dotLightBlue,
+    AppColors.dotBlue,
+  ];
+
+  final ringPaint = Paint()
     ..style = PaintingStyle.stroke
-    ..strokeWidth = 3.0
+    ..strokeWidth = 1.5
+    ..color = AppColors.primary.withValues(alpha: 0.25);
+  canvas.drawCircle(center, baseRadius, ringPaint);
+
+  final Paint linePaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 2.4
     ..strokeCap = StrokeCap.round;
 
-  final double angleStep = 2 * math.pi / barCount;
+  final Paint dotPaint = Paint()..style = PaintingStyle.fill;
+  final double half = barCount / 2.0;
 
   for (int i = 0; i < barCount; i++) {
-    double centerIdx = barCount / 2;
-    int dataIndex = ((i - centerIdx).abs() * 2).clamp(0, barCount - 1).toInt();
+    double progress;
+    double angle;
 
-    double angle = i * angleStep - math.pi / 2;
-    double val = heights[dataIndex];
-    double lineLength = val * radius * 1.2;
+    if (i <= half) {
+      progress = i / half;
+      angle = -math.pi / 2 + (progress * math.pi);
+    } else {
+      progress = (barCount - i) / half;
+      angle = -math.pi / 2 - (progress * math.pi);
+    }
 
-    double hue = (i / barCount) * 360;
-    paint.color = HSLColor.fromAHSL(1.0, hue, 0.8, 0.6).toColor();
+    final int dataIndex = (progress * (barCount - 1)).clamp(0, barCount - 1).toInt();
+    final int colorIdx = (progress * (barColors.length - 1)).clamp(0, barColors.length - 1).toInt();
 
-    Offset inner = Offset(
-      center.dx + radius * math.cos(angle),
-      center.dy + radius * math.sin(angle),
+    final double val = heights[dataIndex].clamp(0.0, 1.0);
+    final double lineLength = val * maxBarLength;
+
+    linePaint.color = barColors[colorIdx];
+    dotPaint.color = dotColors[colorIdx];
+
+    final cosA = math.cos(angle);
+    final sinA = math.sin(angle);
+
+    final inner = Offset(
+      center.dx + baseRadius * cosA,
+      center.dy + baseRadius * sinA,
     );
-    Offset outer = Offset(
-      center.dx + (radius + lineLength) * math.cos(angle),
-      center.dy + (radius + lineLength) * math.sin(angle),
+    final outer = Offset(
+      center.dx + (baseRadius + lineLength) * cosA,
+      center.dy + (baseRadius + lineLength) * sinA,
     );
 
-    canvas.drawLine(inner, outer, paint);
-    
-    double dotH = dotHeights[dataIndex] * radius * 1.2;
-    Offset dotPos = Offset(
-      center.dx + (radius + dotH + 4.0) * math.cos(angle),
-      center.dy + (radius + dotH + 4.0) * math.sin(angle),
+    canvas.drawLine(inner, outer, linePaint);
+
+    final double dotH = (dotHeights[dataIndex].clamp(0.0, 1.0)) * maxBarLength;
+    final dotPos = Offset(
+      center.dx + (baseRadius + dotH + 3.0) * cosA,
+      center.dy + (baseRadius + dotH + 3.0) * sinA,
     );
-    
-    final Paint dotPaint = Paint()
-      ..color = paint.color.withValues(alpha: 0.8)
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(dotPos, 2.0, dotPaint);
+    canvas.drawCircle(dotPos, 1.8, dotPaint);
   }
 }

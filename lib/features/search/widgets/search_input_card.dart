@@ -51,14 +51,30 @@ class SearchInputCard extends StatelessWidget {
                   style: const TextStyle(fontSize: 14),
                   decoration: InputDecoration(
                     prefixIcon: const Icon(Icons.search_rounded, color: Colors.white60, size: 22),
-                    suffixIcon: isSearching
-                        ? Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: primary)),
-                          )
-                        : (controller.text.isNotEmpty
-                            ? IconButton(icon: const Icon(Icons.clear, size: 18, color: Colors.white54), onPressed: () => controller.clear())
-                            : null),
+                    suffixIcon: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (controller.text.isNotEmpty)
+                          IconButton(
+                            icon: const Icon(Icons.clear, size: 18, color: Colors.white54),
+                            onPressed: () => controller.clear(),
+                          ),
+                        IconButton(
+                          tooltip: 'Вставити з буфера',
+                          icon: const Icon(Icons.content_paste_rounded, size: 18, color: Colors.white70),
+                          onPressed: isSearching
+                              ? null
+                              : () async {
+                                  final data = await Clipboard.getData(Clipboard.kTextPlain);
+                                  final text = data?.text?.trim() ?? '';
+                                  if (text.isNotEmpty) {
+                                    controller.text = text;
+                                    onSearch();
+                                  }
+                                },
+                        ),
+                      ],
+                    ),
                     hintText: 'Введіть назву або посилання...',
                     hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.35)),
                     filled: true,
@@ -66,33 +82,24 @@ class SearchInputCard extends StatelessWidget {
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1))),
                     enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1))),
                     focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: primary)),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
                   ),
                   onSubmitted: (_) => onSearch(),
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
               ElevatedButton.icon(
-                onPressed: isSearching
-                    ? null
-                    : () async {
-                        final data = await Clipboard.getData(Clipboard.kTextPlain);
-                        final text = data?.text?.trim() ?? '';
-                        if (text.isNotEmpty) {
-                          controller.text = text;
-                          onSearch();
-                        }
-                      },
+                onPressed: isSearching ? null : onSearch,
                 icon: isSearching
-                    ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white70))
-                    : const Icon(Icons.content_paste_rounded, size: 16),
-                label: Text(isSearching ? 'Пошук...' : 'Вставити', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                    ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : const Icon(Icons.search_rounded, size: 18),
+                label: const Text('Пошук', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white.withValues(alpha: 0.1),
+                  backgroundColor: primary,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  elevation: 0,
+                  elevation: 2,
                 ),
               ),
             ],

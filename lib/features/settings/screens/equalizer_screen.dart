@@ -7,6 +7,7 @@ import 'package:music_flow_mobile/features/player/widgets/visualizer/audio_visua
 import 'package:music_flow_mobile/features/settings/widgets/equalizer_presets.dart';
 import 'package:music_flow_mobile/features/settings/widgets/equalizer_bands.dart';
 import 'package:music_flow_mobile/features/settings/widgets/equalizer_knobs.dart';
+import 'package:music_flow_mobile/features/settings/widgets/equalizer_playback_bar.dart';
 
 class EqualizerScreen extends StatelessWidget {
   const EqualizerScreen({super.key});
@@ -44,6 +45,8 @@ class _EqualizerScreenBodyState extends State<_EqualizerScreenBody> {
       }
     });
 
+    final primary = Theme.of(context).primaryColor;
+
     return Scaffold(
       backgroundColor: const Color(0xFF1E1E1E),
       appBar: AppBar(
@@ -51,18 +54,23 @@ class _EqualizerScreenBodyState extends State<_EqualizerScreenBody> {
         backgroundColor: Colors.transparent,
         actions: [
           if (isEnabled)
-            IconButton(
-              icon: const Icon(Icons.restart_alt),
-              tooltip: 'Скинути частоти',
+            TextButton.icon(
+              icon: const Icon(Icons.restart_alt_rounded, size: 16),
+              label: const Text('Скинути', style: TextStyle(fontSize: 12)),
+              style: TextButton.styleFrom(foregroundColor: Colors.white70),
               onPressed: () {
+                HapticFeedback.lightImpact();
                 provider.resetPreset();
                 setState(() => _activePreset = 'Звичайний');
               },
             ),
           Switch(
             value: isEnabled,
-            onChanged: (val) => provider.toggleEqualizer(),
-            activeColor: Theme.of(context).primaryColor,
+            onChanged: (val) {
+              HapticFeedback.selectionClick();
+              provider.toggleEqualizer();
+            },
+            activeColor: primary,
           ),
         ],
       ),
@@ -77,15 +85,16 @@ class _EqualizerScreenBodyState extends State<_EqualizerScreenBody> {
               padding: const EdgeInsets.symmetric(vertical: 16.0),
               children: [
                 SizedBox(
-                  height: 120,
+                  height: 100,
                   width: double.infinity,
                   child: AudioVisualizer(
                     isPlaying: audioProvider.isPlaying,
                     width: MediaQuery.of(context).size.width,
-                    height: 120,
+                    height: 100,
                   ),
                 ),
-                const SizedBox(height: 24),
+                EqualizerPlaybackBar(audioProvider: audioProvider),
+                const SizedBox(height: 16),
                 EqualizerBandsWidget(
                   provider: provider,
                   onBandChanged: (index, val) {
@@ -93,9 +102,9 @@ class _EqualizerScreenBodyState extends State<_EqualizerScreenBody> {
                     provider.setBandGain(index, val);
                   },
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 28),
                 EqualizerKnobsWidget(provider: provider),
-                const SizedBox(height: 32),
+                const SizedBox(height: 28),
                 EqualizerPresetsWidget(
                   activePreset: _activePreset,
                   onPresetSelected: (preset) {
@@ -103,27 +112,57 @@ class _EqualizerScreenBodyState extends State<_EqualizerScreenBody> {
                     provider.applyPreset(preset);
                   },
                 ),
-                const SizedBox(height: 32),
-                Center(
-                  child: OutlinedButton.icon(
-                    onPressed: () async {
-                      try {
-                        final audioProvider = context.read<AudioProvider>();
-                        final sessionId = audioProvider.player.androidAudioSessionId;
-                        const channel = MethodChannel('com.example.music_flow_mobile/visualizer_method');
-                        await channel.invokeMethod('openSystemEqualizer', {'sessionId': sessionId});
-                      } catch (e) {
-                        if (!context.mounted) return;
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Не вдалося відкрити налаштування звуку')),
-                        );
-                      }
-                    },
-                    icon: const Icon(Icons.settings_suggest),
-                    label: const Text('Системний еквалайзер / Звукові ефекти'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Theme.of(context).primaryColor,
-                      side: BorderSide(color: Theme.of(context).primaryColor),
+                const SizedBox(height: 28),
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(16),
+                      onTap: () async {
+                        HapticFeedback.lightImpact();
+                        try {
+                          final sessionId = audioProvider.player.androidAudioSessionId;
+                          const ch = MethodChannel('com.example.music_flow_mobile/visualizer_method');
+                          await ch.invokeMethod('openSystemEqualizer', {'sessionId': sessionId});
+                        } catch (_) {
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Не вдалося відкрити налаштування звуку')),
+                          );
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF252528),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: primary.withValues(alpha: 0.35)),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: primary.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Icon(Icons.tune_rounded, color: primary, size: 20),
+                            ),
+                            const SizedBox(width: 12),
+                            const Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Системні звукові ефекти', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white)),
+                                  Text('Dolby Atmos, 3D Sound або системний EQ', style: TextStyle(fontSize: 11, color: Colors.white54)),
+                                ],
+                              ),
+                            ),
+                            const Icon(Icons.open_in_new_rounded, size: 16, color: Colors.white38),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
                 ),

@@ -106,7 +106,7 @@ class VisualizerLivePreviewCard extends StatelessWidget {
             ),
           ),
           Container(
-            height: 75,
+            height: 100,
             width: double.infinity,
             margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
@@ -129,7 +129,7 @@ class VisualizerLivePreviewCard extends StatelessWidget {
                     AudioVisualizer(
                       isPlaying: isPlaying,
                       testMode: forceTestMode || !isPlaying,
-                      height: 75,
+                      height: 100,
                       barCount: 60,
                       width: double.infinity,
                     ),

@@ -42,9 +42,7 @@ class _AudioVisualizerState extends State<AudioVisualizer>
   bool _isStartingListening = false;
 
   int get _count => _currentHeights.length;
-
-  int _resolveBars(double w) =>
-      widget.barCount ?? (w <= 420 ? 60 : (w <= 640 ? 80 : (w <= 900 ? 100 : 120)));
+  int _resolveBars(double w) => widget.barCount ?? (w <= 420 ? 60 : (w <= 640 ? 80 : (w <= 900 ? 100 : 120)));
 
   void _initBars(int c) {
     _currentHeights = List.filled(c, 0.05);
@@ -53,9 +51,7 @@ class _AudioVisualizerState extends State<AudioVisualizer>
     _dotVelocities = List.filled(c, 0.0);
   }
 
-  void _ensureBars(int c) {
-    if (_currentHeights.length != c) _initBars(c);
-  }
+  void _ensureBars(int c) { if (_currentHeights.length != c) _initBars(c); }
 
   @override
   void initState() {
@@ -86,14 +82,19 @@ class _AudioVisualizerState extends State<AudioVisualizer>
         _stopTestSimulation();
         _stopListening();
       }
+    } else if (widget.testMode && (_testTimer == null || !_testTimer!.isActive)) {
+      _startTestSimulation();
     }
   }
 
   void _startTestSimulation() {
     _stopTestSimulation();
     if (_ticker != null && !_ticker!.isTicking) _ticker!.start();
-    _testTimer = Timer.periodic(const Duration(milliseconds: 35), (_) {
-      if (mounted) _processWaveform(_mockGenerator.generateNextFrame());
+    _testTimer = Timer.periodic(const Duration(milliseconds: 30), (_) {
+      if (mounted) {
+        if (_ticker != null && !_ticker!.isTicking) _ticker!.start();
+        _processWaveform(_mockGenerator.generateNextFrame());
+      }
     });
   }
 
@@ -131,7 +132,7 @@ class _AudioVisualizerState extends State<AudioVisualizer>
     if (mounted) {
       _targetHeights = List.filled(_count, 0.05);
       Future.delayed(const Duration(milliseconds: 1500), () {
-        if (mounted && !widget.isPlaying && _ticker != null && _ticker!.isTicking) {
+        if (mounted && !widget.isPlaying && !widget.testMode && _ticker != null && _ticker!.isTicking) {
           _ticker!.stop();
         }
       });
