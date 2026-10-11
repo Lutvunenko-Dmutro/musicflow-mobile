@@ -46,9 +46,27 @@ def find_best_apk_path(filename="app-release.apk"):
 
 
 def get_version_info(apk_filename=None):
+    pubspec_path = os.path.join(BASE_DIR, "..", "pubspec.yaml")
+    proj_ver = None
+    proj_build = None
+    if os.path.exists(pubspec_path):
+        try:
+            with open(pubspec_path, "r", encoding="utf-8") as pf:
+                import re
+                m = re.search(r"^version:\s*([0-9.]+)\+([0-9]+)", pf.read(), re.MULTILINE)
+                if m:
+                    proj_ver = m.group(1)
+                    proj_build = int(m.group(2))
+        except Exception:
+            pass
+
     try:
         with open(VERSION_FILE, "r", encoding="utf-8") as f:
             data = json.load(f)
+        if proj_ver:
+            data["version"] = proj_ver
+        if proj_build:
+            data["buildNumber"] = proj_build
         filename = apk_filename or data.get("apkFileName", "app-release.apk")
         data["apkFileName"] = filename
         apk_path = find_best_apk_path(filename)
@@ -59,7 +77,7 @@ def get_version_info(apk_filename=None):
                 data["sha256"] = calculate_sha256(apk_path)
         return data
     except Exception:
-        return {"version": "1.0.0", "buildNumber": 1, "changelog": "Початковий реліз", "fileSizeBytes": 0}
+        return {"version": proj_ver or "0.1.9", "buildNumber": proj_build or 10, "changelog": "MusicFlow Release", "fileSizeBytes": 0}
 
 
 def get_all_crashes():
