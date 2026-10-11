@@ -13,8 +13,8 @@ void paintCircle(
 
   final center = Offset(size.width / 2, size.height / 2);
   final minDim = math.min(size.width, size.height);
-  final baseRadius = minDim * 0.22;
-  final maxBarLength = minDim * 0.23;
+  final baseRadius = minDim * 0.30;
+  final maxBarLength = minDim * 0.16;
 
   final List<Color> barColors = [
     AppColors.primary,

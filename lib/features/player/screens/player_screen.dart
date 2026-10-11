@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:music_flow_mobile/providers/audio_provider.dart';
+import 'package:music_flow_mobile/providers/visualizer_settings_provider.dart';
 import 'package:music_flow_mobile/features/player/widgets/visualizer/audio_visualizer.dart';
 import 'package:music_flow_mobile/features/player/widgets/player_header.dart';
 import 'package:music_flow_mobile/features/player/widgets/player_controls.dart';
@@ -102,7 +103,7 @@ class PlayerScreen extends StatelessWidget {
                               children: [
                                 if (audioProvider.showInlineLyrics && audioProvider.hasKaraokeLyrics)
                                   const InlineLyrics(),
-                                _buildVisualizerArea(audioProvider),
+                                _buildVisualizerArea(context, audioProvider),
                                 PlayerControls(song: song),
                               ],
                             ),
@@ -122,7 +123,7 @@ class PlayerScreen extends StatelessWidget {
                         Expanded(flex: 7, child: PlayerHeader(song: song)),
                         if (audioProvider.showInlineLyrics && audioProvider.hasKaraokeLyrics)
                           const InlineLyrics(),
-                        _buildVisualizerArea(audioProvider),
+                        _buildVisualizerArea(context, audioProvider),
                         PlayerControls(song: song),
                       ],
                     ),
@@ -138,7 +139,7 @@ class PlayerScreen extends StatelessWidget {
 }
 
 
-  Widget _buildVisualizerArea(AudioProvider audioProvider) {
+  Widget _buildVisualizerArea(BuildContext context, AudioProvider audioProvider) {
     if (!audioProvider.showVisualizer) return const SizedBox.shrink();
     if (audioProvider.playbackError != null) {
       return SizedBox(
@@ -172,14 +173,16 @@ class PlayerScreen extends StatelessWidget {
         ),
       );
     }
+    final vis = context.watch<VisualizerSettingsProvider?>();
+    final h = (vis?.style == VisualizerStyle.circle) ? 75.0 : 50.0;
     return Flexible(
       child: SizedBox(
-        height: 50,
+        height: h,
         width: double.infinity,
         child: AudioVisualizer(
           isPlaying: audioProvider.isPlaying,
           width: double.infinity,
-          height: 50,
+          height: h,
         ),
       ),
     );

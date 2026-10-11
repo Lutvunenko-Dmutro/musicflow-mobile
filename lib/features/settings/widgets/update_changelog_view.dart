@@ -13,104 +13,68 @@ class UpdateChangelogView extends StatelessWidget {
 
     for (var line in lines) {
       line = line.trim();
-      if (line.isEmpty) continue;
+      if (line.isEmpty || line.startsWith('#')) continue;
 
-      // Ігноруємо заголовки markdown (#, ##, ###)
-      if (line.startsWith('#')) continue;
-
-      // Ігноруємо SHA-256 та контрольні суми
       final lower = line.toLowerCase();
-      if (lower.contains('sha-256') || lower.contains('sha256') || lower.contains('md5:')) {
+      if (lower.contains('sha-256') || lower.contains('sha256') || lower.contains('md5:')) continue;
+
+      final header = line.replaceAll(RegExp(r'[\*\_`#]'), '').trim().toLowerCase();
+      if (header.startsWith('зміни у цій версії') ||
+          header.startsWith('оновлення musicflow') ||
+          header.startsWith('changelog') ||
+          header.startsWith('що нового') ||
+          header == 'зміни:' ||
+          header == 'changes:') {
         continue;
       }
 
-      // Ігноруємо службові підзаголовки
-      final headerCheck = line
-          .replaceAll('*', '')
-          .replaceAll('_', '')
-          .replaceAll('`', '')
-          .replaceAll('#', '')
-          .trim()
-          .toLowerCase();
-      if (headerCheck.startsWith('зміни у цій версії') ||
-          headerCheck.startsWith('оновлення musicflow') ||
-          headerCheck.startsWith('changelog') ||
-          headerCheck.startsWith('що нового') ||
-          headerCheck == 'зміни:' ||
-          headerCheck == 'changes:') {
-        continue;
-      }
-
-      // Знімаємо маркер списку на початку (*, -, •, +, 1.)
       var cleaned = line.replaceFirst(RegExp(r'^([•\-\*\+]|\d+[\.\)])\s*'), '').trim();
+      cleaned = cleaned.replaceAll('**', '').replaceAll('__', '').replaceAll('`', '').replaceAll(RegExp(r'^\*+|\*+$'), '').trim();
 
-      // Знімаємо всі залишки markdown: **, __, `, залишки зірочок на краях
-      cleaned = cleaned
-          .replaceAll('**', '')
-          .replaceAll('__', '')
-          .replaceAll('`', '')
-          .replaceAll(RegExp(r'^\*+|\*+$'), '')
-          .trim();
-
-      if (cleaned.isNotEmpty) {
-        result.add(cleaned);
-      }
+      if (cleaned.isNotEmpty) result.add(cleaned);
     }
 
-    if (result.isEmpty) {
-      return const ['Покращення стабільності та оптимізація додатку'];
-    }
-
-    return result;
+    return result.isEmpty ? const ['Покращення стабільності та оптимізація додатку'] : result;
   }
 
   @override
   Widget build(BuildContext context) {
     final primary = Theme.of(context).primaryColor;
     final missed = info.missedReleases;
+    final currentItems = _parseChangelog(info.changelog);
 
-    if (missed.length > 1) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Text('Що нового ', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white70)),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: Colors.amber.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text('пропущено ${missed.length} оновлень', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.amberAccent)),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Container(
-            constraints: const BoxConstraints(maxHeight: 220),
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: missed.map((rel) => _buildReleaseBlock(rel, primary)).toList(),
-              ),
-            ),
-          ),
-        ],
-      );
-    }
-
-    final items = _parseChangelog(info.changelog);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        const Text('Що нового в цій версії:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white70)),
+        Row(
+          children: [
+            Text('Що нового у v${info.version}:', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white70)),
+            if (missed.isNotEmpty) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(color: Colors.amber.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(6)),
+                child: Text('пропущено ${missed.length}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.amberAccent)),
+              ),
+            ],
+          ],
+        ),
         const SizedBox(height: 8),
         Container(
-          constraints: const BoxConstraints(maxHeight: 180),
+          constraints: const BoxConstraints(maxHeight: 200),
           child: SingleChildScrollView(
             child: Column(
-              children: items.map((item) => _buildBulletItem(item, primary)).toList(),
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                ...currentItems.map((item) => _buildBulletItem(item, primary)),
+                if (missed.isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  const Text('Пропущені зміни:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.amberAccent)),
+                  const SizedBox(height: 6),
+                  ...missed.map((rel) => _buildReleaseBlock(rel, primary)),
+                ],
+              ],
             ),
           ),
         ),
@@ -120,7 +84,6 @@ class UpdateChangelogView extends StatelessWidget {
 
   Widget _buildReleaseBlock(ReleaseHistoryItem release, Color primary) {
     final items = _parseChangelog(release.changelog);
-    final isLatest = release.buildNumber == info.buildNumber;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -128,7 +91,7 @@ class UpdateChangelogView extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: isLatest ? primary.withValues(alpha: 0.4) : Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(color: Colors.amber.withValues(alpha: 0.35)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -137,20 +100,17 @@ class UpdateChangelogView extends StatelessWidget {
             children: [
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: isLatest ? primary.withValues(alpha: 0.25) : Colors.white12,
-                  borderRadius: BorderRadius.circular(5),
-                ),
-                child: Text('v${release.version}', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: isLatest ? primary : Colors.white)),
+                decoration: BoxDecoration(color: Colors.amber.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(5)),
+                child: Text('v${release.version}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.amberAccent)),
               ),
-              if (isLatest) ...[
-                const SizedBox(width: 6),
-                const Text('🔥 найновіша', style: TextStyle(fontSize: 10, color: Colors.amberAccent, fontWeight: FontWeight.w500)),
+              if (release.releaseDate.isNotEmpty) ...[
+                const SizedBox(width: 8),
+                Text(release.releaseDate, style: const TextStyle(fontSize: 10, color: Colors.white38)),
               ],
             ],
           ),
           const SizedBox(height: 6),
-          ...items.map((item) => _buildBulletItem(item, primary)),
+          ...items.map((item) => _buildBulletItem(item, Colors.amberAccent)),
         ],
       ),
     );
