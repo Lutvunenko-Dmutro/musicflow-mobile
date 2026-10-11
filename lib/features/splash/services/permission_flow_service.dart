@@ -108,11 +108,19 @@ class PermissionFlowService {
         if (!status.isGranted) {
           status = await Permission.storage.request();
         }
+        if (!status.isGranted && await Permission.manageExternalStorage.status.isRestricted == false) {
+          status = await Permission.manageExternalStorage.request();
+        }
         break;
       case AppPermissionType.installUpdates:
         status = await Permission.requestInstallPackages.request();
         break;
     }
+
+    if (status.isPermanentlyDenied) {
+      await openAppSettings();
+    }
+
     return status.isGranted;
   }
 }
