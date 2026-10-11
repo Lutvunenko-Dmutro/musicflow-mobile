@@ -24,9 +24,23 @@ class DevServerDialog {
               decoration: InputDecoration(
                 filled: true,
                 fillColor: Colors.black26,
-                hintText: 'http://192.168.0.103:8080',
+                hintText: 'http://192.168.0.229:8080',
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
               ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 6,
+              children: [
+                ActionChip(
+                  label: const Text('Wi-Fi ПК (192.168.0.229)', style: TextStyle(fontSize: 11)),
+                  onPressed: () => controller.text = 'http://192.168.0.229:8080',
+                ),
+                ActionChip(
+                  label: const Text('localhost', style: TextStyle(fontSize: 11)),
+                  onPressed: () => controller.text = 'http://localhost:8080',
+                ),
+              ],
             ),
           ],
         ),
@@ -43,9 +57,13 @@ class DevServerDialog {
 
     if (newUrl != null && newUrl.isNotEmpty && context.mounted) {
       await TelemetryService.instance.setServerUrl(newUrl);
+      final ok = await TelemetryService.instance.checkServerHealth();
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Адресу сервера змінено: $newUrl'), behavior: SnackBarBehavior.floating),
+          SnackBar(
+            content: Text(ok ? '✅ Підключено до сервера: $newUrl' : '⚠️ Сервер збережено, але не відповідає: $newUrl'),
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
     }

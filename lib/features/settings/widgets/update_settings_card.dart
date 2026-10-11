@@ -103,13 +103,21 @@ class _UpdateSettingsCardState extends State<UpdateSettingsCard> {
             children: [
               const Text('Оновлення додатку', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               GestureDetector(
+                onTap: () => DevServerDialog.show(context),
                 onLongPress: () => DevServerDialog.show(context),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(6)),
-                  child: Text(
-                    'v$_installedVersion (${UpdatePreferences.currentRunningChannel == UpdateChannel.release ? "Release" : "Debug"})',
-                    style: const TextStyle(fontSize: 11, color: Colors.white70),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.wifi_tethering_rounded, size: 12, color: Colors.white70),
+                      const SizedBox(width: 4),
+                      Text(
+                        'v$_installedVersion (${UpdatePreferences.currentRunningChannel == UpdateChannel.release ? "Release" : "Debug"})',
+                        style: const TextStyle(fontSize: 11, color: Colors.white70),
+                      ),
+                    ],
                   ),
                 ),
               ),

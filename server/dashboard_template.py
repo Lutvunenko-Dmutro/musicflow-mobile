@@ -59,7 +59,15 @@ DASHBOARD_HTML = """<!DOCTYPE html>
 
     <!-- БЛОК ПІДКЛЮЧЕНИХ ПРИСТРОЇВ -->
     <div class="card">
-      <h2>📡 Підключені пристрої в мережі Wi-Fi <span class="badge" style="background: #1976d2;">{{ONLINE_COUNT}} в мережі</span></h2>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+        <h2 style="margin-bottom: 0;">📡 Підключені пристрої в мережі Wi-Fi <span class="badge" style="background: #1976d2;">{{ONLINE_COUNT}} в мережі</span></h2>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 11px; color: var(--text-muted);" id="scan-status">🟢 Моніторинг у реальному часі</span>
+          <button onclick="triggerScan()" class="btn btn-secondary" style="font-size: 12px; padding: 6px 14px; cursor: pointer; display: flex; align-items: center; gap: 6px;" id="scan-btn">
+            🔄 Сканувати та оновити зараз
+          </button>
+        </div>
+      </div>
       <div class="table-container">
         {{DEVICES_TABLE_HTML}}
       </div>
@@ -112,10 +120,18 @@ DASHBOARD_HTML = """<!DOCTYPE html>
   </div>
 
   <script>
-    // Автоматичне фонове оновлення дашборду кожні 6 секунд
+    function triggerScan() {
+      const btn = document.getElementById("scan-btn");
+      if (btn) btn.innerText = "⏳ Сканування...";
+      fetch("/api/telemetry/scan")
+        .then(() => { location.reload(); })
+        .catch(() => { location.reload(); });
+    }
+
+    // Автоматичне фонове оновлення дашборду кожні 4 секунди
     setTimeout(function() {
       location.reload();
-    }, 6000);
+    }, 4000);
   </script>
 </body>
 </html>
