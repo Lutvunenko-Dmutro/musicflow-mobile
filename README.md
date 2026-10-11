@@ -15,18 +15,16 @@
   <a href="publish.bat">🚀 Збірка в 1 клік</a>
 </p>
 
----
+## 📖 Документація проекту
 
-## 🧭 Навігатор («Куди мені піти?»):
-
-| 🎯 Ваша ціль | 📂 Куди дивитися | 💡 Що всередині |
+| Розділ | Опис | Документи |
 |---|---|---|
-| **Випустити новий реліз / зібрати APK** | 🚀 [**publish.bat**](publish.bat)<br>📋 [Чек-лист релізу](docs/release/RELEASE_CHECKLIST.md) | Автоматична збірка, тести, SHA-256 та реліз на GitHub в 1 команду |
-| **Зрозуміти як працюють оновлення та канали** | 🗺️ [**Архітектура оновлень UML**](docs/architecture/UPDATE_SYSTEM_ARCHITECTURE.md)<br>🛡️ [Матриця відкату](docs/release/COMPATIBILITY_AND_ROLLBACK.md) | UML Component/Sequence діаграми, перемикання Release ⇄ Debug |
-| **Змінити логіку відтворення чи чергу** | 🎧 [AudioProvider & Міксини](docs/architecture/architecture_audio_provider.md)<br>🏗️ [Системна архітектура](docs/architecture/ARCHITECTURE.md) | Потік аудіо, міксини, фоновий сервіс, відновлення стрімів |
-| **Налаштувати візуалізатор чи FFT** | 📊 [Система візуалізатора](docs/architecture/visualizer_system.md) | ШПФ на `fftea`, Android AudioEffect API, оптимізація 60 FPS |
-| **Подивитися вимоги та дорожню карту** | 📋 [Вимоги (PRD)](docs/planning/PRD.md)<br>🗺️ [Дорожня карта (PLAN)](docs/planning/PLAN.md)<br>🤖 [ШІ-Оркестрація](docs/planning/ORCHESTRATION.md) | Сценарії користувача, етапи розробки, стек та інтеграції |
-| **Перевірити відомі баги чи аудит коду** | ⚠️ [Відомі проблеми (TODO)](docs/quality/known_issues_todo.md)<br>🔍 [Аудит безпеки](docs/quality/audit.md)<br>🎯 [Метрики SLA](docs/quality/QUALITY_METRICS.md) | Список багів, споживання пам'яті, швидкість холодного старту |
+| **Системна архітектура** | Модульна структура додатку, потік аудіо-ядра та UML-схеми оновлень | [ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md) • [UML Специфікація](docs/architecture/UPDATE_SYSTEM_ARCHITECTURE.md) • [Аудіо-ядро](docs/architecture/architecture_audio_provider.md) |
+| **CI/CD та Релізи** | Інженерний протокол збірки, криптографічні підписи та відкат версій | [Чек-лист релізу](docs/release/RELEASE_CHECKLIST.md) • [План відкату](docs/release/COMPATIBILITY_AND_ROLLBACK.md) • [Безпека оновлень](docs/release/SECURITY_UPDATE_FLOW.md) |
+| **Специфікація та Планування** | Продуктові вимоги, технічна дорожня карта та ШІ-оркестрація | [PRD](docs/planning/PRD.md) • [Roadmap](docs/planning/PLAN.md) • [Оркестрація](docs/planning/ORCHESTRATION.md) |
+| **Якість та Надійність** | Метрики відповідності SLA, результати аудиту безпеки та відомі дефекти | [Метрики SLA](docs/quality/QUALITY_METRICS.md) • [Аудит безпеки](docs/quality/audit.md) • [Каталог TODO](docs/quality/known_issues_todo.md) |
+
+> 📚 Повний навігаційний індекс та гайд для нових розробників доступні у **[Каталозі документації (docs/README.md)](docs/README.md)**.
 
 ---
 
