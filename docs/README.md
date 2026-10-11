@@ -43,6 +43,7 @@ docs/
 
 | Документ | Опис | Ключові теми |
 |---|---|---|
+| [ONE_CLICK_RELEASE.md](release/ONE_CLICK_RELEASE.md) | Збірка та публікація в 1 клік | Автоматизований пайплайн publish.bat, валідація, версіонування |
 | [RELEASE_CHECKLIST.md](release/RELEASE_CHECKLIST.md) | Інженерний чек-лист випуску релізу | Покроковий план перевірок перед публікацією білда |
 | [SECURITY_UPDATE_FLOW.md](release/SECURITY_UPDATE_FLOW.md) | Безпека та верифікація оновлень | Перевірка підписів APK, валідація SHA-256, захист від підміни |
 | [COMPATIBILITY_AND_ROLLBACK.md](release/COMPATIBILITY_AND_ROLLBACK.md) | Матриця сумісності та план відкату | Anti-downgrade правила, аварійний rollback, міграції БД SQLite |

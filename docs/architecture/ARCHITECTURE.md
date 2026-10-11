@@ -90,7 +90,10 @@ lib/
 │       ├── playback_controls_mixin.dart
 │       ├── crossfade_manager_mixin.dart
 │       ├── lyrics_manager_mixin.dart
-│       └── preferences_manager_mixin.dart
+│       ├── preferences_manager_mixin.dart
+│       ├── stream_recovery_mixin.dart
+│       ├── player_setup_mixin.dart
+│       └── audio_focus_manager_mixin.dart
 │
 ├── features/                        # Візуальні та функціональні модулі
 │   ├── player/                      # Екран плеєра, Ambient Glow, Cover Sheen, Візуалізатор
@@ -125,7 +128,10 @@ AudioProvider (ChangeNotifier)
   ├── PlaybackControlsMixin     # Play / Pause / Seek / Next / Prev / Sleep Timer
   ├── CrossfadeManagerMixin     # Безшовний перехід між треками на 2 аудіоплеєрах
   ├── LyricsManagerMixin        # Пошук, завантаження та парсинг синхронізованих LRC текстів
-  └── PreferencesManagerMixin   # Персистентність налаштувань користувача
+  ├── PreferencesManagerMixin   # Персистентність налаштувань користувача у SharedPreferences
+  ├── StreamRecoveryMixin       # Стійкість стріму та повторні спроби (Exponential Backoff)
+  ├── PlayerSetupMixin          # Ініціалізація та конфігурація JustAudio аудіоплеєрів
+  └── AudioFocusManagerMixin    # Обробка системного аудіофокусу Android
 ```
 
 ---
@@ -165,17 +171,17 @@ sequenceDiagram
 
 ## 7. 1-Click Release & CI/CD Pipeline
 
-Релізи створюються та публікуються однією автоматизованою командою:
+Релізи створюються та публікуються однією автоматизованою командою (детальніше див. [Збірка в 1 клік](../release/ONE_CLICK_RELEASE.md)):
 
-```bash
-python server/publish_release.py --bump patch --mode release -c "Опис змін"
+```cmd
+.\publish.bat
 ```
+*(або `python publish_manager.py`)*
 
 ### Фази пайплайну:
-1. **Pre-flight Static Check:** Запуск `flutter analyze` (вимагається 0 помилок).
-2. **Pre-flight Test Suite:** Запуск 54 автоматичних тестів `flutter test` (включаючи архітектурний тест довжини файлів).
-3. **Version Increment:** Оновлення поля `version` у `pubspec.yaml` (наприклад, `1.0.32+33`).
-4. **Compilation:** Збірка релізного APK `flutter build apk --release`.
-5. **Storage Sync:** Копіювання скомпільованого білда в сховище локального сервера `server/data/updates/app-release.apk`.
-6. **Manifest Generation:** Запис версії, розміру файлу та changelog у `server/data/version.json`.
-7. **Git Automation:** Додавання змін (`git add -A`), створення коміту, релізного тегу `vX.Y.Z` та відправка в GitHub (`git push origin main --tags`).
+1. **Pre-flight Static Check:** Запуск `flutter analyze` (вимагається 0 помилок/попереджень).
+2. **Pre-flight Test Suite:** Запуск 66+ автоматичних тестів `flutter test` (включаючи архітектурні ліміти довжини файлів `< 200`, цілісність посилань та валідацію синтаксису YAML).
+3. **Version Increment:** Оновлення поля `version` у `pubspec.yaml` (наприклад, `1.0.32+33`) та створення релізного тегу `vX.Y.Z`.
+4. **Compilation:** Збірка релізного APK `flutter build apk --release` із розрахунком криптографічного хешу SHA-256.
+5. **Storage Sync & Publishing:** Автоматична публікація на GitHub Releases через `gh release` або синхронізація з локальним сервером оновлень.
+6. **Git Automation:** Автоматичний коміт версії та пуш змін у віддалений репозиторій (`git push origin main --tags`).

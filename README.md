@@ -12,7 +12,7 @@
   <a href="https://github.com/Lutvunenko-Dmutro/musicflow-mobile/releases/latest">📦 Завантажити APK</a> •
   <a href="docs/README.md">📚 Каталог документації</a> •
   <a href="CHANGELOG.md">📜 Журнал змін</a> •
-  <a href="publish.bat">🚀 Збірка в 1 клік</a>
+  <a href="docs/release/ONE_CLICK_RELEASE.md">🚀 Збірка в 1 клік</a>
 </p>
 
 ## 📖 Документація проекту
@@ -20,7 +20,7 @@
 | Розділ | Опис | Документи |
 |---|---|---|
 | **Системна архітектура** | Модульна структура додатку, потік аудіо-ядра та UML-схеми оновлень | [ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md) • [UML Специфікація](docs/architecture/UPDATE_SYSTEM_ARCHITECTURE.md) • [Аудіо-ядро](docs/architecture/architecture_audio_provider.md) |
-| **CI/CD та Релізи** | Інженерний протокол збірки, криптографічні підписи та відкат версій | [Чек-лист релізу](docs/release/RELEASE_CHECKLIST.md) • [План відкату](docs/release/COMPATIBILITY_AND_ROLLBACK.md) • [Безпека оновлень](docs/release/SECURITY_UPDATE_FLOW.md) |
+| **CI/CD та Релізи** | Інженерний протокол збірки, криптографічні підписи та відкат версій | [Збірка в 1 клік](docs/release/ONE_CLICK_RELEASE.md) • [Чек-лист релізу](docs/release/RELEASE_CHECKLIST.md) • [План відкату](docs/release/COMPATIBILITY_AND_ROLLBACK.md) • [Безпека оновлень](docs/release/SECURITY_UPDATE_FLOW.md) |
 | **Специфікація та Планування** | Продуктові вимоги, технічна дорожня карта та ШІ-оркестрація | [PRD](docs/planning/PRD.md) • [Roadmap](docs/planning/PLAN.md) • [Оркестрація](docs/planning/ORCHESTRATION.md) |
 | **Якість та Надійність** | Метрики відповідності SLA, результати аудиту безпеки та відомі дефекти | [Метрики SLA](docs/quality/QUALITY_METRICS.md) • [Аудит безпеки](docs/quality/audit.md) • [Каталог TODO](docs/quality/known_issues_todo.md) |
 
