@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:music_flow_mobile/locator.dart';
 import 'package:music_flow_mobile/providers/audio_provider.dart';
 import 'package:music_flow_mobile/providers/visualizer_settings_provider.dart';
-import 'package:music_flow_mobile/features/main/screens/main_screen.dart';
+import 'package:music_flow_mobile/features/splash/screens/splash_screen.dart';
 import 'package:music_flow_mobile/providers/local_library_provider.dart';
 import 'package:music_flow_mobile/services/telemetry_service.dart';
 import 'package:music_flow_mobile/core/app_theme.dart';
@@ -51,7 +51,7 @@ class MusicFlowApp extends StatelessWidget {
         scaffoldMessengerKey: scaffoldMessengerKey,
         debugShowCheckedModeBanner: false,
         theme: AppTheme.darkTheme,
-        home: const MainScreen(),
+        home: const SplashScreen(),
       ),
     );
   }
