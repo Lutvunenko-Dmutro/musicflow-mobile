@@ -284,14 +284,20 @@ def main():
         input("\nНатисніть Enter для виходу...")
         return 1
 
+    import time
+    time.sleep(2.0)
+
+    dbg_apk_ready = False
     build_dbg_cmd = [
         "flutter", "build", "apk", "--debug",
         f"--build-name={version_name}",
         f"--build-number={build_num}"
     ]
-    if not run_command_with_log(build_dbg_cmd, "Flutter Build Debug APK"):
-        input("\nНатисніть Enter для виходу...")
-        return 1
+    if run_command_with_log(build_dbg_cmd, "Flutter Build Debug APK"):
+        dbg_apk_ready = True
+    else:
+        print("\n[УВАГА] Debug APK не вдалося скомпілювати (блокування .dart_tool у Windows).")
+        print("Основний релізний APK (Release APK) успішно зібрано, продовжуємо публікацію...")
 
     # Step 4: SHA-256
     print("\n[4/5] Розрахунок SHA-256 контрольної суми...")
@@ -304,7 +310,7 @@ def main():
         return 1
 
     sha256_rel = calculate_sha256(release_apk)
-    sha256_dbg = calculate_sha256(debug_apk) if os.path.exists(debug_apk) else ""
+    sha256_dbg = calculate_sha256(debug_apk) if (dbg_apk_ready and os.path.exists(debug_apk)) else ""
     print(f"SHA-256 (Release): {sha256_rel}")
     if sha256_dbg:
         print(f"SHA-256 (Debug):   {sha256_dbg}")
@@ -324,6 +330,10 @@ def main():
         if sha256_dbg:
             f.write(f"SHA-256 (Debug): {sha256_dbg}\n")
 
+    apk_files = [release_apk]
+    if dbg_apk_ready and os.path.exists(debug_apk):
+        apk_files.append(debug_apk)
+
     # Перевіряємо, чи існує вже такий реліз на GitHub
     check_rel = subprocess.run(
         ["gh", "release", "view", f"v{version_name}"],
@@ -334,8 +344,7 @@ def main():
         print(f"Реліз v{version_name} вже існує. Оновлюємо APK-файли (--clobber) та опис...")
         res = subprocess.run([
             "gh", "release", "upload", f"v{version_name}",
-            release_apk,
-            debug_apk,
+            *apk_files,
             "--clobber"
         ])
         subprocess.run([
@@ -346,8 +355,7 @@ def main():
     else:
         release_cmd = [
             "gh", "release", "create", f"v{version_name}",
-            release_apk,
-            debug_apk,
+            *apk_files,
             "--title", f"MusicFlow v{version_name} (build {build_num})",
             "--notes-file", notes_file
         ]
