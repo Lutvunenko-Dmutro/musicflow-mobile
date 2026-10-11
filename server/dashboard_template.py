@@ -1,5 +1,6 @@
 import html
 import os
+from datetime import datetime
 
 DASHBOARD_HTML = """<!DOCTYPE html>
 <html lang="uk">
@@ -22,7 +23,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
     .badge-ip { background: #1565c0; font-family: monospace; font-size: 13px; padding: 5px 12px; border-radius: 8px; }
     .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
     @media(max-width: 768px) { .grid { grid-template-columns: 1fr; } }
-    .card { background: var(--card); border: 1px solid var(--card-border); border-radius: 14px; padding: 20px; }
+    .card { background: var(--card); border: 1px solid var(--card-border); border-radius: 14px; padding: 20px; margin-bottom: 24px; }
     .card h2 { font-size: 16px; margin-bottom: 14px; color: var(--primary); display: flex; align-items: center; gap: 8px; }
     .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #282828; font-size: 13px; }
     .info-row span:first-child { color: var(--text-muted); }
@@ -36,6 +37,17 @@ DASHBOARD_HTML = """<!DOCTYPE html>
     .crash-device { font-size: 12px; color: #e0e0e0; margin-bottom: 6px; }
     .crash-trace { background: #000; color: #ffb4a2; font-family: monospace; font-size: 11px; padding: 10px; border-radius: 6px; max-height: 180px; overflow-y: auto; white-space: pre-wrap; margin-top: 8px; }
     .empty-state { text-align: center; padding: 30px; color: var(--text-muted); font-size: 14px; }
+
+    /* Таблиця підключених пристроїв */
+    .table-container { overflow-x: auto; margin-top: 10px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
+    th { background: #252525; color: var(--text-muted); padding: 10px 14px; font-weight: 600; border-bottom: 1px solid var(--card-border); }
+    td { padding: 12px 14px; border-bottom: 1px solid #282828; }
+    .badge-online { background: rgba(46, 125, 50, 0.2); border: 1px solid #2e7d32; color: #81c784; font-size: 11px; padding: 3px 8px; border-radius: 12px; font-weight: bold; display: inline-flex; align-items: center; gap: 6px; }
+    .badge-recent { background: rgba(245, 127, 23, 0.2); border: 1px solid #f57f17; color: #ffb74d; font-size: 11px; padding: 3px 8px; border-radius: 12px; font-weight: bold; }
+    .badge-offline { background: rgba(66, 66, 66, 0.2); border: 1px solid #555; color: #aaa; font-size: 11px; padding: 3px 8px; border-radius: 12px; }
+    .pulse-dot { width: 8px; height: 8px; background: #69f0ae; border-radius: 50%; box-shadow: 0 0 8px #69f0ae; display: inline-block; animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0% { opacity: 0.4; transform: scale(0.9); } 50% { opacity: 1; transform: scale(1.2); } 100% { opacity: 0.4; transform: scale(0.9); } }
   </style>
 </head>
 <body>
@@ -45,8 +57,16 @@ DASHBOARD_HTML = """<!DOCTYPE html>
       <div class="badge-ip">IP: {{LOCAL_IP}}:{{PORT}}</div>
     </header>
 
+    <!-- БЛОК ПІДКЛЮЧЕНИХ ПРИСТРОЇВ -->
+    <div class="card">
+      <h2>📡 Підключені пристрої в мережі Wi-Fi <span class="badge" style="background: #1976d2;">{{ONLINE_COUNT}} в мережі</span></h2>
+      <div class="table-container">
+        {{DEVICES_TABLE_HTML}}
+      </div>
+    </div>
+
     <div class="grid">
-      <div class="card">
+      <div class="card" style="margin-bottom: 0;">
         <h2>🚀 Керування оновленнями</h2>
         <div class="info-row"><span>Поточна версія:</span><b>v{{VERSION}} (build {{BUILD}})</b></div>
         <div class="info-row"><span>Дата випуску:</span><b>{{RELEASE_DATE}}</b></div>
@@ -68,7 +88,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
         </div>
       </div>
 
-      <div class="card">
+      <div class="card" style="margin-bottom: 0;">
         <h2>📱 Підключення додатку з телефону</h2>
         <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">
           Введіть цю адресу в мобільному додатку у розділі <b>Налаштування → Оновлення та Телеметрія</b>:
@@ -78,9 +98,9 @@ DASHBOARD_HTML = """<!DOCTYPE html>
         </div>
         <ul style="font-size: 12px; color: #aaa; line-height: 1.6; padding-left: 18px;">
           <li>Телефон і ПК мають бути підключені до одного Wi-Fi роутера.</li>
-          <li>Додаток автоматично перевірятиме наявність оновлень при натисканні кнопки.</li>
+          <li>Щойно додаток відкриється або перевірить оновлення, він <b>миттєво з'явиться в таблиці вище</b>!</li>
           <li>Звіти про помилки надсилаються <b>тільки якщо користувач дав згоду</b>.</li>
-          <li>Для оновлення версії запустіть <code style="color: #fff;">python server/publish_release.py</code>.</li>
+          <li>Для випуску версії запустіть <code style="color: #fff;">publish.bat</code>.</li>
         </ul>
       </div>
     </div>
@@ -90,16 +110,73 @@ DASHBOARD_HTML = """<!DOCTYPE html>
       <div id="crashes-list">{{CRASHES_HTML}}</div>
     </div>
   </div>
+
+  <script>
+    // Автоматичне фонове оновлення дашборду кожні 6 секунд
+    setTimeout(function() {
+      location.reload();
+    }, 6000);
+  </script>
 </body>
 </html>
 """
 
 
-def render_dashboard(info, local_ip, port, crashes, updates_dir):
+def render_dashboard(info, local_ip, port, crashes, updates_dir, devices=None):
     apk_path = os.path.join(updates_dir, info.get("apkFileName", "app-release.apk"))
     has_apk = os.path.exists(apk_path)
     apk_status = "✅ Готовий до роздачі" if has_apk else "⚠️ Відсутній"
     apk_size = f"{os.path.getsize(apk_path) / (1024 * 1024):.1f} MB" if has_apk else "0 MB"
+
+    now = datetime.now()
+    devices = devices or {}
+    online_count = 0
+    device_rows = []
+
+    for ip, dev in sorted(devices.items(), key=lambda x: x[1].get("last_seen_dt", now), reverse=True):
+        last_dt = dev.get("last_seen_dt", now)
+        diff_sec = int((now - last_dt).total_seconds())
+
+        if diff_sec < 90:
+            status_html = '<span class="badge-online"><span class="pulse-dot"></span>Онлайн</span>'
+            online_count += 1
+            seen_text = "тільки що" if diff_sec < 10 else f"{diff_sec} сек тому"
+        elif diff_sec < 600:
+            status_html = '<span class="badge-recent">Нещодавно</span>'
+            seen_text = f"{diff_sec // 60} хв тому"
+        else:
+            status_html = '<span class="badge-offline">Офлайн</span>'
+            seen_text = dev.get("last_seen_str", "—")
+
+        device_rows.append(f"""
+        <tr>
+          <td>{status_html}</td>
+          <td><b>📱 {html.escape(str(dev.get('device', 'Android Пристрій')))}</b></td>
+          <td><code style="color: #80d8ff;">{html.escape(str(ip))}</code></td>
+          <td>{html.escape(str(dev.get('version', '—')))}</td>
+          <td><span style="background: #333; padding: 2px 6px; border-radius: 4px; font-size: 11px;">{html.escape(str(dev.get('channel', 'RELEASE')))}</span></td>
+          <td style="color: var(--text-muted);">{seen_text}</td>
+        </tr>""")
+
+    if not device_rows:
+        devices_table_html = '<div class="empty-state">📡 Активних пристроїв поки не виявлено. Перевірте, що телефон у тій же мережі Wi-Fi, та відкрийте додаток MusicFlow!</div>'
+    else:
+        devices_table_html = f"""
+        <table>
+          <thead>
+            <tr>
+              <th>Статус</th>
+              <th>Модель пристрою</th>
+              <th>IP-адреса Wi-Fi</th>
+              <th>Встановлена версія</th>
+              <th>Канал</th>
+              <th>Останній відгук</th>
+            </tr>
+          </thead>
+          <tbody>
+            {''.join(device_rows)}
+          </tbody>
+        </table>"""
 
     if not crashes:
         crashes_html = '<div class="empty-state">🎉 Звітів про помилки поки немає. Все працює стабільно!</div>'
@@ -131,6 +208,8 @@ def render_dashboard(info, local_ip, port, crashes, updates_dir):
     html_page = DASHBOARD_HTML
     for k, v in [
         ("{{LOCAL_IP}}", local_ip), ("{{PORT}}", str(port)),
+        ("{{ONLINE_COUNT}}", str(online_count)),
+        ("{{DEVICES_TABLE_HTML}}", devices_table_html),
         ("{{VERSION}}", str(info.get("version", "1.0.0"))),
         ("{{BUILD}}", str(info.get("buildNumber", 1))),
         ("{{RELEASE_DATE}}", str(info.get("releaseDate", "-"))),

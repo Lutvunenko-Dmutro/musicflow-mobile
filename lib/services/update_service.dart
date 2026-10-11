@@ -93,8 +93,9 @@ class UpdateService {
     bool allowChannelSwitch,
   ) async {
     final channel = await UpdatePreferences.getChannel();
+    final dev = Uri.encodeComponent('${Platform.operatingSystem} ${Platform.operatingSystemVersion}');
     final url = Uri.parse(
-      '$baseUrl/api/update/check?currentBuild=${current.buildNumber}&channel=${channel.key}',
+      '$baseUrl/api/update/check?currentBuild=${current.buildNumber}&channel=${channel.key}&version=${current.version}&device=$dev',
     );
     final response = await http.get(url).timeout(const Duration(seconds: 4));
     

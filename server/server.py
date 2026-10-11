@@ -28,6 +28,25 @@ from storage import (
     get_local_ip, find_best_apk_path, get_version_info, get_all_crashes
 )
 
+ACTIVE_DEVICES = {}
+
+
+def register_client(ip, device_name=None, version=None, channel=None, extra=None):
+    now = datetime.now()
+    existing = ACTIVE_DEVICES.get(ip, {})
+    dev_name = device_name or existing.get("device") or "Android Пристрій"
+    ver = version or existing.get("version") or "1.0.0"
+    chan = (channel or existing.get("channel") or "release").upper()
+
+    ACTIVE_DEVICES[ip] = {
+        "device": dev_name,
+        "version": ver,
+        "channel": chan,
+        "last_seen_dt": now,
+        "last_seen_str": now.strftime("%H:%M:%S"),
+        "extra": extra or existing.get("extra", {}),
+    }
+
 
 class MusicFlowRequestHandler(http.server.SimpleHTTPRequestHandler):
     def end_headers(self):
@@ -56,12 +75,41 @@ class MusicFlowRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.send_json({"status": "ok", "time": datetime.now().isoformat()})
             return
 
+        if path == "/api/telemetry/ping":
+            query = parse_qs(parsed.query)
+            dev_name = query.get("device", [None])[0]
+            ver = query.get("version", [None])[0]
+            chan = query.get("channel", [None])[0]
+            register_client(self.client_address[0], dev_name, ver, chan)
+            self.send_json({"status": "pong", "time": datetime.now().isoformat()})
+            return
+
+        if path == "/api/telemetry/devices":
+            result = []
+            now = datetime.now()
+            for ip, d in ACTIVE_DEVICES.items():
+                diff_sec = int((now - d.get("last_seen_dt", now)).total_seconds())
+                result.append({
+                    "ip": ip,
+                    "device": d.get("device"),
+                    "version": d.get("version"),
+                    "channel": d.get("channel"),
+                    "lastSeenSecondsAgo": diff_sec,
+                    "isOnline": diff_sec < 90,
+                })
+            self.send_json({"count": len(result), "devices": result})
+            return
+
         if path == "/api/update/check":
             query = parse_qs(parsed.query)
             channel = query.get("channel", ["release"])[0].lower()
             if channel not in ("release", "debug"):
                 self.send_json({"error": "Недійсний канал. Дозволено: release, debug"}, status=400)
                 return
+
+            dev_name = query.get("device", [None])[0] or self.headers.get("X-Device-Model")
+            ver_name = query.get("version", [None])[0]
+            register_client(self.client_address[0], dev_name, ver_name, channel)
 
             apk_filename = "app-debug.apk" if channel == "debug" else "app-release.apk"
             info = get_version_info(apk_filename)
@@ -115,6 +163,24 @@ class MusicFlowRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.send_json({"error": "Забагато запитів. Зачекайте хвилину."}, status=429)
             return
 
+        if urlparse(self.path).path == "/api/telemetry/ping":
+            content_length = int(self.headers.get("Content-Length", 0))
+            data = {}
+            if content_length > 0:
+                try:
+                    data = json.loads(self.rfile.read(content_length).decode("utf-8"))
+                except Exception:
+                    pass
+            register_client(
+                self.client_address[0],
+                device_name=data.get("device"),
+                version=data.get("version") or (f"build {data.get('buildNumber')}" if data.get('buildNumber') else None),
+                channel=data.get("channel"),
+                extra=data,
+            )
+            self.send_json({"status": "pong", "time": datetime.now().isoformat()})
+            return
+
         if urlparse(self.path).path == "/api/telemetry/events":
             content_length = int(self.headers.get("Content-Length", 0))
             if content_length == 0:
@@ -126,6 +192,12 @@ class MusicFlowRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_json({"error": "Invalid JSON"}, status=400)
                 return
 
+            register_client(
+                self.client_address[0],
+                device_name=data.get("device"),
+                version=data.get("appVersion"),
+                channel=data.get("channel"),
+            )
             now = datetime.now()
             event_name = data.get("event", "unknown_event")
             print(f"[{now.strftime('%Y-%m-%d %H:%M:%S')}] 📈 Подія від {data.get('device')}: {event_name}")
@@ -144,6 +216,12 @@ class MusicFlowRequestHandler(http.server.SimpleHTTPRequestHandler):
                 return
 
             data = sanitize_telemetry(data)
+            register_client(
+                self.client_address[0],
+                device_name=data.get("device"),
+                version=data.get("appVersion"),
+                channel=data.get("channel"),
+            )
             now = datetime.now()
             report_id = now.strftime("%Y%m%d_%H%M%S_%f")[:19]
             data["reportId"] = report_id
@@ -174,7 +252,7 @@ class MusicFlowRequestHandler(http.server.SimpleHTTPRequestHandler):
         info = get_version_info()
         local_ip = get_local_ip()
         crashes = get_all_crashes()
-        page = render_dashboard(info, local_ip, PORT, crashes, UPDATES_DIR)
+        page = render_dashboard(info, local_ip, PORT, crashes, UPDATES_DIR, devices=ACTIVE_DEVICES)
         body = page.encode("utf-8")
         self.send_response(200)
         self.send_header("Content-Type", "text/html; charset=utf-8")

@@ -58,7 +58,8 @@ class TelemetryService {
   Future<bool> checkServerHealth() async {
     try {
       final base = await getServerUrl();
-      final url = Uri.parse('$base/api/health');
+      final dev = Uri.encodeComponent('${Platform.operatingSystem} ${Platform.operatingSystemVersion}');
+      final url = Uri.parse('$base/api/telemetry/ping?device=$dev&version=1.0.19+20');
       final res = await http.get(url).timeout(const Duration(seconds: 4));
       return res.statusCode == 200;
     } catch (_) {
