@@ -21,9 +21,9 @@ docs/
 | Документ | Опис | Ключові теми |
 |---|---|---|
 | [UPDATE_SYSTEM_ARCHITECTURE.md](architecture/UPDATE_SYSTEM_ARCHITECTURE.md) | Комплексна архітектура системи оновлень з UML-діаграмами | Component/Sequence/State діаграми, перемикання Release/Debug, SHA-256 |
-| [architecture_audio_provider.md](architecture_audio_provider.md) | Ядро відтворення та стан аудіоплеєра | `AudioProvider`, модульні міксини, потік відтворення треків |
-| [visualizer_system.md](visualizer_system.md) | FFT-візуалізатор спектру частот | Software (fftea) + Hardware (Android Visualizer), оптимізація 60 FPS |
-| [services.md](services.md) | Каталог сервісів додатку | YouTube, SQLite база даних, Download, Lyrics, Native Handlers |
+| [architecture_audio_provider.md](architecture/architecture_audio_provider.md) | Ядро відтворення та стан аудіоплеєра | `AudioProvider`, модульні міксини, потік відтворення треків |
+| [visualizer_system.md](architecture/visualizer_system.md) | FFT-візуалізатор спектру частот | Software (fftea) + Hardware (Android Visualizer), оптимізація 60 FPS |
+| [services.md](architecture/services.md) | Каталог сервісів додатку | YouTube, SQLite база даних, Download, Lyrics, Native Handlers |
 
 ---
 
