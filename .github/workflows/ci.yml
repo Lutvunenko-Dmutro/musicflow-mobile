@@ -1,10 +1,7 @@
 name: MusicFlow CI/CD Pipeline
 
 on:
-  push:
-    tags:
-      - 'v*'
-  # Дозволяє запускати збірку та реліз вручну через кнопку на GitHub
+  # Запуск виключно за явною командою (через publish.bat пункт [2] або кнопку в GitHub Actions)
   workflow_dispatch:
     inputs:
       release_version:
@@ -57,8 +54,8 @@ jobs:
   build-and-release:
     name: Build & Publish Release
     needs: quality-gate
-    # Запускаємо якщо це пуш тегу, АБО якщо це ручний запуск (workflow_dispatch)
-    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    # Запуск за явною командою (workflow_dispatch)
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
