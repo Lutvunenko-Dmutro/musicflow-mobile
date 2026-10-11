@@ -90,6 +90,7 @@ class GithubUpdateClient {
           fileSizeBytes: fileSize,
           history: history,
           userCurrentBuild: currentBuildNumber,
+          userCurrentVersion: currentVersion,
           channel: targetChannel.toLowerCase(),
           isChannelSwitch: isChannelSwitch,
           sha256: sha256Hash,

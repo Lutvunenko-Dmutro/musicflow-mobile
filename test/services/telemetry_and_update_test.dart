@@ -101,16 +101,48 @@ void main() {
         ],
       };
 
-      // Користувач на build 6 (пропустив версії 7 та 8)
-      final info = UpdateInfo.fromJson(json, userCurrentBuild: 6);
+      // Користувач на версії 1.0.6 (пропустив версію 1.0.7 перед 1.0.8)
+      final info = UpdateInfo.fromJson(json, userCurrentBuild: 6, userCurrentVersion: '1.0.6');
       expect(info.history.length, equals(5));
-      // В info версія 1.0.8. Версія 1.0.7 (build 7) - пропущена.
-      // 1.0.8 - не враховується, бо version == info.version.
-      // 1.0.6 - build 6 (не > 6).
-      // 1.0.5 - build 5 (не > 6).
-      // Отже, missedReleases має бути тільки 1 (це 1.0.7).
+      // В info версія 1.0.8. Версія 1.0.7 - пропущена.
       expect(info.missedReleases.length, equals(1));
       expect(info.missedReleases.map((r) => r.version), equals(['1.0.7']));
+    });
+
+    test('UpdateInfo missedReleases returns empty when user is already on latest version 0.1.10', () {
+      final json = {
+        'version': '0.1.10',
+        'buildNumber': 11,
+        'changelog': '• Оновлення 0.1.10',
+        'downloadUrl': 'https://github.com/test',
+        'fileSizeBytes': 66000000,
+        'history': [
+          {'version': '0.1.10', 'buildNumber': 11},
+          {'version': '0.1.9', 'buildNumber': 10},
+          {'version': '0.1.8', 'buildNumber': 108},
+          {'version': '1.0.37', 'buildNumber': 18},
+        ],
+      };
+      final info = UpdateInfo.fromJson(json, userCurrentBuild: 11, userCurrentVersion: '0.1.10');
+      expect(info.missedReleases, isEmpty);
+    });
+
+    test('UpdateInfo missedReleases correctly identifies skipped 0.1.9 when user is on 0.1.8 and target is 0.1.10', () {
+      final json = {
+        'version': '0.1.10',
+        'buildNumber': 11,
+        'changelog': '• Оновлення 0.1.10',
+        'downloadUrl': 'https://github.com/test',
+        'fileSizeBytes': 66000000,
+        'history': [
+          {'version': '0.1.10', 'buildNumber': 11},
+          {'version': '0.1.9', 'buildNumber': 10},
+          {'version': '0.1.8', 'buildNumber': 108},
+          {'version': '1.0.37', 'buildNumber': 18},
+        ],
+      };
+      final info = UpdateInfo.fromJson(json, userCurrentBuild: 108, userCurrentVersion: '0.1.8');
+      expect(info.missedReleases.map((r) => r.version), equals(['0.1.9']));
     });
 
     test('GithubUpdateClient extracts repo constants', () {
