@@ -152,16 +152,17 @@ def render_dashboard(info, local_ip, port, crashes, updates_dir, devices=None):
     for ip, dev in sorted(devices.items(), key=lambda x: x[1].get("last_seen_dt", now), reverse=True):
         last_dt = dev.get("last_seen_dt", now)
         diff_sec = int((now - last_dt).total_seconds())
+        state = dev.get("state", "in_app")
 
-        if diff_sec < 90:
-            status_html = '<span class="badge-online"><span class="pulse-dot"></span>Онлайн</span>'
+        if diff_sec <= 15 and state == "in_app":
+            status_html = '<span class="badge-online"><span class="pulse-dot"></span>У додатку (Активний)</span>'
             online_count += 1
-            seen_text = "тільки що" if diff_sec < 10 else f"{diff_sec} сек тому"
-        elif diff_sec < 600:
-            status_html = '<span class="badge-recent">Нещодавно</span>'
-            seen_text = f"{diff_sec // 60} хв тому"
+            seen_text = "тільки що" if diff_sec < 5 else f"{diff_sec} сек тому"
+        elif diff_sec <= 60 and state != "closed":
+            status_html = '<span class="badge-recent">У фоні</span>'
+            seen_text = f"{diff_sec} сек тому"
         else:
-            status_html = '<span class="badge-offline">Офлайн</span>'
+            status_html = '<span class="badge-offline">Офлайн (Закрито)</span>'
             seen_text = dev.get("last_seen_str", "—")
 
         device_rows.append(f"""
@@ -175,7 +176,7 @@ def render_dashboard(info, local_ip, port, crashes, updates_dir, devices=None):
         </tr>""")
 
     if not device_rows:
-        devices_table_html = '<div class="empty-state">📡 Активних пристроїв поки не виявлено. Перевірте, що телефон у тій же мережі Wi-Fi, та відкрийте додаток MusicFlow!</div>'
+        devices_table_html = '<div class="empty-state">📲 Немає підключених додатків. Відкрийте додаток MusicFlow на телефоні — він з&#39;явиться тут у реальному часі!</div>'
     else:
         devices_table_html = f"""
         <table>

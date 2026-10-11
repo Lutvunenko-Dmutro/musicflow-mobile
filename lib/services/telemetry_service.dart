@@ -1,20 +1,23 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:music_flow_mobile/services/native_crash_handler.dart';
 import 'package:music_flow_mobile/utils/app_logger.dart';
 
 class TelemetryService {
-  static const String defaultServerUrl = 'http://localhost:8080';
+  static const String defaultServerUrl = 'http://192.168.0.229:8080';
   static const String consentKey = 'telemetry_consent';
   static const String serverUrlKey = 'telemetry_server_url';
-
   static const String lastCrashKey = 'telemetry_last_crash';
 
   static TelemetryService? _instance;
   static TelemetryService get instance => _instance ??= TelemetryService();
+
+  Timer? _heartbeatTimer;
+  AppLifecycleListener? _lifecycleListener;
 
   Future<bool> isConsentGranted() async {
     final prefs = await SharedPreferences.getInstance();
@@ -67,6 +70,49 @@ class TelemetryService {
     }
   }
 
+  void startHeartbeat() {
+    _heartbeatTimer?.cancel();
+    _lifecycleListener?.dispose();
+
+    _lifecycleListener = AppLifecycleListener(
+      onResume: () => sendHeartbeat(state: 'in_app'),
+      onPause: () => sendHeartbeat(state: 'background'),
+      onDetach: () => sendHeartbeat(state: 'closed'),
+    );
+
+    sendHeartbeat(state: 'in_app');
+    _heartbeatTimer = Timer.periodic(const Duration(seconds: 6), (_) {
+      sendHeartbeat(state: 'in_app');
+    });
+  }
+
+  void stopHeartbeat() {
+    _heartbeatTimer?.cancel();
+    _heartbeatTimer = null;
+    _lifecycleListener?.dispose();
+    _lifecycleListener = null;
+    sendHeartbeat(state: 'closed');
+  }
+
+  Future<void> sendHeartbeat({String state = 'in_app', String? screen}) async {
+    try {
+      final base = await getServerUrl();
+      final url = Uri.parse('$base/api/telemetry/heartbeat');
+      final payload = {
+        'device': '${Platform.operatingSystem} ${Platform.operatingSystemVersion}',
+        'appVersion': '1.0.19+20',
+        'state': state,
+        'screen': screen ?? 'MusicFlow App',
+        'timestamp': DateTime.now().toIso8601String(),
+      };
+      await http.post(
+        url,
+        headers: {'Content-Type': 'application/json; charset=utf-8'},
+        body: json.encode(payload),
+      ).timeout(const Duration(seconds: 3));
+    } catch (_) {}
+  }
+
   Future<bool> sendCrashReport({
     required String error,
     StackTrace? stack,
@@ -82,7 +128,6 @@ class TelemetryService {
       if (extra != null) ...extra,
     };
 
-    // Завжди зберігаємо локальний звіт, щоб користувач міг побачити причину
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(lastCrashKey, json.encode(payload));
@@ -93,15 +138,13 @@ class TelemetryService {
     try {
       final base = await getServerUrl();
       final url = Uri.parse('$base/api/telemetry/crash-report');
-
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json; charset=utf-8'},
         body: json.encode(payload),
       ).timeout(const Duration(seconds: 5));
-
       return response.statusCode == 200;
-    } catch (e) {
+    } catch (_) {
       return false;
     }
   }
@@ -115,80 +158,15 @@ class TelemetryService {
         'event': eventName,
         if (extra != null) ...extra,
       };
-
       final base = await getServerUrl();
       final url = Uri.parse('$base/api/telemetry/events');
-
       await http.post(
         url,
         headers: {'Content-Type': 'application/json; charset=utf-8'},
         body: json.encode(payload),
       ).timeout(const Duration(seconds: 3));
-    } catch (_) {
-      // Ігноруємо помилки мережі при відправці аналітики
-    }
+    } catch (_) {}
   }
 
-  static const MethodChannel _nativeCrashChannel =
-      MethodChannel('com.example.music_flow_mobile/native_crash');
-
-  /// Перевіряє, чи не стався нативний збій Android перед попереднім перезапуском
-  static Future<void> checkAndSendPendingNativeCrash() async {
-    if (!Platform.isAndroid) return;
-    try {
-      final pending = await _nativeCrashChannel.invokeMethod<String>('getPendingNativeCrash');
-      if (pending != null && pending.isNotEmpty) {
-        AppLogger.warning('Знайдено нативний звіт про збій Android! Відправляємо...', 'TELEMETRY');
-        final service = TelemetryService.instance;
-        final base = await service.getServerUrl();
-        final url = Uri.parse('$base/api/telemetry/crash-report');
-
-        final response = await http.post(
-          url,
-          headers: {'Content-Type': 'application/json; charset=utf-8'},
-          body: pending,
-        ).timeout(const Duration(seconds: 5));
-
-        if (response.statusCode == 200) {
-          AppLogger.info('Нативний звіт про збій успішно доставлено на сервер!', 'TELEMETRY');
-          await _nativeCrashChannel.invokeMethod('clearPendingNativeCrash');
-        }
-      }
-    } catch (e) {
-      AppLogger.warning('Не вдалося перевірити нативний звіт: $e', 'TELEMETRY');
-    }
-  }
-
-  static void initGlobalCrashHandler() {
-    final service = TelemetryService.instance;
-
-    // Перевірка нативних збоїв при запуску
-    checkAndSendPendingNativeCrash();
-
-    AppLogger.onErrorListener = (msg, ex, stack, tag) {
-      service.sendCrashReport(
-        error: '$msg ${ex != null ? "($ex)" : ""}',
-        stack: stack,
-        extra: {'source': 'AppLogger', 'tag': tag ?? 'GENERAL'},
-      );
-    };
-
-    FlutterError.onError = (details) {
-      FlutterError.presentError(details);
-      service.sendCrashReport(
-        error: details.exceptionAsString(),
-        stack: details.stack,
-        extra: {'source': 'FlutterError'},
-      );
-    };
-
-    PlatformDispatcher.instance.onError = (error, stack) {
-      service.sendCrashReport(
-        error: error.toString(),
-        stack: stack,
-        extra: {'source': 'PlatformDispatcher'},
-      );
-      return true;
-    };
-  }
+  static void initGlobalCrashHandler() => NativeCrashHandler.init();
 }

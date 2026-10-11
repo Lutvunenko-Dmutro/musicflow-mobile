@@ -34,58 +34,25 @@ from storage import (
 ACTIVE_DEVICES = {}
 
 
-def register_client(ip, device_name=None, version=None, channel=None, extra=None):
+def register_client(ip, device_name=None, version=None, channel=None, state=None, screen=None, extra=None):
     now = datetime.now()
     existing = ACTIVE_DEVICES.get(ip, {})
     dev_name = device_name or existing.get("device") or "Android Пристрій"
     ver = version or existing.get("version") or "1.0.0"
     chan = (channel or existing.get("channel") or "release").upper()
+    cur_state = state or "in_app"
+    cur_screen = screen or existing.get("screen") or "MusicFlow App"
 
     ACTIVE_DEVICES[ip] = {
         "device": dev_name,
         "version": ver,
         "channel": chan,
+        "state": cur_state,
+        "screen": cur_screen,
         "last_seen_dt": now,
         "last_seen_str": now.strftime("%H:%M:%S"),
         "extra": extra or existing.get("extra", {}),
     }
-
-
-def scan_local_devices():
-    """Сканує локальну Wi-Fi мережу для виявлення активних телефонів"""
-    local_ip = get_local_ip()
-    subnet_prefix = ".".join(local_ip.split(".")[:3]) + "."
-    now = datetime.now()
-
-    try:
-        out = subprocess.check_output("arp -a", shell=True).decode("cp866", errors="ignore")
-        for line in out.splitlines():
-            m = re.search(r"(\d+\.\d+\.\d+\.\d+)\s+([0-9a-fA-F-]+)\s+(\w+)", line)
-            if not m:
-                continue
-            ip, mac, ip_type = m.group(1), m.group(2), m.group(3)
-            if not ip.startswith(subnet_prefix) or ip == local_ip or ip.endswith(".1") or ip.endswith(".255"):
-                continue
-            if mac.lower().startswith("ff-ff-ff") or ip_type.lower() == "static":
-                continue
-
-            if ip not in ACTIVE_DEVICES:
-                ACTIVE_DEVICES[ip] = {
-                    "device": f"📱 Wi-Fi Пристрій ({mac})",
-                    "version": "Очікує відкриття додатку",
-                    "channel": "WI-FI",
-                    "last_seen_dt": now,
-                    "last_seen_str": now.strftime("%H:%M:%S"),
-                    "extra": {"mac": mac, "source": "arp"},
-                }
-            else:
-                # Оновлюємо статус активності
-                ACTIVE_DEVICES[ip]["last_seen_dt"] = now
-                ACTIVE_DEVICES[ip]["last_seen_str"] = now.strftime("%H:%M:%S")
-    except Exception:
-        pass
-
-    return ACTIVE_DEVICES
 
 
 class MusicFlowRequestHandler(http.server.SimpleHTTPRequestHandler):
@@ -124,35 +91,32 @@ class MusicFlowRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.send_json({"status": "pong", "time": datetime.now().isoformat()})
             return
 
-        if path == "/api/telemetry/scan":
-            scan_local_devices()
-            result = []
-            now = datetime.now()
-            for ip, d in ACTIVE_DEVICES.items():
-                diff_sec = int((now - d.get("last_seen_dt", now)).total_seconds())
-                result.append({
-                    "ip": ip,
-                    "device": d.get("device"),
-                    "version": d.get("version"),
-                    "channel": d.get("channel"),
-                    "lastSeenSecondsAgo": diff_sec,
-                    "isOnline": diff_sec < 90,
-                })
-            self.send_json({"count": len(result), "devices": result})
+        if path == "/api/telemetry/heartbeat":
+            query = parse_qs(parsed.query)
+            dev_name = query.get("device", [None])[0]
+            ver = query.get("version", [None])[0]
+            chan = query.get("channel", [None])[0]
+            st = query.get("state", ["in_app"])[0]
+            scr = query.get("screen", [None])[0]
+            register_client(self.client_address[0], dev_name, ver, chan, state=st, screen=scr)
+            self.send_json({"status": "heartbeat_ack", "time": datetime.now().isoformat()})
             return
 
-        if path == "/api/telemetry/devices":
+        if path in ("/api/telemetry/scan", "/api/telemetry/devices"):
             result = []
             now = datetime.now()
             for ip, d in ACTIVE_DEVICES.items():
                 diff_sec = int((now - d.get("last_seen_dt", now)).total_seconds())
+                is_online = (diff_sec <= 15 and d.get("state") == "in_app")
                 result.append({
                     "ip": ip,
                     "device": d.get("device"),
                     "version": d.get("version"),
                     "channel": d.get("channel"),
+                    "state": d.get("state"),
+                    "screen": d.get("screen"),
                     "lastSeenSecondsAgo": diff_sec,
-                    "isOnline": diff_sec < 90,
+                    "isOnline": is_online,
                 })
             self.send_json({"count": len(result), "devices": result})
             return
@@ -218,6 +182,26 @@ class MusicFlowRequestHandler(http.server.SimpleHTTPRequestHandler):
     def do_POST(self):
         if is_rate_limited(self.client_address[0]):
             self.send_json({"error": "Забагато запитів. Зачекайте хвилину."}, status=429)
+            return
+
+        if urlparse(self.path).path == "/api/telemetry/heartbeat":
+            content_length = int(self.headers.get("Content-Length", 0))
+            data = {}
+            if content_length > 0:
+                try:
+                    data = json.loads(self.rfile.read(content_length).decode("utf-8"))
+                except Exception:
+                    pass
+            register_client(
+                self.client_address[0],
+                device_name=data.get("device"),
+                version=data.get("appVersion") or data.get("version"),
+                channel=data.get("channel"),
+                state=data.get("state", "in_app"),
+                screen=data.get("screen"),
+                extra=data,
+            )
+            self.send_json({"status": "heartbeat_ack", "time": datetime.now().isoformat()})
             return
 
         if urlparse(self.path).path == "/api/telemetry/ping":
@@ -306,7 +290,6 @@ class MusicFlowRequestHandler(http.server.SimpleHTTPRequestHandler):
         self.wfile.write(body)
 
     def handle_dashboard(self):
-        scan_local_devices()
         info = get_version_info()
         local_ip = get_local_ip()
         crashes = get_all_crashes()
@@ -345,17 +328,6 @@ def main():
     print(f"💻 На цьому ПК:      http://localhost:{PORT}")
     print(f"📊 Дашборд помилок:  http://{local_ip}:{PORT}/dashboard")
     print("=" * 65)
-
-    def background_scanner():
-        while True:
-            try:
-                scan_local_devices()
-            except Exception:
-                pass
-            time.sleep(8)
-
-    scanner_thread = threading.Thread(target=background_scanner, daemon=True)
-    scanner_thread.start()
 
     if sys.platform != "win32":
         socketserver.ThreadingTCPServer.allow_reuse_address = True

@@ -21,6 +21,7 @@ Future<void> main() async {
     
     // Ініціалізація глобального перехоплювача помилок телеметрії
     TelemetryService.initGlobalCrashHandler();
+    TelemetryService.instance.startHeartbeat();
     
     // Start background sync of local files on app startup
     locator<LocalLibraryProvider>().init();
