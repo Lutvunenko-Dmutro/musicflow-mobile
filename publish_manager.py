@@ -249,7 +249,7 @@ def main():
         res = subprocess.run(cmd)
         if res.returncode == 0:
             print("\n[УСПІШНО] Завдання відправлено до GitHub Actions!")
-            print("Ви можете перевірити статус: https://github.com/dmutr43603/music_flow_mobile/actions")
+            print("Ви можете перевірити статус: https://github.com/Lutvunenko-Dmutro/musicflow-mobile/actions")
         else:
             print("\n[ПОМИЛКА] Не вдалося запустити GitHub Actions.")
         input("\nНатисніть Enter для виходу...")
