@@ -14,13 +14,14 @@
 > 🏗️ **[Системна архітектура (ARCHITECTURE.md) →](ARCHITECTURE.md)**  
 > 🗺️ **[План реалізації та Roadmap (PLAN.md) →](PLAN.md)**  
 > 🤖 **[ШІ-Оркестрація та Агенти (ORCHESTRATION.md) →](ORCHESTRATION.md)**  
-> 🛡️ **[Матриця сумісності та План відкату (COMPATIBILITY_AND_ROLLBACK.md) →](docs/COMPATIBILITY_AND_ROLLBACK.md)**  
-> 📋 **[Чек-лист випуску релізу (RELEASE_CHECKLIST.md) →](docs/RELEASE_CHECKLIST.md)**  
-> 🎯 **[Ключові метрики якості SLA (QUALITY_METRICS.md) →](docs/QUALITY_METRICS.md)**  
+> 🚀 **[Архітектура оновлень та UML (UPDATE_SYSTEM_ARCHITECTURE.md) →](docs/architecture/UPDATE_SYSTEM_ARCHITECTURE.md)**  
+> 🛡️ **[Матриця сумісності та План відкату (COMPATIBILITY_AND_ROLLBACK.md) →](docs/release/COMPATIBILITY_AND_ROLLBACK.md)**  
+> 📋 **[Чек-лист випуску релізу (RELEASE_CHECKLIST.md) →](docs/release/RELEASE_CHECKLIST.md)**  
+> 🎯 **[Ключові метрики якості SLA (QUALITY_METRICS.md) →](docs/quality/QUALITY_METRICS.md)**  
 > 📜 **[Журнал змін (CHANGELOG.md) →](CHANGELOG.md)**  
 > 📥 **[Завантажити останній релізний APK (v1.0.32) →](https://github.com/Lutvunenko-Dmutro/musicflow-mobile/releases/latest)**  
 > 📖 **[Технічна документація проекту →](docs/README.md)**  
-> 🔍 **[Результати аудиту системи →](docs/audit.md)**
+> 🔍 **[Результати аудиту системи →](docs/quality/audit.md)**
 
 ---
 
