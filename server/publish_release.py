@@ -78,9 +78,20 @@ def publish_release(changelog=None, bump_type="patch", mode="release", skip_veri
     new_version_display = f"{n_maj}.{n_min}.{n_pat}"
 
     if not changelog:
-        print(f"\n📝 Нова версія: v{new_version_display} (build {n_bld})")
-        user_input = input("Введіть опис змін: ").strip()
-        changelog = user_input.replace('\\n', '\n') if user_input else f"• Оновлення v{new_version_display}"
+        notes_path = os.path.join(PROJECT_DIR, "RELEASE_NOTES.md")
+        if os.path.exists(notes_path):
+            try:
+                with open(notes_path, "r", encoding="utf-8") as f:
+                    c = f.read().strip()
+                    if c:
+                        changelog = c
+                        print(">> Знайдено RELEASE_NOTES.md — використовую підготовлений опис!")
+            except Exception:
+                pass
+        if not changelog:
+            print(f"\n📝 Нова версія: v{new_version_display} (build {n_bld})")
+            user_input = input("Введіть опис змін: ").strip()
+            changelog = user_input.replace('\\n', '\n') if user_input else f"• Оновлення v{new_version_display}"
     else:
         changelog = changelog.replace('\\n', '\n')
 

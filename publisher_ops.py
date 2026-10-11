@@ -58,6 +58,16 @@ def calculate_sha256(filepath):
 
 
 def generate_automatic_changelog(version_name):
+    if os.path.exists("RELEASE_NOTES.md"):
+        try:
+            with open("RELEASE_NOTES.md", "r", encoding="utf-8") as f:
+                content = f.read().strip()
+                if content:
+                    print(">> Знайдено RELEASE_NOTES.md — використовую підготовлений опис!")
+                    return content
+        except Exception:
+            pass
+
     commits = []
     try:
         tag_proc = subprocess.run(["git", "describe", "--tags", "--abbrev=0"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, encoding="utf-8")
