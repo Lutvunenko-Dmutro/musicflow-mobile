@@ -71,10 +71,23 @@ class _MainScreenState extends State<MainScreen> {
             Expanded(
               child: Stack(
                 children: [
-                  IndexedStack(
-                    index: _currentIndex,
-                    children: _screens,
-                  ),
+                  ...List.generate(_screens.length, (i) {
+                    final isCurrent = i == _currentIndex;
+                    return IgnorePointer(
+                      ignoring: !isCurrent,
+                      child: AnimatedSlide(
+                        duration: const Duration(milliseconds: 280),
+                        curve: Curves.easeOutCubic,
+                        offset: isCurrent ? Offset.zero : Offset(i < _currentIndex ? -0.06 : 0.06, 0.0),
+                        child: AnimatedOpacity(
+                          duration: const Duration(milliseconds: 220),
+                          curve: Curves.easeOut,
+                          opacity: isCurrent ? 1.0 : 0.0,
+                          child: _screens[i],
+                        ),
+                      ),
+                    );
+                  }),
                   Positioned(
                     left: 24,
                     right: 24,
