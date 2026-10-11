@@ -32,6 +32,19 @@ abstract class AppStrings {
   String get minutesSuffix;
   String get timerSetTo;
 
+  // Visualizer Appearance & Positioning
+  String get visualizerAppearance;
+  String get visualizerPlacement;
+  String get visPosBottom;
+  String get visPosCoverAura;
+  String get visCoverShape;
+  String get visShapeSquare;
+  String get visShapeVinyl;
+  String get visColorTheme;
+  String get visColorFire;
+  String get visColorAdaptive;
+  String get visColorCyberpunk;
+
   // Settings
   String get settingsTitle;
   String get playback;

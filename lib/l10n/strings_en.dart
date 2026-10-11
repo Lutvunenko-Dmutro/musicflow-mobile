@@ -51,6 +51,30 @@ class StringsEn implements AppStrings {
   @override
   String get timerSetTo => 'Timer set to';
 
+  // Visualizer Appearance & Positioning
+  @override
+  String get visualizerAppearance => 'Appearance & Position';
+  @override
+  String get visualizerPlacement => 'Placement';
+  @override
+  String get visPosBottom => 'Bottom strip';
+  @override
+  String get visPosCoverAura => 'Around album cover';
+  @override
+  String get visCoverShape => 'Cover Shape';
+  @override
+  String get visShapeSquare => 'Rounded square';
+  @override
+  String get visShapeVinyl => 'Circular vinyl';
+  @override
+  String get visColorTheme => 'Color Palette';
+  @override
+  String get visColorFire => 'MusicFlow Fire';
+  @override
+  String get visColorAdaptive => 'Album adaptive';
+  @override
+  String get visColorCyberpunk => 'Cyber-neon';
+
   // Settings
   @override
   String get settingsTitle => 'Settings';

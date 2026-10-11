@@ -51,6 +51,30 @@ class StringsUk implements AppStrings {
   @override
   String get timerSetTo => 'Таймер встановлено на';
 
+  // Visualizer Appearance & Positioning
+  @override
+  String get visualizerAppearance => 'Вигляд та позиція';
+  @override
+  String get visualizerPlacement => 'Розташування';
+  @override
+  String get visPosBottom => 'Знизу плеєра';
+  @override
+  String get visPosCoverAura => 'Навколо обкладинки';
+  @override
+  String get visCoverShape => 'Форма обкладинки';
+  @override
+  String get visShapeSquare => 'Скруглений квадрат';
+  @override
+  String get visShapeVinyl => 'Круглий вініл';
+  @override
+  String get visColorTheme => 'Колірна тема';
+  @override
+  String get visColorFire => 'MusicFlow Вогонь';
+  @override
+  String get visColorAdaptive => 'Колір альбому';
+  @override
+  String get visColorCyberpunk => 'Кібер-неон';
+
   // Settings
   @override
   String get settingsTitle => 'Налаштування';

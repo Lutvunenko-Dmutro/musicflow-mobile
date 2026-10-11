@@ -5,8 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:music_flow_mobile/core/app_colors.dart';
 import 'package:music_flow_mobile/providers/audio_provider.dart';
 import 'package:music_flow_mobile/models/song_model.dart';
-import 'package:music_flow_mobile/features/player/widgets/smart_cover.dart';
-import 'package:music_flow_mobile/features/player/widgets/cover_sheen.dart';
+import 'package:music_flow_mobile/features/player/widgets/player_cover_art.dart';
 
 class PlayerHeader extends StatefulWidget {
   final SongModel song;
@@ -103,27 +102,9 @@ class _PlayerHeaderState extends State<PlayerHeader> with SingleTickerProviderSt
                       ..scale(scale),
                     child: Opacity(
                       opacity: opacity,
-                      child: AspectRatio(
-                        aspectRatio: 1.0,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.45),
-                                blurRadius: 18,
-                                offset: Offset(_dragOffset * 0.1, 8),
-                              ),
-                            ],
-                          ),
-                          child: CoverSheen(
-                            borderRadius: 16.0,
-                            child: SmartCover(
-                              song: widget.song,
-                              size: 320,
-                              borderRadius: 16.0,
-                            ),
-                          ),
-                        ),
+                      child: PlayerCoverArt(
+                        song: widget.song,
+                        dragOffset: _dragOffset,
                       ),
                     ),
                   ),

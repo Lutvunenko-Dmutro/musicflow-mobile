@@ -1,6 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:music_flow_mobile/services/native_visualizer_service.dart';
+import 'package:music_flow_mobile/models/visualizer_options.dart';
+
+export 'package:music_flow_mobile/models/visualizer_options.dart';
 
 enum VisualizerStyle { bars, mirrored, circle, wave }
 enum VisualizerCore { software, hardware }
@@ -49,27 +52,36 @@ class VisualizerSettingsProvider extends ChangeNotifier {
 
   VisualizerStyle _style = VisualizerStyle.bars;
   VisualizerCore  _core  = VisualizerCore.software;
+  VisualizerPosition _position = VisualizerPosition.bottom;
+  VisualizerCoverShape _coverShape = VisualizerCoverShape.roundedSquare;
+  VisualizerColorScheme _colorScheme = VisualizerColorScheme.fire;
 
   VisualizerSettingsProvider() { _loadSettings(); }
 
   CoreSettings get _current => _core == VisualizerCore.hardware ? _hw : _sw;
 
   // ── Getters (always return values for the ACTIVE core) ─────────────────
-  double         get attack         => _current.attack;
-  double         get release        => _current.release;
-  double         get gravity        => _current.gravity;
-  double         get bounce         => _current.bounce;
-  double         get amplitudeBoost => _current.amplitudeBoost;
-  VisualizerStyle get style          => _style;
-  VisualizerCore  get core           => _core;
+  double                 get attack         => _current.attack;
+  double                 get release        => _current.release;
+  double                 get gravity        => _current.gravity;
+  double                 get bounce         => _current.bounce;
+  double                 get amplitudeBoost => _current.amplitudeBoost;
+  VisualizerStyle        get style          => _style;
+  VisualizerCore         get core           => _core;
+  VisualizerPosition     get position       => _position;
+  VisualizerCoverShape   get coverShape     => _coverShape;
+  VisualizerColorScheme  get colorScheme    => _colorScheme;
 
   // ── Setters (write into the ACTIVE core's settings) ────────────────────
-  void setAttack(double v)         { _current.attack = v;          _save(); notifyListeners(); }
-  void setRelease(double v)        { _current.release = v;         _save(); notifyListeners(); }
-  void setGravity(double v)        { _current.gravity = v;         _save(); notifyListeners(); }
-  void setBounce(double v)         { _current.bounce = v;          _save(); notifyListeners(); }
-  void setAmplitudeBoost(double v) { _current.amplitudeBoost = v;  _save(); notifyListeners(); }
-  void setStyle(VisualizerStyle v) { _style = v;                    _save(); notifyListeners(); }
+  void setAttack(double v)             { _current.attack = v;          _save(); notifyListeners(); }
+  void setRelease(double v)            { _current.release = v;         _save(); notifyListeners(); }
+  void setGravity(double v)            { _current.gravity = v;         _save(); notifyListeners(); }
+  void setBounce(double v)             { _current.bounce = v;          _save(); notifyListeners(); }
+  void setAmplitudeBoost(double v)     { _current.amplitudeBoost = v;  _save(); notifyListeners(); }
+  void setStyle(VisualizerStyle v)     { _style = v;                    _save(); notifyListeners(); }
+  void setPosition(VisualizerPosition v) { _position = v;              _save(); notifyListeners(); }
+  void setCoverShape(VisualizerCoverShape v) { _coverShape = v;        _save(); notifyListeners(); }
+  void setColorScheme(VisualizerColorScheme v) { _colorScheme = v;     _save(); notifyListeners(); }
 
   Future<void> setCore(VisualizerCore value) async {
     _core = value;
@@ -96,6 +108,9 @@ class VisualizerSettingsProvider extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     _core = VisualizerCore.values[prefs.getInt('visualizer_core') ?? 0];
     _style = VisualizerStyle.values[prefs.getInt('visualizer_style') ?? 0];
+    _position = VisualizerPosition.values[prefs.getInt('visualizer_position') ?? 0];
+    _coverShape = VisualizerCoverShape.values[prefs.getInt('visualizer_cover_shape') ?? 0];
+    _colorScheme = VisualizerColorScheme.values[prefs.getInt('visualizer_color_scheme') ?? 0];
 
     _sw.loadFrom({
       'attack':         prefs.getDouble('sw_attack'),
@@ -120,6 +135,9 @@ class VisualizerSettingsProvider extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt('visualizer_core',  _core.index);
     await prefs.setInt('visualizer_style', _style.index);
+    await prefs.setInt('visualizer_position', _position.index);
+    await prefs.setInt('visualizer_cover_shape', _coverShape.index);
+    await prefs.setInt('visualizer_color_scheme', _colorScheme.index);
     final prefix = _core == VisualizerCore.hardware ? 'hw' : 'sw';
     await prefs.setDouble('${prefix}_attack',         _current.attack);
     await prefs.setDouble('${prefix}_release',        _current.release);

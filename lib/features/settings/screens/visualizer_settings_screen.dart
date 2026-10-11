@@ -8,6 +8,7 @@ import 'package:music_flow_mobile/features/settings/widgets/visualizer/visualize
 import 'package:music_flow_mobile/features/settings/widgets/visualizer/visualizer_styles_grid.dart';
 import 'package:music_flow_mobile/features/settings/widgets/visualizer/visualizer_core_selector.dart';
 import 'package:music_flow_mobile/features/settings/widgets/visualizer/visualizer_sliders_card.dart';
+import 'package:music_flow_mobile/features/settings/widgets/visualizer/visualizer_appearance_card.dart';
 
 class VisualizerSettingsScreen extends StatefulWidget {
   const VisualizerSettingsScreen({super.key});
@@ -88,6 +89,8 @@ class _VisualizerSettingsScreenState extends State<VisualizerSettingsScreen> {
                   settings: settings,
                   onStyleChanged: () => setState(() => _activePreset = 'Користувацький'),
                 ),
+                const SizedBox(height: 24),
+                VisualizerAppearanceCard(settings: settings),
                 const SizedBox(height: 24),
                 _buildSectionHeader(context, 'Рушій спектру (Core)', Icons.memory),
                 const SizedBox(height: 12),

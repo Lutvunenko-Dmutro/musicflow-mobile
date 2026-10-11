@@ -175,6 +175,9 @@ class PlayerScreen extends StatelessWidget {
       );
     }
     final vis = context.watch<VisualizerSettingsProvider?>();
+    if (vis?.position == VisualizerPosition.coverAura) {
+      return const SizedBox(height: 12);
+    }
     final h = (vis?.style == VisualizerStyle.circle) ? 75.0 : 50.0;
     return Flexible(
       child: SizedBox(

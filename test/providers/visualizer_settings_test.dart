@@ -78,5 +78,24 @@ void main() {
       expect(provider.release, closeTo(defaults.release, 0.001));
       expect(provider.amplitudeBoost, closeTo(defaults.amplitudeBoost, 0.001));
     });
+
+    test('Can configure appearance position, cover shape and color scheme', () {
+      final provider = VisualizerSettingsProvider();
+      expect(provider.position, equals(VisualizerPosition.bottom));
+      expect(provider.coverShape, equals(VisualizerCoverShape.roundedSquare));
+      expect(provider.colorScheme, equals(VisualizerColorScheme.fire));
+
+      provider.setPosition(VisualizerPosition.coverAura);
+      expect(provider.position, equals(VisualizerPosition.coverAura));
+
+      provider.setCoverShape(VisualizerCoverShape.circleVinyl);
+      expect(provider.coverShape, equals(VisualizerCoverShape.circleVinyl));
+
+      provider.setColorScheme(VisualizerColorScheme.cyberpunk);
+      expect(provider.colorScheme, equals(VisualizerColorScheme.cyberpunk));
+
+      provider.setColorScheme(VisualizerColorScheme.adaptive);
+      expect(provider.colorScheme, equals(VisualizerColorScheme.adaptive));
+    });
   });
 }
