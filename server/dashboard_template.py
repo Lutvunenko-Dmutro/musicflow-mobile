@@ -75,12 +75,12 @@ DASHBOARD_HTML = """<!DOCTYPE html>
 
     <div class="grid">
       <div class="card" style="margin-bottom: 0;">
-        <h2>🚀 Керування оновленнями</h2>
-        <div class="info-row"><span>Поточна версія:</span><b>v{{VERSION}} (build {{BUILD}})</b></div>
-        <div class="info-row"><span>Дата випуску:</span><b>{{RELEASE_DATE}}</b></div>
-        <div class="info-row"><span>Файл APK:</span><b>{{APK_STATUS}}</b></div>
-        <div class="info-row"><span>Розмір:</span><b>{{APK_SIZE}}</b></div>
-        <div style="margin-top: 12px;"><b>Що нового в релізі:</b></div>
+        <h2>🚀 Оновлення додатку (GitHub Releases)</h2>
+        <div class="info-row"><span>Канал оновлень:</span><b>GitHub Releases (24/7)</b></div>
+        <div class="info-row"><span>Поточна версія релізу:</span><b>v{{VERSION}} (build {{BUILD}})</b></div>
+        <div class="info-row"><span>Дата:</span><b>{{RELEASE_DATE}}</b></div>
+        <div class="info-row"><span>Доступність:</span><b>🌍 Усі мережі (Wi-Fi + 4G)</b></div>
+        <div style="margin-top: 12px;"><b>Опис останнього релізу:</b></div>
         <div class="changelog-box">{{CHANGELOG}}</div>
         <div style="margin-top: 14px;">
           <details>
@@ -90,9 +90,9 @@ DASHBOARD_HTML = """<!DOCTYPE html>
             </div>
           </details>
         </div>
-        <div style="margin-top: 16px; display: flex; gap: 10px;">
-          <a href="/api/update/download" class="btn">Завантажити APK</a>
-          <a href="/api/update/check" class="btn btn-secondary" target="_blank">Перевірити API JSON</a>
+        <div style="margin-top: 16px; display: flex; gap: 10px; flex-wrap: wrap;">
+          <a href="https://github.com/Lutvunenko-Dmutro/musicflow-mobile/releases" class="btn" target="_blank">🌐 Релізи на GitHub</a>
+          <a href="/api/telemetry/devices" class="btn btn-secondary" target="_blank">📡 JSON статус клієнтів</a>
         </div>
       </div>
 

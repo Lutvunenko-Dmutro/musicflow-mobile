@@ -16,7 +16,7 @@ class DevServerDialog {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Адреса сервера оновлень та телеметрії:', style: TextStyle(color: Colors.white70, fontSize: 12)),
+            const Text('Адреса сервера телеметрії та логів:', style: TextStyle(color: Colors.white70, fontSize: 12)),
             const SizedBox(height: 10),
             TextField(
               controller: controller,

@@ -1,7 +1,5 @@
-import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:music_flow_mobile/models/update_info.dart';
 import 'package:music_flow_mobile/services/github_update_client.dart';
@@ -41,84 +39,26 @@ class UpdateService {
   }
 
   Future<UpdateInfo?> checkForUpdate({
-    String? customServerUrl,
     bool force = false,
     bool allowChannelSwitch = true,
   }) async {
     final current = await getCurrentVersion();
-    
-    // Створюємо список спроб (Fallbacks)
-    final attempts = <Future<UpdateInfo?> Function()>[];
-
-    if (customServerUrl != null) {
-      attempts.add(() => _checkCustomServer(customServerUrl, current, force, allowChannelSwitch));
-    } else {
-      attempts.add(() async {
-        final channel = await UpdatePreferences.getChannel();
-        return GithubUpdateClient.instance.checkLatestRelease(
-          currentBuildNumber: current.buildNumber,
-          currentVersion: current.version,
-          targetChannel: channel.key,
-          force: force,
-          allowChannelSwitch: allowChannelSwitch,
-        );
-      });
-          
-      attempts.add(() async {
-        final localServer = await TelemetryService.instance.getServerUrl();
-        if (localServer.isNotEmpty && !localServer.contains('0.0.0.0')) {
-          return _checkCustomServer(localServer, current, force, allowChannelSwitch);
-        }
-        return null;
-      });
-    }
-
-    for (final attempt in attempts) {
-      try {
-        final result = await attempt();
-        if (result != null) return result;
-      } catch (e) {
-        AppLogger.warning('Спроба пошуку оновлень завершилась помилкою: $e', 'UPDATER');
-      }
-    }
-    
-    AppLogger.info('Оновлень не знайдено на жодному доступному сервері.', 'UPDATER');
-    return null;
-  }
-
-  Future<UpdateInfo?> _checkCustomServer(
-    String baseUrl,
-    ({String version, int buildNumber}) current,
-    bool force,
-    bool allowChannelSwitch,
-  ) async {
     final channel = await UpdatePreferences.getChannel();
-    final dev = Uri.encodeComponent('${Platform.operatingSystem} ${Platform.operatingSystemVersion}');
-    final url = Uri.parse(
-      '$baseUrl/api/update/check?currentBuild=${current.buildNumber}&channel=${channel.key}&version=${current.version}&device=$dev',
-    );
-    final response = await http.get(url).timeout(const Duration(seconds: 4));
     
-    if (response.statusCode == 429) {
-      AppLogger.warning('Забагато запитів до сервера оновлень (HTTP 429). Спробуйте пізніше.', 'UPDATER');
-      return null;
+    try {
+      final result = await GithubUpdateClient.instance.checkLatestRelease(
+        currentBuildNumber: current.buildNumber,
+        currentVersion: current.version,
+        targetChannel: channel.key,
+        force: force,
+        allowChannelSwitch: allowChannelSwitch,
+      );
+      if (result != null) return result;
+    } catch (e) {
+      AppLogger.warning('Помилка пошуку оновлень на GitHub: $e', 'UPDATER');
     }
-    
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body) as Map<String, dynamic>;
-      final serverBuild = data['buildNumber'] as int? ?? 0;
-      final isDiffChannel = (channel != UpdatePreferences.currentRunningChannel);
-      final isNewer = serverBuild > current.buildNumber;
-      final isSwitch = (force || allowChannelSwitch) && isDiffChannel;
 
-      if (isNewer || isSwitch || force) {
-        return UpdateInfo.fromJson(
-          data,
-          userCurrentBuild: current.buildNumber,
-          isChannelSwitch: isSwitch,
-        );
-      }
-    }
+    AppLogger.info('Оновлень не знайдено на GitHub Releases.', 'UPDATER');
     return null;
   }
 

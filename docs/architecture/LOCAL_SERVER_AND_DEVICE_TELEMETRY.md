@@ -22,9 +22,9 @@ graph TD
     end
 
     subgraph WiFi ["📶 Локальна мережа Wi-Fi (LAN)"]
-        HTTP_POST["POST /api/telemetry/heartbeat"]
-        HTTP_GET["GET /api/update/check"]
-        HTTP_CRASH["POST /api/telemetry/crash-report"]
+        HTTP_POST["POST /api/telemetry/heartbeat\n(кожні 6 сек)"]
+        HTTP_CRASH["POST /api/telemetry/crash-report\n(за згодою)"]
+        HTTP_SCAN["GET /api/telemetry/devices\n(список пристроїв)"]
     end
 
     subgraph LocalServer ["💻 ПК Розробника (Local Server :8080)"]

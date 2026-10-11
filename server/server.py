@@ -122,54 +122,17 @@ class MusicFlowRequestHandler(http.server.SimpleHTTPRequestHandler):
             return
 
         if path == "/api/update/check":
-            query = parse_qs(parsed.query)
-            channel = query.get("channel", ["release"])[0].lower()
-            if channel not in ("release", "debug"):
-                self.send_json({"error": "Недійсний канал. Дозволено: release, debug"}, status=400)
-                return
-
-            dev_name = query.get("device", [None])[0] or self.headers.get("X-Device-Model")
-            ver_name = query.get("version", [None])[0]
-            register_client(self.client_address[0], dev_name, ver_name, channel)
-
-            apk_filename = "app-debug.apk" if channel == "debug" else "app-release.apk"
-            info = get_version_info(apk_filename)
-            local_ip = get_local_ip()
-            info["downloadUrl"] = f"http://{local_ip}:{PORT}/api/update/download?channel={channel}"
-            info["channel"] = channel
-
-            c_param = query.get("currentBuild", [None])[0]
-            if c_param:
-                try:
-                    c_build = int(c_param)
-                    info["missedCount"] = len([h for h in info.get("history", []) if h.get("buildNumber", 0) > c_build])
-                except Exception:
-                    pass
-            self.send_json(info)
+            self.send_json({
+                "info": "MusicFlow тепер оновлюється виключно через GitHub Releases 24/7.",
+                "githubUrl": "https://github.com/Lutvunenko-Dmutro/musicflow-mobile/releases",
+                "buildNumber": 0
+            })
             return
 
         if path == "/api/update/download":
-            query = parse_qs(parsed.query)
-            channel = query.get("channel", ["release"])[0].lower()
-            if channel not in ("release", "debug"):
-                self.send_json({"error": "Недійсний канал. Дозволено: release, debug"}, status=400)
-                return
-
-            apk_filename = "app-debug.apk" if channel == "debug" else "app-release.apk"
-            apk_path = find_best_apk_path(apk_filename)
-            if apk_path and os.path.exists(apk_path):
-                file_size = os.path.getsize(apk_path)
-                self.send_response(200)
-                self.send_header("Content-Type", "application/vnd.android.package-archive")
-                self.send_header("Content-Disposition", 'attachment; filename="music_flow_update.apk"')
-                self.send_header("Content-Length", str(file_size))
-                self.end_headers()
-                with open(apk_path, "rb") as f:
-                    while chunk := f.read(64 * 1024):
-                        self.wfile.write(chunk)
-                print(f"[{datetime.now().strftime('%H:%M:%S')}] 📲 APK завантажено ({file_size // 1024} KB)")
-                return
-            self.send_json({"error": "APK файл не знайдено"}, status=404)
+            self.send_json({
+                "info": "Завантаження APK перенесено на GitHub Releases: https://github.com/Lutvunenko-Dmutro/musicflow-mobile/releases"
+            }, status=200)
             return
 
         if path == "/api/telemetry/reports":
