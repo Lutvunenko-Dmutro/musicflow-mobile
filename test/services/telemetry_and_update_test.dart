@@ -38,6 +38,13 @@ void main() {
       final sent = await telemetry.sendCrashReport(error: 'Test error without consent');
       expect(sent, isFalse);
     });
+
+    test('getAppVersion returns non-empty version with build number', () async {
+      final telemetry = TelemetryService();
+      final ver = await telemetry.getAppVersion();
+      expect(ver, isNotEmpty);
+      expect(ver, contains('+'));
+    });
   });
 
   group('UpdateService Tests', () {

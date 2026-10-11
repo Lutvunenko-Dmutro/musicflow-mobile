@@ -74,7 +74,7 @@ class _AnimatedShuffleButtonState extends State<AnimatedShuffleButton>
             const SizedBox(height: 3),
             AnimatedContainer(
               duration: const Duration(milliseconds: 250),
-              curve: Curves.easeOutBack,
+              curve: Curves.easeOutCubic,
               width: widget.isActive ? 5 : 0,
               height: widget.isActive ? 5 : 0,
               decoration: BoxDecoration(
@@ -165,7 +165,7 @@ class _AnimatedRepeatButtonState extends State<AnimatedRepeatButton>
             const SizedBox(height: 3),
             AnimatedContainer(
               duration: const Duration(milliseconds: 250),
-              curve: Curves.easeOutBack,
+              curve: Curves.easeOutCubic,
               width: isActive ? 5 : 0,
               height: isActive ? 5 : 0,
               decoration: BoxDecoration(
