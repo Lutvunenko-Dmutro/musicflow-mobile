@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:music_flow_mobile/services/native_crash_handler.dart';
 import 'package:music_flow_mobile/utils/app_logger.dart';
@@ -15,6 +16,18 @@ class TelemetryService {
 
   static TelemetryService? _instance;
   static TelemetryService get instance => _instance ??= TelemetryService();
+  static String? _cachedVersion;
+
+  Future<String> getAppVersion() async {
+    if (_cachedVersion != null) return _cachedVersion!;
+    try {
+      final info = await PackageInfo.fromPlatform();
+      _cachedVersion = '${info.version}+${info.buildNumber}';
+      return _cachedVersion!;
+    } catch (_) {
+      return '0.1.12+13';
+    }
+  }
 
   Timer? _heartbeatTimer;
   AppLifecycleListener? _lifecycleListener;
@@ -62,7 +75,8 @@ class TelemetryService {
     try {
       final base = await getServerUrl();
       final dev = Uri.encodeComponent('${Platform.operatingSystem} ${Platform.operatingSystemVersion}');
-      final url = Uri.parse('$base/api/telemetry/ping?device=$dev&version=1.0.19+20');
+      final ver = await getAppVersion();
+      final url = Uri.parse('$base/api/telemetry/ping?device=$dev&version=$ver');
       final res = await http.get(url).timeout(const Duration(seconds: 4));
       return res.statusCode == 200;
     } catch (_) {
@@ -98,9 +112,10 @@ class TelemetryService {
     try {
       final base = await getServerUrl();
       final url = Uri.parse('$base/api/telemetry/heartbeat');
+      final ver = await getAppVersion();
       final payload = {
         'device': '${Platform.operatingSystem} ${Platform.operatingSystemVersion}',
-        'appVersion': '1.0.19+20',
+        'appVersion': ver,
         'state': state,
         'screen': screen ?? 'MusicFlow App',
         'timestamp': DateTime.now().toIso8601String(),
@@ -118,9 +133,10 @@ class TelemetryService {
     StackTrace? stack,
     Map<String, dynamic>? extra,
   }) async {
+    final ver = await getAppVersion();
     final payload = {
       'device': '${Platform.operatingSystem} ${Platform.operatingSystemVersion}',
-      'appVersion': '1.0.19+20',
+      'appVersion': ver,
       'timestamp': DateTime.now().toIso8601String(),
       'error': error,
       'stackTrace': stack?.toString() ?? '',

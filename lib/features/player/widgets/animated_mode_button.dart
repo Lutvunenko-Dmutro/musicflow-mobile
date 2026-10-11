@@ -35,7 +35,7 @@ class _AnimatedShuffleButtonState extends State<AnimatedShuffleButton>
       TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.75), weight: 30),
       TweenSequenceItem(tween: Tween(begin: 0.75, end: 1.2), weight: 40),
       TweenSequenceItem(tween: Tween(begin: 1.2, end: 1.0), weight: 30),
-    ]).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+    ]).animate(_controller);
   }
 
   @override
@@ -121,7 +121,7 @@ class _AnimatedRepeatButtonState extends State<AnimatedRepeatButton>
       TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.75), weight: 30),
       TweenSequenceItem(tween: Tween(begin: 0.75, end: 1.25), weight: 40),
       TweenSequenceItem(tween: Tween(begin: 1.25, end: 1.0), weight: 30),
-    ]).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
+    ]).animate(_controller);
   }
 
   @override
