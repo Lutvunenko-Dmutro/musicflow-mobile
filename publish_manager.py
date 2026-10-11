@@ -120,18 +120,17 @@ def generate_automatic_changelog(version_name):
             for c in raw_commits:
                 c = c.strip()
                 if c and not c.startswith("chore: bump") and not c.startswith("Merge"):
-                    commits.append(f"* {c}")
+                    commits.append(c)
     except Exception:
         pass
 
     if not commits:
         commits = [
-            "* Покращення стабільності та оптимізація",
-            "* Оновлення компонентів додатку"
+            "Покращення стабільності та оптимізація",
+            "Оновлення компонентів додатку"
         ]
 
-    changelog = f"### 📦 Оновлення MusicFlow Mobile v{version_name}\n\n"
-    changelog += "**Зміни у цій версії:**\n" + "\n".join(commits)
+    changelog = "\n".join(commits)
     return changelog
 
 def get_latest_github_release_tag():
@@ -321,9 +320,9 @@ def main():
     notes_file = "release_notes_temp.txt"
     with open(notes_file, "w", encoding="utf-8") as f:
         f.write(f"{changelog}\n\n")
-        f.write(f"**SHA-256 (Release):** `{sha256_rel}`\n")
+        f.write(f"SHA-256 (Release): {sha256_rel}\n")
         if sha256_dbg:
-            f.write(f"**SHA-256 (Debug):** `{sha256_dbg}`\n")
+            f.write(f"SHA-256 (Debug): {sha256_dbg}\n")
 
     # Перевіряємо, чи існує вже такий реліз на GitHub
     check_rel = subprocess.run(
