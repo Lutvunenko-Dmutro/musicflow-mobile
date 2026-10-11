@@ -1,7 +1,9 @@
 name: MusicFlow CI/CD Pipeline
 
 on:
-    tags: [ 'v*' ]
+  push:
+    tags:
+      - 'v*'
   # Дозволяє запускати збірку та реліз вручну через кнопку на GitHub
   workflow_dispatch:
     inputs:
