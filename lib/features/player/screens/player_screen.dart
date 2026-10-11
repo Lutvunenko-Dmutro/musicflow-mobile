@@ -13,6 +13,11 @@ import 'package:music_flow_mobile/features/player/widgets/player_popup_menu.dart
 class PlayerScreen extends StatelessWidget {
   const PlayerScreen({super.key});
 
+  void _dismiss(BuildContext context) {
+    FocusManager.instance.primaryFocus?.unfocus();
+    Navigator.pop(context);
+  }
+
   @override
   Widget build(BuildContext context) {
     final audioProvider = context.watch<AudioProvider>();
@@ -25,68 +30,59 @@ class PlayerScreen extends StatelessWidget {
       );
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: true,
-        title: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 36,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.white24,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: 4),
-            const Text(
-              'Зараз грає',
-              style: TextStyle(fontSize: 12, color: Colors.white54, fontWeight: FontWeight.w500),
-            ),
-          ],
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.keyboard_arrow_down, size: 30),
-          onPressed: () => Navigator.pop(context),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.lyrics_outlined, size: 24),
-            tooltip: 'Текст пісні',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const LyricsScreen()),
-              );
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.queue_music, size: 26),
-            tooltip: 'Черга',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const QueueScreen()),
-              );
-            },
-          ),
-          PlayerPopupMenu(audioProvider: audioProvider),
-        ],
-      ),
-      extendBodyBehindAppBar: true,
-      body: GestureDetector(
+    return PopScope(
+      onPopInvokedWithResult: (didPop, _) => FocusManager.instance.primaryFocus?.unfocus(),
+      child: GestureDetector(
+        behavior: HitTestBehavior.translucent,
         onVerticalDragEnd: (details) {
-          if (details.primaryVelocity != null && details.primaryVelocity! > 300) {
-            Navigator.pop(context);
+          if (details.primaryVelocity != null && details.primaryVelocity! > 180) {
+            _dismiss(context);
           }
         },
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            AmbientPlayerBackdrop(song: song),
+        child: Scaffold(
+          appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            centerTitle: true,
+            title: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => _dismiss(context),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 38,
+                    height: 4.5,
+                    decoration: BoxDecoration(color: Colors.white30, borderRadius: BorderRadius.circular(3)),
+                  ),
+                  const SizedBox(height: 5),
+                  const Text('Зараз грає', style: TextStyle(fontSize: 12, color: Colors.white54, fontWeight: FontWeight.w500)),
+                ],
+              ),
+            ),
+            leading: IconButton(
+              icon: const Icon(Icons.keyboard_arrow_down, size: 30),
+              onPressed: () => _dismiss(context),
+            ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.lyrics_outlined, size: 24),
+                tooltip: 'Текст пісні',
+                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LyricsScreen())),
+              ),
+              IconButton(
+                icon: const Icon(Icons.queue_music, size: 26),
+                tooltip: 'Черга',
+                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const QueueScreen())),
+              ),
+              PlayerPopupMenu(audioProvider: audioProvider),
+            ],
+          ),
+          extendBodyBehindAppBar: true,
+          body: Stack(
+            fit: StackFit.expand,
+            children: [
+              AmbientPlayerBackdrop(song: song),
             OrientationBuilder(
               builder: (context, orientation) {
                 final isLandscape = orientation == Orientation.landscape;
@@ -137,8 +133,9 @@ class PlayerScreen extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
 
   Widget _buildVisualizerArea(AudioProvider audioProvider) {

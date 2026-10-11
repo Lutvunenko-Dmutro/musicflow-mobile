@@ -11,6 +11,35 @@ import 'package:music_flow_mobile/features/player/widgets/mini_player_controls.d
 class MiniPlayer extends StatelessWidget {
   const MiniPlayer({super.key});
 
+  void _openPlayer(BuildContext context) {
+    FocusManager.instance.primaryFocus?.unfocus();
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        transitionDuration: const Duration(milliseconds: 360),
+        reverseTransitionDuration: const Duration(milliseconds: 280),
+        pageBuilder: (context, animation, secondaryAnimation) => const PlayerScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          final curved = CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutQuart,
+            reverseCurve: Curves.easeInQuart,
+          );
+          return SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0.0, 1.0),
+              end: Offset.zero,
+            ).animate(curved),
+            child: FadeTransition(
+              opacity: CurvedAnimation(parent: animation, curve: const Interval(0.0, 0.7)),
+              child: child,
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final audioProvider = context.watch<AudioProvider>();
@@ -19,29 +48,12 @@ class MiniPlayer extends StatelessWidget {
     if (song == null) return const SizedBox.shrink();
 
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          PageRouteBuilder(
-            transitionDuration: const Duration(milliseconds: 380),
-            reverseTransitionDuration: const Duration(milliseconds: 300),
-            pageBuilder: (context, animation, secondaryAnimation) => const PlayerScreen(),
-            transitionsBuilder: (context, animation, secondaryAnimation, child) {
-              final curved = CurvedAnimation(
-                parent: animation,
-                curve: Curves.easeOutCubic,
-                reverseCurve: Curves.easeInCubic,
-              );
-              return SlideTransition(
-                position: Tween<Offset>(
-                  begin: const Offset(0.0, 1.0),
-                  end: Offset.zero,
-                ).animate(curved),
-                child: child,
-              );
-            },
-          ),
-        );
+      behavior: HitTestBehavior.opaque,
+      onTap: () => _openPlayer(context),
+      onVerticalDragEnd: (details) {
+        if (details.primaryVelocity != null && details.primaryVelocity! < -120) {
+          _openPlayer(context);
+        }
       },
       child: ClipRRect(
         child: BackdropFilter(

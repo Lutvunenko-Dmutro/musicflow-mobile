@@ -4,6 +4,7 @@ import 'package:music_flow_mobile/providers/audio_provider.dart';
 import 'package:music_flow_mobile/models/song_model.dart';
 import 'package:music_flow_mobile/core/animations/animated_play_pause.dart';
 import 'package:music_flow_mobile/core/animations/scale_tap_button.dart';
+import 'package:music_flow_mobile/features/player/widgets/animated_mode_button.dart';
 
 class PlayerControls extends StatelessWidget {
   final SongModel song;
@@ -88,8 +89,7 @@ class PlayerControls extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _buildModeButton(
-                icon: Icons.shuffle,
+              AnimatedShuffleButton(
                 isActive: audioProvider.isShuffleModeEnabled,
                 onTap: audioProvider.toggleShuffle,
                 primary: primary,
@@ -148,44 +148,14 @@ class PlayerControls extends StatelessWidget {
                   ),
                 ),
               ),
-              _buildModeButton(
-                icon: audioProvider.repeatMode == AudioRepeatMode.one ? Icons.repeat_one : Icons.repeat,
-                isActive: audioProvider.repeatMode != AudioRepeatMode.off,
+              AnimatedRepeatButton(
+                repeatMode: audioProvider.repeatMode,
                 onTap: audioProvider.toggleRepeat,
                 primary: primary,
               ),
             ],
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildModeButton({
-    required IconData icon,
-    required bool isActive,
-    required VoidCallback? onTap,
-    required Color primary,
-  }) {
-    return ScaleTapButton(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: isActive ? primary : Colors.grey[400], size: 26),
-            const SizedBox(height: 3),
-            Container(
-              width: 4,
-              height: 4,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isActive ? primary : Colors.transparent,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
