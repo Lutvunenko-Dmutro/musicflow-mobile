@@ -10,6 +10,7 @@ import 'package:music_flow_mobile/features/settings/screens/settings_screen.dart
 import 'package:music_flow_mobile/features/settings/widgets/update_dialog.dart';
 import 'package:music_flow_mobile/services/update_preferences.dart';
 import 'package:music_flow_mobile/services/update_service.dart';
+import 'package:music_flow_mobile/l10n/app_strings.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -125,26 +126,26 @@ class _MainScreenState extends State<MainScreen> {
             setState(() => _currentIndex = index);
           }
         },
-        destinations: const [
+        destinations: [
           NavigationDestination(
-            icon: Icon(Icons.search_outlined),
-            selectedIcon: Icon(Icons.search),
-            label: 'Пошук',
+            icon: const Icon(Icons.search_outlined),
+            selectedIcon: const Icon(Icons.search),
+            label: context.l10n.search,
           ),
           NavigationDestination(
-            icon: Icon(Icons.library_music_outlined),
-            selectedIcon: Icon(Icons.library_music),
-            label: 'Медіатека',
+            icon: const Icon(Icons.library_music_outlined),
+            selectedIcon: const Icon(Icons.library_music),
+            label: context.l10n.library,
           ),
           NavigationDestination(
-            icon: Icon(Icons.history_outlined),
-            selectedIcon: Icon(Icons.history),
-            label: 'Історія',
+            icon: const Icon(Icons.history_outlined),
+            selectedIcon: const Icon(Icons.history),
+            label: context.l10n.history,
           ),
           NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings),
-            label: 'Налаштування',
+            icon: const Icon(Icons.settings_outlined),
+            selectedIcon: const Icon(Icons.settings),
+            label: context.l10n.settings,
           ),
         ],
       ),

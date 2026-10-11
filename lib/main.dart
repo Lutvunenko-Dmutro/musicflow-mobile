@@ -10,6 +10,8 @@ import 'package:music_flow_mobile/providers/local_library_provider.dart';
 import 'package:music_flow_mobile/services/telemetry_service.dart';
 import 'package:music_flow_mobile/core/app_theme.dart';
 
+import 'package:music_flow_mobile/providers/language_provider.dart';
+
 final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -43,17 +45,24 @@ class MusicFlowApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => LanguageProvider()),
         ChangeNotifierProvider(create: (_) => AudioProvider()),
         ChangeNotifierProvider(create: (_) => VisualizerSettingsProvider()),
       ],
-      child: MaterialApp(
-        title: 'MusicFlow Mobile',
-        navigatorKey: navigatorKey,
-        scaffoldMessengerKey: scaffoldMessengerKey,
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.darkTheme,
-        home: const SplashScreen(),
+      child: Consumer<LanguageProvider>(
+        builder: (context, langProvider, child) {
+          return MaterialApp(
+            title: 'MusicFlow Mobile',
+            locale: langProvider.locale,
+            navigatorKey: navigatorKey,
+            scaffoldMessengerKey: scaffoldMessengerKey,
+            debugShowCheckedModeBanner: false,
+            theme: AppTheme.darkTheme,
+            home: const SplashScreen(),
+          );
+        },
       ),
     );
   }
 }
+

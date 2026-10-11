@@ -10,6 +10,7 @@ import 'package:music_flow_mobile/features/lyrics/screens/lyrics_screen.dart';
 import 'package:music_flow_mobile/features/lyrics/widgets/inline_lyrics.dart';
 import 'package:music_flow_mobile/features/player/widgets/ambient_player_backdrop.dart';
 import 'package:music_flow_mobile/features/player/widgets/player_popup_menu.dart';
+import 'package:music_flow_mobile/l10n/app_strings.dart';
 
 class PlayerScreen extends StatelessWidget {
   const PlayerScreen({super.key});
@@ -57,7 +58,7 @@ class PlayerScreen extends StatelessWidget {
                     decoration: BoxDecoration(color: Colors.white30, borderRadius: BorderRadius.circular(3)),
                   ),
                   const SizedBox(height: 5),
-                  const Text('Зараз грає', style: TextStyle(fontSize: 12, color: Colors.white54, fontWeight: FontWeight.w500)),
+                  Text(context.l10n.nowPlaying, style: const TextStyle(fontSize: 12, color: Colors.white54, fontWeight: FontWeight.w500)),
                 ],
               ),
             ),

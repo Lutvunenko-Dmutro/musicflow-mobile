@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:music_flow_mobile/core/widgets/custom_card.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:music_flow_mobile/core/widgets/custom_card.dart';
 import 'package:music_flow_mobile/providers/audio_provider.dart';
 import 'package:music_flow_mobile/features/settings/widgets/cache_info_card.dart';
 import 'package:music_flow_mobile/features/settings/widgets/download_settings_card.dart';
 import 'package:music_flow_mobile/features/settings/widgets/update_settings_card.dart';
 import 'package:music_flow_mobile/features/settings/widgets/telemetry_settings_card.dart';
+import 'package:music_flow_mobile/features/settings/widgets/system_settings_card.dart';
 import 'package:music_flow_mobile/features/settings/screens/visualizer_settings_screen.dart';
 import 'package:music_flow_mobile/features/settings/screens/equalizer_screen.dart';
+import 'package:music_flow_mobile/l10n/app_strings.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -19,11 +20,8 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  bool _showMediaNotification = true;
   bool _enableCrossfade = true;
   bool _smoothMediaPause = true;
-  final String _language = 'Українська';
-  String _downloadPath = 'Внутрішня пам\'ять/MusicFlow';
 
   @override
   void initState() {
@@ -33,37 +31,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _downloadPath = prefs.getString('download_path') ?? 'За замовчуванням (Внутрішня пам\'ять)';
-      _showMediaNotification = prefs.getBool('show_media_notification') ?? true;
-      _enableCrossfade = prefs.getBool('enable_crossfade') ?? true;
-      _smoothMediaPause = prefs.getBool('smooth_media_pause') ?? true;
-    });
-  }
-
-  Future<void> _pickDirectory() async {
-    String? selectedDirectory = await FilePicker.getDirectoryPath();
-    if (selectedDirectory != null) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('download_path', selectedDirectory);
+    if (mounted) {
       setState(() {
-        _downloadPath = selectedDirectory;
+        _enableCrossfade = prefs.getBool('enable_crossfade') ?? true;
+        _smoothMediaPause = prefs.getBool('smooth_media_pause') ?? true;
       });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Папку змінено на: $selectedDirectory')),
-        );
-      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final primary = Theme.of(context).primaryColor;
+    final strings = context.l10n;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Налаштування'),
+        title: Text(strings.settingsTitle),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16.0),
@@ -78,12 +61,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Відтворення', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                Text(strings.playback, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('Плавний перехід (Crossfade)'),
-                  subtitle: const Text('Плавне затихання і перехід між треками', style: TextStyle(fontSize: 12)),
+                  title: Text(strings.crossfadeTitle),
+                  subtitle: Text(strings.crossfadeSubtitle, style: const TextStyle(fontSize: 12)),
                   value: _enableCrossfade,
                   activeColor: primary,
                   onChanged: (val) async {
@@ -96,11 +79,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const Divider(height: 16),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('Плавна пауза при перегляді медіа'),
-                  subtitle: const Text(
-                    'Плавно зменшувати звук і зупиняти музику, якщо вмикається YouTube або інше відео',
-                    style: TextStyle(fontSize: 12),
-                  ),
+                  title: Text(strings.smoothMediaPauseTitle),
+                  subtitle: Text(strings.smoothMediaPauseSubtitle, style: const TextStyle(fontSize: 12)),
                   value: _smoothMediaPause,
                   activeColor: primary,
                   onChanged: (val) async {
@@ -114,8 +94,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: Icon(Icons.graphic_eq, color: primary),
-                  title: const Text('Візуалізатор'),
-                  subtitle: const Text('Живий перегляд, стилі та параметри анімації', style: TextStyle(fontSize: 12)),
+                  title: Text(strings.visualizer),
+                  subtitle: Text(strings.visualizerSubtitle, style: const TextStyle(fontSize: 12)),
                   trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                   onTap: () {
                     Navigator.push(
@@ -128,8 +108,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: Icon(Icons.equalizer, color: primary),
-                  title: const Text('Еквалайзер'),
-                  subtitle: const Text('Частотні смуги, бас та пресети', style: TextStyle(fontSize: 12)),
+                  title: Text(strings.equalizer),
+                  subtitle: Text(strings.equalizerSubtitle, style: const TextStyle(fontSize: 12)),
                   trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                   onTap: () {
                     Navigator.push(
@@ -144,41 +124,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 16),
           const CacheInfoCard(),
           const SizedBox(height: 16),
-          CustomCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Система', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Мова'),
-                  subtitle: Text(_language),
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                  onTap: () {},
-                ),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Показувати сповіщення плеєра'),
-                  subtitle: const Text('Вимкнення може зупиняти фонову музику', style: TextStyle(fontSize: 12)),
-                  value: _showMediaNotification,
-                  activeColor: primary,
-                  onChanged: (val) async {
-                    final prefs = await SharedPreferences.getInstance();
-                    await prefs.setBool('show_media_notification', val);
-                    setState(() => _showMediaNotification = val);
-                  },
-                ),
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Папка збереження'),
-                  subtitle: Text(_downloadPath, maxLines: 2, overflow: TextOverflow.ellipsis),
-                  trailing: const Icon(Icons.folder, size: 20),
-                  onTap: _pickDirectory,
-                ),
-              ],
-            ),
-          ),
+          const SystemSettingsCard(),
           const SizedBox(height: 16),
           const Center(
             child: Text(
