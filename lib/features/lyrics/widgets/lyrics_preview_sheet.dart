@@ -5,6 +5,7 @@ import 'package:music_flow_mobile/models/lrclib_search_result.dart';
 import 'package:music_flow_mobile/providers/audio_provider.dart';
 import 'package:music_flow_mobile/utils/lyrics_parser.dart';
 import 'package:music_flow_mobile/features/lyrics/widgets/lyrics_list_view.dart';
+import 'package:music_flow_mobile/l10n/app_strings.dart';
 
 class LyricsPreviewSheet extends StatelessWidget {
   final SongModel song;
@@ -59,7 +60,7 @@ class LyricsPreviewSheet extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(item.trackName, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                    Text('${item.artistName} • Джерело: LRCLIB (#${item.id})', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, color: Colors.white54)),
+                    Text('${item.artistName} • ${context.l10n.lyricsSourceLrclib(item.id.toString())}', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, color: Colors.white54)),
                   ],
                 ),
               ),
@@ -80,7 +81,7 @@ class LyricsPreviewSheet extends StatelessWidget {
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    item.isKaraoke ? 'Живий перегляд караоке під час поточної музики' : 'Статичний текст (без синхронних таймінгів)',
+                    item.isKaraoke ? context.l10n.syncedLyricsSubtitle : context.l10n.staticLyricsSubtitle,
                     style: TextStyle(fontSize: 11, color: item.isKaraoke ? Colors.greenAccent : Colors.amber, fontWeight: FontWeight.w500),
                   ),
                 ),
@@ -119,7 +120,7 @@ class LyricsPreviewSheet extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(vertical: 13),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  child: const Text('Назад'),
+                  child: Text(context.l10n.backAction),
                 ),
               ),
               const SizedBox(width: 10),
@@ -131,7 +132,7 @@ class LyricsPreviewSheet extends StatelessWidget {
                     onConfirmSave();
                   },
                   icon: const Icon(Icons.save_rounded, size: 18),
-                  label: Text(item.isKaraoke ? 'Зберегти це караоке' : 'Зберегти цей текст', style: const TextStyle(fontWeight: FontWeight.bold)),
+                  label: Text(item.isKaraoke ? context.l10n.saveKaraokeAction : context.l10n.saveTextAction, style: const TextStyle(fontWeight: FontWeight.bold)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: primary,
                     foregroundColor: Colors.white,

@@ -56,6 +56,14 @@ server/data/crashes/
 # Keystore & Properties (DO NOT COMMIT)
 android/app/*.keystore
 android/key.properties
+android/local.properties
 keystore_base64.txt
 build_log.txt
 node_modules/
+
+# Local Environment & Secrets
+.env
+.env.*
+!.env.example
+dev_config.json
+*.local.json

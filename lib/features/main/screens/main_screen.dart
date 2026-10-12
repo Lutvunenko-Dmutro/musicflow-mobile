@@ -50,10 +50,10 @@ class _MainScreenState extends State<MainScreen> {
       await UpdatePreferences.recordCheckTime();
 
       final systemNotif = await UpdatePreferences.isSystemNotificationEnabled();
-      if (systemNotif) {
+      if (systemNotif && mounted) {
         await UpdateService.instance.showSystemNotification(
-          title: 'Доступне оновлення MusicFlow v${info.version}',
-          message: 'Натисніть, щоб переглянути нові функції та оновити додаток',
+          title: context.l10n.updateNotificationTitle(info.version),
+          message: context.l10n.updateNotificationBody,
         );
       }
     }

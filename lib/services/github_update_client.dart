@@ -64,8 +64,12 @@ class GithubUpdateClient {
       }
 
       final history = _parseHistory(decoded);
-      final isNewer = remoteBuild > currentBuildNumber ||
-          _compareVersions(cleanVersion, currentVersion) > 0;
+      final isNewer = isVersionNewer(
+        remoteVersion: cleanVersion,
+        remoteBuild: remoteBuild,
+        currentVersion: currentVersion,
+        currentBuild: currentBuildNumber,
+      );
 
       final currentRunning = UpdatePreferences.currentRunningChannel;
       final isChannelSwitch = targetChannel.toLowerCase() != currentRunning.key.toLowerCase();
@@ -78,7 +82,7 @@ class GithubUpdateClient {
       shaMatch ??= RegExp(r'sha-?256[:\s]+`?([a-f0-9]{64})`?', caseSensitive: false).firstMatch(body);
       final sha256Hash = shaMatch?.group(1);
 
-      final shouldTrigger = isNewer || force || (allowChannelSwitch && isChannelSwitch);
+      final shouldTrigger = isNewer || (allowChannelSwitch && isChannelSwitch);
 
       if (shouldTrigger) {
         AppLogger.success('Знайдено реліз на GitHub: v$cleanVersion (build $remoteBuild)', 'UPDATER');
@@ -112,6 +116,19 @@ class GithubUpdateClient {
     final parts = version.split('.').map((e) => int.tryParse(e) ?? 0).toList();
     if (parts.length >= 3) return parts[0] * 10000 + parts[1] * 100 + parts[2];
     return 0;
+  }
+
+  static bool isVersionNewer({
+    required String remoteVersion,
+    required int remoteBuild,
+    required String currentVersion,
+    required int currentBuild,
+  }) {
+    final cmp = _compareVersions(remoteVersion, currentVersion);
+    if (cmp > 0) return true;
+    if (cmp < 0) return false;
+    if (remoteBuild > 0 && currentBuild > 0) return remoteBuild > currentBuild;
+    return false;
   }
 
   static int _compareVersions(String v1, String v2) {

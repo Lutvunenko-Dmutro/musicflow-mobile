@@ -91,11 +91,18 @@ void main() {
       provider.setCoverShape(VisualizerCoverShape.circleVinyl);
       expect(provider.coverShape, equals(VisualizerCoverShape.circleVinyl));
 
-      provider.setColorScheme(VisualizerColorScheme.cyberpunk);
-      expect(provider.colorScheme, equals(VisualizerColorScheme.cyberpunk));
-
       provider.setColorScheme(VisualizerColorScheme.adaptive);
       expect(provider.colorScheme, equals(VisualizerColorScheme.adaptive));
+
+      expect(provider.auraSpectrumMode, equals(AuraSpectrumMode.live));
+      provider.setAuraSpectrumMode(AuraSpectrumMode.mirrored4Side);
+      expect(provider.auraSpectrumMode, equals(AuraSpectrumMode.mirrored4Side));
+
+      provider.setAuraSpectrumMode(AuraSpectrumMode.mirrored2H);
+      expect(provider.auraSpectrumMode, equals(AuraSpectrumMode.mirrored2H));
+
+      provider.setAuraSpectrumMode(AuraSpectrumMode.mirrored2V);
+      expect(provider.auraSpectrumMode, equals(AuraSpectrumMode.mirrored2V));
     });
   });
 }

@@ -9,6 +9,7 @@ export 'package:music_flow_mobile/models/repeat_mode.dart';
 
 mixin QueueManagerMixin on ChangeNotifier {
   List<SongModel> _queue = [];
+  final List<int> _historyIndices = [];
   int _currentIndex = -1;
   bool _isShuffleModeEnabled = false;
   AudioRepeatMode _repeatMode = AudioRepeatMode.off;
@@ -16,7 +17,7 @@ mixin QueueManagerMixin on ChangeNotifier {
   bool _isFetchingAutoContinue = false;
 
   bool get hasNext => true;
-  bool get hasPrevious => _queue.isNotEmpty && (_currentIndex > 0 || _repeatMode == AudioRepeatMode.all || _isShuffleModeEnabled);
+  bool get hasPrevious => _queue.isNotEmpty && (_currentIndex > 0 || _repeatMode == AudioRepeatMode.all || _historyIndices.isNotEmpty);
   bool get isShuffleModeEnabled => _isShuffleModeEnabled;
   AudioRepeatMode get repeatMode => _repeatMode;
   List<SongModel> get queue => _queue;
@@ -28,6 +29,7 @@ mixin QueueManagerMixin on ChangeNotifier {
   Future<void> playSong(SongModel song);
 
   void setQueue(List<SongModel> queue, {int initialIndex = 0}) {
+    _historyIndices.clear();
     _queue = queue;
     _currentIndex = initialIndex;
     if (_queue.isNotEmpty) {
@@ -62,6 +64,9 @@ mixin QueueManagerMixin on ChangeNotifier {
   Future<void> playNext() async {
     _isPlayingNext = true;
     if (_queue.isEmpty) return;
+    if (_currentIndex >= 0 && _currentIndex < _queue.length) {
+      _historyIndices.add(_currentIndex);
+    }
     
     if (_isShuffleModeEnabled && _queue.length > 1) {
       int nextIndex;
@@ -121,23 +126,23 @@ mixin QueueManagerMixin on ChangeNotifier {
       return;
     }
 
-    if (_isShuffleModeEnabled && _queue.length > 1) {
-      int prevIndex;
-      do {
-        prevIndex = Random().nextInt(_queue.length);
-      } while (prevIndex == _currentIndex);
-      _currentIndex = prevIndex;
+    if (_historyIndices.isNotEmpty) {
+      final prev = _historyIndices.removeLast();
+      if (prev >= 0 && prev < _queue.length) {
+        _currentIndex = prev;
+        await playSong(_queue[_currentIndex]);
+        return;
+      }
+    }
+
+    if (_currentIndex > 0) {
+      _currentIndex--;
+      await playSong(_queue[_currentIndex]);
+    } else if (_repeatMode == AudioRepeatMode.all) {
+      _currentIndex = _queue.length - 1;
       await playSong(_queue[_currentIndex]);
     } else {
-      if (_currentIndex > 0) {
-        _currentIndex--;
-        await playSong(_queue[_currentIndex]);
-      } else if (_repeatMode == AudioRepeatMode.all) {
-        _currentIndex = _queue.length - 1;
-        await playSong(_queue[_currentIndex]);
-      } else {
-        await player.seek(Duration.zero);
-      }
+      await player.seek(Duration.zero);
     }
   }
 
@@ -158,9 +163,7 @@ mixin QueueManagerMixin on ChangeNotifier {
   }
 
   void reorderQueue(int oldIndex, int newIndex) {
-    if (oldIndex < newIndex) {
-      newIndex -= 1;
-    }
+    if (oldIndex < newIndex) newIndex -= 1;
     final SongModel item = _queue.removeAt(oldIndex);
     _queue.insert(newIndex, item);
 
@@ -176,7 +179,6 @@ mixin QueueManagerMixin on ChangeNotifier {
 
   void removeFromQueue(int index) {
     if (index < 0 || index >= _queue.length) return;
-    
     _queue.removeAt(index);
     if (index < _currentIndex) {
       _currentIndex--;
@@ -185,9 +187,7 @@ mixin QueueManagerMixin on ChangeNotifier {
         _currentIndex = -1;
         player.stop();
       } else {
-        if (_currentIndex >= _queue.length) {
-          _currentIndex = 0;
-        }
+        if (_currentIndex >= _queue.length) _currentIndex = 0;
         playSong(_queue[_currentIndex]);
       }
     }

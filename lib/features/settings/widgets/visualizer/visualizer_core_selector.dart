@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:music_flow_mobile/l10n/app_strings.dart';
 import 'package:music_flow_mobile/providers/visualizer_settings_provider.dart';
 
 class VisualizerCoreSelector extends StatelessWidget {
@@ -13,6 +14,7 @@ class VisualizerCoreSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final primary = Theme.of(context).primaryColor;
+    final l10n = context.l10n;
     final isHw = settings.core == VisualizerCore.hardware;
 
     return Container(
@@ -26,8 +28,8 @@ class VisualizerCoreSelector extends StatelessWidget {
         children: [
           Expanded(
             child: _buildButton(
-              title: 'Програмне (Software FFT)',
-              subtitle: 'Вбудований точний аналіз',
+              title: l10n.visCoreSoftwareTitle,
+              subtitle: l10n.visCoreSoftwareDesc,
               isSelected: !isHw,
               primary: primary,
               onTap: () {
@@ -39,8 +41,8 @@ class VisualizerCoreSelector extends StatelessWidget {
           const SizedBox(width: 6),
           Expanded(
             child: _buildButton(
-              title: 'Апаратне (Hardware)',
-              subtitle: 'Android AudioEffect API',
+              title: l10n.visCoreHardwareTitle,
+              subtitle: l10n.visCoreHardwareDesc,
               isSelected: isHw,
               primary: primary,
               onTap: () {
@@ -66,30 +68,35 @@ class VisualizerCoreSelector extends StatelessWidget {
       borderRadius: BorderRadius.circular(12),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
         decoration: BoxDecoration(
-          color: isSelected ? primary.withValues(alpha: 0.2) : Colors.transparent,
+          color: isSelected ? primary.withValues(alpha: 0.15) : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: isSelected ? primary : Colors.transparent),
+          border: Border.all(
+            color: isSelected ? primary : Colors.transparent,
+            width: 1.2,
+          ),
         ),
         child: Column(
           children: [
             Text(
               title,
-              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
                 color: isSelected ? primary : Colors.white70,
               ),
             ),
-            const SizedBox(height: 2),
+            const SizedBox(height: 3),
             Text(
               subtitle,
-              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontSize: 10,
-                color: isSelected ? primary.withValues(alpha: 0.8) : Colors.white38,
+                color: isSelected ? Colors.white60 : Colors.white38,
               ),
             ),
           ],

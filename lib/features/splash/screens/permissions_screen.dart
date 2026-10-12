@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:music_flow_mobile/features/main/screens/main_screen.dart';
 import 'package:music_flow_mobile/features/splash/services/permission_flow_service.dart';
 import 'package:music_flow_mobile/features/splash/widgets/permission_card.dart';
+import 'package:music_flow_mobile/l10n/app_strings.dart';
 
 class PermissionsScreen extends StatefulWidget {
   const PermissionsScreen({super.key});
@@ -84,10 +85,10 @@ class _PermissionsScreenState extends State<PermissionsScreen> with WidgetsBindi
                     const SizedBox(height: 24),
                     const Icon(Icons.security_rounded, size: 48, color: Colors.white70),
                     const SizedBox(height: 16),
-                    const Text(
-                      'Налаштування доступу',
+                    Text(
+                      context.l10n.permissionsTitle,
                       textAlign: TextAlign.center,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
@@ -95,7 +96,7 @@ class _PermissionsScreenState extends State<PermissionsScreen> with WidgetsBindi
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Для повноцінної роботи плеєра, візуалізатора та фонового відтворення надайте дозволи:',
+                      context.l10n.permissionsSubtitle,
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 13,
@@ -128,16 +129,16 @@ class _PermissionsScreenState extends State<PermissionsScreen> with WidgetsBindi
                         ),
                         elevation: 4,
                       ),
-                      child: const Text(
-                        'Продовжити',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      child: Text(
+                        context.l10n.continueButton,
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                       ),
                     ),
                     const SizedBox(height: 8),
                     TextButton(
                       onPressed: _proceedToMain,
                       child: Text(
-                        'Пропустити та перейти до музики',
+                        context.l10n.skipToMusic,
                         style: TextStyle(
                           fontSize: 13,
                           color: Colors.white.withValues(alpha: 0.5),

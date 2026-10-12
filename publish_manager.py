@@ -78,14 +78,30 @@ def build_and_publish_local(version_name, build_num, changelog):
     if not run_command_with_log(["flutter", "test"], "Flutter Test"):
         return 1
 
+    dev_url = ""
+    if os.path.exists(".env"):
+        try:
+            with open(".env", "r", encoding="utf-8") as f:
+                for line in f:
+                    if line.strip().startswith("DEV_SERVER_URL="):
+                        dev_url = line.strip().split("=", 1)[1].strip()
+                        break
+        except Exception:
+            pass
+
     print("\n[3/5] Збірка APK файлів...")
     build_rel_cmd = ["flutter", "build", "apk", "--release", f"--build-name={version_name}", f"--build-number={build_num}"]
+    if dev_url:
+        build_rel_cmd.append(f"--dart-define=DEV_SERVER_URL={dev_url}")
+        print(f">> Впроваджено локальну адресу сервера з .env: {dev_url}")
     if not run_command_with_log(build_rel_cmd, "Flutter Build Release APK"):
         return 1
 
     time.sleep(3.0)
     dbg_apk_ready = False
     build_dbg_cmd = ["flutter", "build", "apk", "--debug", f"--build-name={version_name}", f"--build-number={build_num}"]
+    if dev_url:
+        build_dbg_cmd.append(f"--dart-define=DEV_SERVER_URL={dev_url}")
     if run_command_with_log(build_dbg_cmd, "Flutter Build Debug APK", is_optional=True):
         dbg_apk_ready = True
     else:

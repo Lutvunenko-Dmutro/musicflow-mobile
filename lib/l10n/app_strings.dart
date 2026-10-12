@@ -5,7 +5,29 @@ import 'package:music_flow_mobile/l10n/strings_uk.dart';
 import 'package:music_flow_mobile/l10n/strings_en.dart';
 import 'package:music_flow_mobile/providers/language_provider.dart';
 
-abstract class AppStrings {
+import 'package:music_flow_mobile/l10n/interfaces/app_update_strings.dart';
+import 'package:music_flow_mobile/l10n/interfaces/app_permission_strings.dart';
+import 'package:music_flow_mobile/l10n/interfaces/app_visualizer_detailed_strings.dart';
+import 'package:music_flow_mobile/l10n/interfaces/app_equalizer_strings.dart';
+import 'package:music_flow_mobile/l10n/interfaces/app_common_actions_strings.dart';
+import 'package:music_flow_mobile/l10n/interfaces/app_search_filter_strings.dart';
+import 'package:music_flow_mobile/l10n/interfaces/app_cache_strings.dart';
+import 'package:music_flow_mobile/l10n/interfaces/app_lyrics_strings.dart';
+import 'package:music_flow_mobile/l10n/interfaces/app_library_strings.dart';
+import 'package:music_flow_mobile/l10n/interfaces/app_general_settings_strings.dart';
+
+abstract class AppStrings
+    implements
+        AppUpdateStrings,
+        AppPermissionStrings,
+        AppVisualizerDetailedStrings,
+        AppEqualizerStrings,
+        AppCommonActionsStrings,
+        AppSearchFilterStrings,
+        AppCacheStrings,
+        AppLyricsStrings,
+        AppLibraryStrings,
+        AppGeneralSettingsStrings {
   // Navigation
   String get search;
   String get library;
@@ -43,7 +65,11 @@ abstract class AppStrings {
   String get visColorTheme;
   String get visColorFire;
   String get visColorAdaptive;
-  String get visColorCyberpunk;
+  String get visSpectrumMode;
+  String get visSpectrumLive;
+  String get visSpectrumMirror2H;
+  String get visSpectrumMirror2V;
+  String get visSpectrumPulse4;
 
   // Settings
   String get settingsTitle;
@@ -60,15 +86,6 @@ abstract class AppStrings {
   String get mediaNotificationTitle;
   String get mediaNotificationSubtitle;
   String get downloadFolderTitle;
-  String get defaultFolder;
-  String get downloadSettingsTitle;
-  String get embedLyricsTitle;
-  String get embedLyricsSubtitle;
-  String get highQualityTitle;
-  String get highQualitySubtitle;
-  String get privacyAndDiagnostics;
-  String get crashConsentTitle;
-  String get crashConsentSubtitle;
 
   // Search
   String get searchPrompt;
@@ -92,12 +109,6 @@ abstract class AppStrings {
   String get emptyHistory;
   String get emptyLibrary;
 
-  // Dialogs & Actions
-  String get cancel;
-  String get save;
-  String get close;
-  String get retry;
-
   static AppStrings get(AppLanguage language) {
     switch (language) {
       case AppLanguage.uk:
@@ -108,7 +119,12 @@ abstract class AppStrings {
   }
 
   static AppStrings of(BuildContext context, {bool listen = true}) {
-    return Provider.of<LanguageProvider>(context, listen: listen).strings;
+    try {
+      final provider = Provider.of<LanguageProvider>(context, listen: listen);
+      return provider.strings;
+    } catch (_) {
+      return const StringsUk();
+    }
   }
 }
 

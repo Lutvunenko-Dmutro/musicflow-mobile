@@ -1,6 +1,28 @@
 import 'package:music_flow_mobile/l10n/app_strings.dart';
+import 'package:music_flow_mobile/l10n/uk/uk_update_strings.dart';
+import 'package:music_flow_mobile/l10n/uk/uk_permission_strings.dart';
+import 'package:music_flow_mobile/l10n/uk/uk_visualizer_detailed_strings.dart';
+import 'package:music_flow_mobile/l10n/uk/uk_equalizer_strings.dart';
+import 'package:music_flow_mobile/l10n/uk/uk_common_actions_strings.dart';
+import 'package:music_flow_mobile/l10n/uk/uk_search_filter_strings.dart';
+import 'package:music_flow_mobile/l10n/uk/uk_cache_strings.dart';
+import 'package:music_flow_mobile/l10n/uk/uk_lyrics_strings.dart';
+import 'package:music_flow_mobile/l10n/uk/uk_library_strings.dart';
+import 'package:music_flow_mobile/l10n/uk/uk_general_settings_strings.dart';
 
-class StringsUk implements AppStrings {
+class StringsUk
+    with
+        UkUpdateStrings,
+        UkPermissionStrings,
+        UkVisualizerDetailedStrings,
+        UkEqualizerStrings,
+        UkCommonActionsStrings,
+        UkSearchFilterStrings,
+        UkCacheStrings,
+        UkLyricsStrings,
+        UkLibraryStrings,
+        UkGeneralSettingsStrings
+    implements AppStrings {
   const StringsUk();
 
   // Navigation
@@ -47,33 +69,41 @@ class StringsUk implements AppStrings {
   @override
   String get turnOffTimer => 'Вимкнути таймер';
   @override
-  String get minutesSuffix => 'хвилин';
+  String get minutesSuffix => 'хв';
   @override
   String get timerSetTo => 'Таймер встановлено на';
 
   // Visualizer Appearance & Positioning
   @override
-  String get visualizerAppearance => 'Вигляд та позиція';
+  String get visualizerAppearance => 'Зовнішній вигляд візуалізатора';
   @override
   String get visualizerPlacement => 'Розташування';
   @override
   String get visPosBottom => 'Знизу плеєра';
   @override
-  String get visPosCoverAura => 'Навколо обкладинки';
+  String get visPosCoverAura => 'Аура навколо обкладинки';
   @override
   String get visCoverShape => 'Форма обкладинки';
   @override
-  String get visShapeSquare => 'Скруглений квадрат';
+  String get visShapeSquare => 'Квадратна';
   @override
-  String get visShapeVinyl => 'Круглий вініл';
+  String get visShapeVinyl => 'Вініловий диск';
   @override
-  String get visColorTheme => 'Колірна тема';
+  String get visColorTheme => 'Кольорова схема';
   @override
-  String get visColorFire => 'MusicFlow Вогонь';
+  String get visColorFire => 'Фірмова (Мультиколір)';
   @override
-  String get visColorAdaptive => 'Колір альбому';
+  String get visColorAdaptive => 'Адаптивна (Колір теми)';
   @override
-  String get visColorCyberpunk => 'Кібер-неон';
+  String get visSpectrumMode => 'Режим спектра аури';
+  @override
+  String get visSpectrumLive => 'Живий 360°';
+  @override
+  String get visSpectrumMirror2H => 'Дзеркало (Ліво-Право)';
+  @override
+  String get visSpectrumMirror2V => 'Дзеркало (Верх-Низ)';
+  @override
+  String get visSpectrumPulse4 => 'Пульс 4 сторін';
 
   // Settings
   @override
@@ -81,49 +111,29 @@ class StringsUk implements AppStrings {
   @override
   String get playback => 'Відтворення';
   @override
-  String get crossfadeTitle => 'Плавний перехід (Crossfade)';
+  String get crossfadeTitle => 'Плавне згасання (Crossfade)';
   @override
-  String get crossfadeSubtitle => 'Плавне затихання і перехід між треками';
+  String get crossfadeSubtitle => 'Плавний перехід між піснями';
   @override
-  String get smoothMediaPauseTitle => 'Плавна пауза при перегляді медіа';
+  String get smoothMediaPauseTitle => 'Плавне згасання при паузі';
   @override
-  String get smoothMediaPauseSubtitle =>
-      'Плавно зменшувати звук і зупиняти музику, якщо вмикається YouTube або інше відео';
+  String get smoothMediaPauseSubtitle => 'М\'яке зменшення гучності замість різкої зупинки';
   @override
-  String get visualizerSubtitle => 'Живий перегляд, стилі та параметри анімації';
+  String get visualizerSubtitle => 'Стиль хвиль, частота та чутливість';
   @override
-  String get equalizerSubtitle => 'Частотні смуги, бас та пресети';
+  String get equalizerSubtitle => '5 смуг, бас-буст та 3D-звук';
   @override
   String get system => 'Система';
   @override
-  String get language => 'Мова';
+  String get language => 'Мова інтерфейсу';
   @override
   String get selectLanguage => 'Вибір мови';
   @override
-  String get mediaNotificationTitle => 'Показувати сповіщення плеєра';
+  String get mediaNotificationTitle => 'Повідомлення з плеєром';
   @override
-  String get mediaNotificationSubtitle => 'Вимкнення може зупиняти фонову музику';
+  String get mediaNotificationSubtitle => 'Керування відтворенням у шторці';
   @override
-  String get downloadFolderTitle => 'Папка збереження';
-  @override
-  String get defaultFolder => 'За замовчуванням (Внутрішня пам\'ять)';
-  @override
-  String get downloadSettingsTitle => 'Опції завантаження';
-  @override
-  String get embedLyricsTitle => 'Вшити текст пісні';
-  @override
-  String get embedLyricsSubtitle => 'Автоматично шукати текст і зберігати у файл';
-  @override
-  String get highQualityTitle => 'Найкраща якість аудіо';
-  @override
-  String get highQualitySubtitle => 'Завантажувати найбільший бітрейт (потребує більше пам\'яті)';
-  @override
-  String get privacyAndDiagnostics => 'Конфіденційність та діагностика';
-  @override
-  String get crashConsentTitle => 'Згода на збір звітів про помилки';
-  @override
-  String get crashConsentSubtitle =>
-      'Анонімно передавати технічні звіти про збої розробнику для швидкого виправлення помилок';
+  String get downloadFolderTitle => 'Папка для завантажень';
 
   // Search
   @override
@@ -164,14 +174,4 @@ class StringsUk implements AppStrings {
   String get emptyHistory => 'Ви ще нічого не слухали';
   @override
   String get emptyLibrary => 'У вашій бібліотеці ще немає треків';
-
-  // Dialogs & Actions
-  @override
-  String get cancel => 'Скасувати';
-  @override
-  String get save => 'Зберегти';
-  @override
-  String get close => 'Закрити';
-  @override
-  String get retry => 'Повторити';
 }

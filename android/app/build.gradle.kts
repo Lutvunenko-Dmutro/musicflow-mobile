@@ -58,6 +58,12 @@ android {
             }
         }
         release {
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
             // Підписуємо офіційним ключем локально або debug підписом у хмарі (CI/CD)
             if (hasKeystore) {
                 signingConfig = signingConfigs.getByName("release")

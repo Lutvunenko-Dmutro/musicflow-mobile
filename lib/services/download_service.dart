@@ -11,6 +11,7 @@ import 'package:music_flow_mobile/services/download_path_resolver.dart';
 import 'package:music_flow_mobile/services/download_media_scanner.dart';
 import 'package:music_flow_mobile/utils/app_logger.dart';
 import 'package:music_flow_mobile/locator.dart';
+import 'package:music_flow_mobile/providers/language_provider.dart';
 
 export 'package:music_flow_mobile/models/download_info.dart';
 
@@ -152,9 +153,10 @@ class DownloadService {
     _updateProgress(song.id, -1.0, "Помилка");
 
     if (e.toString().contains('SocketException')) {
+      final msg = LanguageProvider.currentStrings.noInternetConnection;
       scaffoldMessengerKey.currentState?.showSnackBar(
-        const SnackBar(
-          content: Text('Немає підключення до інтернету. Завантаження скасовано.'),
+        SnackBar(
+          content: Text(msg),
           backgroundColor: Colors.redAccent,
           behavior: SnackBarBehavior.floating,
         ),

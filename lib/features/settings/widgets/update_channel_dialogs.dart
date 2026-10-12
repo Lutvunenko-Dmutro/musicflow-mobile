@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:music_flow_mobile/l10n/app_strings.dart';
 import 'package:music_flow_mobile/services/update_preferences.dart';
 
 class UpdateChannelDialogs {
@@ -7,9 +8,9 @@ class UpdateChannelDialogs {
       context: context,
       builder: (ctx) => SimpleDialog(
         backgroundColor: const Color(0xFF222222),
-        title: const Text('Частота перевірки оновлень', style: TextStyle(color: Colors.white, fontSize: 16)),
+        title: Text(context.l10n.checkFrequency, style: const TextStyle(color: Colors.white, fontSize: 16)),
         children: UpdateFrequency.values.map((f) => RadioListTile<UpdateFrequency>(
-          title: Text(f.label, style: const TextStyle(color: Colors.white, fontSize: 14)),
+          title: Text(f.localizedLabel(context.l10n), style: const TextStyle(color: Colors.white, fontSize: 14)),
           value: f,
           groupValue: current,
           activeColor: Theme.of(context).primaryColor,
@@ -24,9 +25,9 @@ class UpdateChannelDialogs {
       context: context,
       builder: (ctx) => SimpleDialog(
         backgroundColor: const Color(0xFF222222),
-        title: const Text('Канал оновлень', style: TextStyle(color: Colors.white, fontSize: 16)),
+        title: Text(context.l10n.updateChannelTitle, style: const TextStyle(color: Colors.white, fontSize: 16)),
         children: UpdateChannel.values.map((c) => RadioListTile<UpdateChannel>(
-          title: Text(c.label, style: const TextStyle(color: Colors.white, fontSize: 14)),
+          title: Text(c.localizedLabel(context.l10n), style: const TextStyle(color: Colors.white, fontSize: 14)),
           value: c,
           groupValue: current,
           activeColor: Theme.of(context).primaryColor,
@@ -37,20 +38,21 @@ class UpdateChannelDialogs {
   }
 
   static Future<bool?> showConfirmChannelSwitch(BuildContext context, UpdateChannel selected) {
+    final l10n = context.l10n;
+    final channelName = selected == UpdateChannel.release ? 'Release' : 'Debug';
     return showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF222222),
-        title: const Text('Зміна каналу оновлень', style: TextStyle(color: Colors.white, fontSize: 16)),
+        title: Text(l10n.channelChangeDialogTitle, style: const TextStyle(color: Colors.white, fontSize: 16)),
         content: Text(
-          'Ви обрали канал ${selected == UpdateChannel.release ? "Release" : "Debug"}.\n\n'
-          'Бажаєте зараз завантажити та встановити відповідну збірку?',
+          l10n.channelChangePrompt(channelName),
           style: const TextStyle(color: Colors.white70, fontSize: 14),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Пізніше', style: TextStyle(color: Colors.white54)),
+            child: Text(l10n.later, style: const TextStyle(color: Colors.white54)),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
@@ -58,7 +60,7 @@ class UpdateChannelDialogs {
               backgroundColor: Theme.of(context).primaryColor,
               foregroundColor: Colors.white,
             ),
-            child: const Text('Завантажити зараз'),
+            child: Text(l10n.downloadNow),
           ),
         ],
       ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:music_flow_mobile/models/song_model.dart';
 import 'package:music_flow_mobile/providers/audio_provider.dart';
 import 'package:music_flow_mobile/features/lyrics/widgets/lyrics_version_sheet.dart';
+import 'package:music_flow_mobile/l10n/app_strings.dart';
 
 class LyricsVersionMenu extends StatelessWidget {
   final AudioProvider audioProvider;
@@ -20,7 +21,7 @@ class LyricsVersionMenu extends StatelessWidget {
 
     return IconButton(
       icon: const Icon(Icons.tune_rounded),
-      tooltip: 'Керування версіями субтитрів',
+      tooltip: context.l10n.manageLyricsVersionsTooltip,
       onPressed: () => LyricsVersionSheet.show(
         context,
         audioProvider: audioProvider,

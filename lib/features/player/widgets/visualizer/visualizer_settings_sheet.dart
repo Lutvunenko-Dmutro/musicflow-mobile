@@ -6,6 +6,7 @@ import 'package:music_flow_mobile/providers/visualizer_settings_provider.dart';
 import 'package:music_flow_mobile/features/player/widgets/visualizer/visualizer_slider_setting.dart';
 import 'package:music_flow_mobile/features/player/widgets/visualizer/visualizer_style_chip.dart';
 import 'package:music_flow_mobile/features/player/widgets/visualizer/visualizer_core_chip.dart';
+import 'package:music_flow_mobile/l10n/app_strings.dart';
 
 class VisualizerSettingsSheet extends StatelessWidget {
   const VisualizerSettingsSheet({super.key});
@@ -44,29 +45,24 @@ class VisualizerSettingsSheet extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Row(
+                      Row(
                         children: [
-                          Icon(Icons.tune, color: Colors.white, size: 24),
-                          SizedBox(width: 12),
-                          Text(
-                            'Налаштування',
-                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
-                          ),
+                          const Icon(Icons.tune, color: Colors.white, size: 24),
+                          const SizedBox(width: 12),
+                          Text(context.l10n.visPhysicsParams, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
                         ],
                       ),
                       IconButton(
                         icon: const Icon(Icons.refresh, color: Colors.white70),
-                        tooltip: 'Скинути до стандартних',
-                        onPressed: () {
-                          settings.reset();
-                        },
+                        tooltip: context.l10n.visResetTooltip,
+                        onPressed: settings.reset,
                       ),
                     ],
                   ),
                   const SizedBox(height: 24),
                   VisualizerSliderSetting(
                     icon: Icons.height,
-                    label: 'Амплітуда (Висота)',
+                    label: context.l10n.visSliderSensitivity,
                     value: settings.amplitudeBoost.clamp(0.5, 1.20),
                     min: 0.5,
                     max: 1.20,
@@ -74,7 +70,7 @@ class VisualizerSettingsSheet extends StatelessWidget {
                   ),
                   VisualizerSliderSetting(
                     icon: Icons.speed,
-                    label: 'Підйом (Attack)',
+                    label: context.l10n.visSliderAttack,
                     value: settings.attack,
                     min: 0.05,
                     max: 1.0,
@@ -82,7 +78,7 @@ class VisualizerSettingsSheet extends StatelessWidget {
                   ),
                   VisualizerSliderSetting(
                     icon: Icons.waves,
-                    label: 'Падіння (Release)',
+                    label: context.l10n.visSliderRelease,
                     value: settings.release,
                     min: 0.01,
                     max: 0.5,
@@ -90,7 +86,7 @@ class VisualizerSettingsSheet extends StatelessWidget {
                   ),
                   VisualizerSliderSetting(
                     icon: Icons.arrow_downward,
-                    label: 'Гравітація ліній',
+                    label: context.l10n.visSliderGravity,
                     value: settings.gravity.abs().clamp(0.0005, 0.02),
                     min: 0.0005,
                     max: 0.02,
@@ -99,7 +95,7 @@ class VisualizerSettingsSheet extends StatelessWidget {
                   ),
                   VisualizerSliderSetting(
                     icon: Icons.vertical_align_top,
-                    label: 'Відскок ліній',
+                    label: context.l10n.visSliderBounce,
                     value: settings.bounce,
                     min: 0.0,
                     max: 0.2,
@@ -109,11 +105,11 @@ class VisualizerSettingsSheet extends StatelessWidget {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Row(
+                      Row(
                         children: [
-                          Icon(Icons.palette, color: Colors.white70, size: 18),
-                          SizedBox(width: 8),
-                          Text('Стиль візуалізації', style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w500)),
+                          const Icon(Icons.palette, color: Colors.white70, size: 18),
+                          const SizedBox(width: 8),
+                          Text(context.l10n.visualizerAppearance, style: const TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w500)),
                         ],
                       ),
                       const SizedBox(height: 12),
@@ -121,13 +117,13 @@ class VisualizerSettingsSheet extends StatelessWidget {
                         scrollDirection: Axis.horizontal,
                         child: Row(
                           children: [
-                            VisualizerStyleChip(settings: settings, style: VisualizerStyle.bars, label: 'Смуги', icon: Icons.bar_chart),
+                            VisualizerStyleChip(settings: settings, style: VisualizerStyle.bars, label: context.l10n.visStyleBars, icon: Icons.bar_chart),
                             const SizedBox(width: 8),
-                            VisualizerStyleChip(settings: settings, style: VisualizerStyle.mirrored, label: 'Центр', icon: Icons.graphic_eq),
+                            VisualizerStyleChip(settings: settings, style: VisualizerStyle.mirrored, label: context.l10n.visStyleMirrored, icon: Icons.graphic_eq),
                             const SizedBox(width: 8),
-                            VisualizerStyleChip(settings: settings, style: VisualizerStyle.circle, label: 'Коло', icon: Icons.radio_button_unchecked),
+                            VisualizerStyleChip(settings: settings, style: VisualizerStyle.circle, label: context.l10n.visStyleCircle, icon: Icons.radio_button_unchecked),
                             const SizedBox(width: 8),
-                            VisualizerStyleChip(settings: settings, style: VisualizerStyle.wave, label: 'Хвиля', icon: Icons.waves),
+                            VisualizerStyleChip(settings: settings, style: VisualizerStyle.wave, label: context.l10n.visStyleWave, icon: Icons.waves),
                           ],
                         ),
                       ),
@@ -137,17 +133,17 @@ class VisualizerSettingsSheet extends StatelessWidget {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Row(
+                      Row(
                         children: [
-                          Icon(Icons.memory, color: Colors.white70, size: 18),
-                          SizedBox(width: 8),
-                          Text('Ядро візуалізатора', style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w500)),
+                          const Icon(Icons.memory, color: Colors.white70, size: 18),
+                          const SizedBox(width: 8),
+                          Text(context.l10n.visCore, style: const TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w500)),
                         ],
                       ),
                       const SizedBox(height: 4),
-                      const Text(
-                        'Software — FFT-аналіз хвилі (рекомендовано)\nHardware — пряме FFT від Android (може відрізнятись)',
-                        style: TextStyle(color: Colors.white38, fontSize: 11),
+                      Text(
+                        '${context.l10n.visCoreSoftwareTitle} — ${context.l10n.visCoreSoftwareDesc}\n${context.l10n.visCoreHardwareTitle} — ${context.l10n.visCoreHardwareDesc}',
+                        style: const TextStyle(color: Colors.white38, fontSize: 11),
                       ),
                       const SizedBox(height: 12),
                       SingleChildScrollView(
@@ -155,14 +151,14 @@ class VisualizerSettingsSheet extends StatelessWidget {
                         child: Row(
                           children: [
                             VisualizerCoreChip(
-                              label: 'Software (FFT)',
+                              label: context.l10n.visCoreSoftwareTitle,
                               icon: Icons.psychology,
                               selected: settings.core == VisualizerCore.software,
                               onTap: () => settings.setCore(VisualizerCore.software),
                             ),
                             const SizedBox(width: 8),
                             VisualizerCoreChip(
-                              label: 'Hardware',
+                              label: context.l10n.visCoreHardwareTitle,
                               icon: Icons.developer_board,
                               selected: settings.core == VisualizerCore.hardware,
                               onTap: () => settings.setCore(VisualizerCore.hardware),

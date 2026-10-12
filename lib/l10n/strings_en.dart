@@ -1,6 +1,28 @@
 import 'package:music_flow_mobile/l10n/app_strings.dart';
+import 'package:music_flow_mobile/l10n/en/en_update_strings.dart';
+import 'package:music_flow_mobile/l10n/en/en_permission_strings.dart';
+import 'package:music_flow_mobile/l10n/en/en_visualizer_detailed_strings.dart';
+import 'package:music_flow_mobile/l10n/en/en_equalizer_strings.dart';
+import 'package:music_flow_mobile/l10n/en/en_common_actions_strings.dart';
+import 'package:music_flow_mobile/l10n/en/en_search_filter_strings.dart';
+import 'package:music_flow_mobile/l10n/en/en_cache_strings.dart';
+import 'package:music_flow_mobile/l10n/en/en_lyrics_strings.dart';
+import 'package:music_flow_mobile/l10n/en/en_library_strings.dart';
+import 'package:music_flow_mobile/l10n/en/en_general_settings_strings.dart';
 
-class StringsEn implements AppStrings {
+class StringsEn
+    with
+        EnUpdateStrings,
+        EnPermissionStrings,
+        EnVisualizerDetailedStrings,
+        EnEqualizerStrings,
+        EnCommonActionsStrings,
+        EnSearchFilterStrings,
+        EnCacheStrings,
+        EnLyricsStrings,
+        EnLibraryStrings,
+        EnGeneralSettingsStrings
+    implements AppStrings {
   const StringsEn();
 
   // Navigation
@@ -47,33 +69,41 @@ class StringsEn implements AppStrings {
   @override
   String get turnOffTimer => 'Turn off timer';
   @override
-  String get minutesSuffix => 'minutes';
+  String get minutesSuffix => 'min';
   @override
   String get timerSetTo => 'Timer set to';
 
   // Visualizer Appearance & Positioning
   @override
-  String get visualizerAppearance => 'Appearance & Position';
+  String get visualizerAppearance => 'Visualizer appearance';
   @override
   String get visualizerPlacement => 'Placement';
   @override
-  String get visPosBottom => 'Bottom strip';
+  String get visPosBottom => 'Bottom of player';
   @override
-  String get visPosCoverAura => 'Around album cover';
+  String get visPosCoverAura => 'Cover Aura';
   @override
-  String get visCoverShape => 'Cover Shape';
+  String get visCoverShape => 'Cover shape';
   @override
-  String get visShapeSquare => 'Rounded square';
+  String get visShapeSquare => 'Square';
   @override
-  String get visShapeVinyl => 'Circular vinyl';
+  String get visShapeVinyl => 'Vinyl record';
   @override
-  String get visColorTheme => 'Color Palette';
+  String get visColorTheme => 'Color scheme';
   @override
-  String get visColorFire => 'MusicFlow Fire';
+  String get visColorFire => 'Brand (Multicolor)';
   @override
-  String get visColorAdaptive => 'Album adaptive';
+  String get visColorAdaptive => 'Adaptive (Theme color)';
   @override
-  String get visColorCyberpunk => 'Cyber-neon';
+  String get visSpectrumMode => 'Aura Spectrum Mode';
+  @override
+  String get visSpectrumLive => 'Live 360°';
+  @override
+  String get visSpectrumMirror2H => 'Mirror (Left-Right)';
+  @override
+  String get visSpectrumMirror2V => 'Mirror (Top-Bottom)';
+  @override
+  String get visSpectrumPulse4 => '4-Side Pulse';
 
   // Settings
   @override
@@ -81,61 +111,41 @@ class StringsEn implements AppStrings {
   @override
   String get playback => 'Playback';
   @override
-  String get crossfadeTitle => 'Smooth Crossfade';
+  String get crossfadeTitle => 'Crossfade';
   @override
-  String get crossfadeSubtitle => 'Seamless fade in and fade out between songs';
+  String get crossfadeSubtitle => 'Smooth transition between songs';
   @override
-  String get smoothMediaPauseTitle => 'Smooth pause during media playback';
+  String get smoothMediaPauseTitle => 'Smooth pause fade-out';
   @override
-  String get smoothMediaPauseSubtitle =>
-      'Smoothly fade audio and pause when YouTube or other video starts';
+  String get smoothMediaPauseSubtitle => 'Soft volume fade-out instead of sudden stop';
   @override
-  String get visualizerSubtitle => 'Live preview, styles and animation parameters';
+  String get visualizerSubtitle => 'Wave style, rate, and responsiveness';
   @override
-  String get equalizerSubtitle => 'Frequency bands, bass boost and presets';
+  String get equalizerSubtitle => '5 bands, bass boost, and 3D sound';
   @override
   String get system => 'System';
   @override
-  String get language => 'Language';
+  String get language => 'Interface language';
   @override
-  String get selectLanguage => 'Select Language';
+  String get selectLanguage => 'Select language';
   @override
-  String get mediaNotificationTitle => 'Show player notification';
+  String get mediaNotificationTitle => 'Media Notification';
   @override
-  String get mediaNotificationSubtitle => 'Disabling may stop background music playback';
+  String get mediaNotificationSubtitle => 'Notification bar playback controls';
   @override
   String get downloadFolderTitle => 'Download folder';
-  @override
-  String get defaultFolder => 'Default (Internal Storage)';
-  @override
-  String get downloadSettingsTitle => 'Download Options';
-  @override
-  String get embedLyricsTitle => 'Embed Lyrics';
-  @override
-  String get embedLyricsSubtitle => 'Automatically fetch lyrics and save into file';
-  @override
-  String get highQualityTitle => 'Best Audio Quality';
-  @override
-  String get highQualitySubtitle => 'Download highest bitrate available (uses more storage)';
-  @override
-  String get privacyAndDiagnostics => 'Privacy & Diagnostics';
-  @override
-  String get crashConsentTitle => 'Consent to crash reports';
-  @override
-  String get crashConsentSubtitle =>
-      'Anonymously send crash reports to developer for fast issue resolution';
 
   // Search
   @override
   String get searchPrompt => 'Search tracks or paste YouTube link';
   @override
-  String get searchPlaceholder => 'Enter title or link...';
+  String get searchPlaceholder => 'Enter track title or URL...';
   @override
   String get searchPasteTooltip => 'Paste from clipboard';
   @override
   String get searchButton => 'Search';
   @override
-  String get filter => 'Filter';
+  String get filter => 'Filters';
   @override
   String get inLibrary => 'In Library';
   @override
@@ -143,7 +153,7 @@ class StringsEn implements AppStrings {
   @override
   String get nothingFound => 'Nothing found';
   @override
-  String get nothingFoundHint => 'Try changing search query or reset filters';
+  String get nothingFoundHint => 'Try modifying your search or reset filters';
 
   // Library & History
   @override
@@ -164,14 +174,4 @@ class StringsEn implements AppStrings {
   String get emptyHistory => 'You have not listened to anything yet';
   @override
   String get emptyLibrary => 'No tracks in your library yet';
-
-  // Dialogs & Actions
-  @override
-  String get cancel => 'Cancel';
-  @override
-  String get save => 'Save';
-  @override
-  String get close => 'Close';
-  @override
-  String get retry => 'Retry';
 }

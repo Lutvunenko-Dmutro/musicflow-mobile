@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:music_flow_mobile/providers/audio_provider.dart';
 import 'package:music_flow_mobile/features/player/widgets/smart_cover.dart';
+import 'package:music_flow_mobile/l10n/app_strings.dart';
 
 class QueueScreen extends StatelessWidget {
   const QueueScreen({super.key});
@@ -21,11 +22,11 @@ class QueueScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Черга відтворення', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(context.l10n.queueTitle, style: const TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
       ),
       body: queue.isEmpty
-          ? const Center(child: Text('Черга порожня', style: TextStyle(color: Colors.white54)))
+          ? Center(child: Text(context.l10n.queueEmpty, style: const TextStyle(color: Colors.white54)))
           : ReorderableListView.builder(
               padding: const EdgeInsets.symmetric(vertical: 8),
               itemCount: queue.length,

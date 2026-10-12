@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:music_flow_mobile/l10n/app_strings.dart';
 
 enum UpdateFrequency {
   onLaunch('on_launch', 'При кожному запуску'),
@@ -10,6 +11,19 @@ enum UpdateFrequency {
   final String key;
   final String label;
   const UpdateFrequency(this.key, this.label);
+
+  String localizedLabel(AppStrings l10n) {
+    switch (this) {
+      case UpdateFrequency.onLaunch:
+        return l10n.freqOnLaunch;
+      case UpdateFrequency.daily:
+        return l10n.freqDaily;
+      case UpdateFrequency.weekly:
+        return l10n.freqWeekly;
+      case UpdateFrequency.manual:
+        return l10n.freqManual;
+    }
+  }
 
   static UpdateFrequency fromKey(String? key) {
     return UpdateFrequency.values.firstWhere(
@@ -26,6 +40,15 @@ enum UpdateChannel {
   final String key;
   final String label;
   const UpdateChannel(this.key, this.label);
+
+  String localizedLabel(AppStrings l10n) {
+    switch (this) {
+      case UpdateChannel.release:
+        return l10n.channelRelease;
+      case UpdateChannel.debug:
+        return l10n.channelDebug;
+    }
+  }
 
   static UpdateChannel fromKey(String? key) {
     return UpdateChannel.values.firstWhere(

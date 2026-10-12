@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:music_flow_mobile/l10n/app_strings.dart';
 import 'package:music_flow_mobile/providers/visualizer_settings_provider.dart';
 
 class VisualizerSlidersCard extends StatelessWidget {
@@ -13,6 +14,8 @@ class VisualizerSlidersCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
@@ -25,8 +28,8 @@ class VisualizerSlidersCard extends StatelessWidget {
           _buildRow(
             context,
             icon: Icons.vertical_align_top,
-            label: 'Чутливість / Висота',
-            desc: 'Множник підйому смуг від звуку',
+            label: l10n.visSliderSensitivity,
+            desc: l10n.visSliderSensitivityDesc,
             value: settings.amplitudeBoost.clamp(0.5, 2.0),
             min: 0.5,
             max: 2.0,
@@ -40,8 +43,8 @@ class VisualizerSlidersCard extends StatelessWidget {
           _buildRow(
             context,
             icon: Icons.speed,
-            label: 'Швидкість підйому (Attack)',
-            desc: 'Як швидко стовпчики реагують на бас',
+            label: l10n.visSliderAttack,
+            desc: l10n.visSliderAttackDesc,
             value: settings.attack.clamp(0.05, 1.0),
             min: 0.05,
             max: 1.0,
@@ -55,8 +58,8 @@ class VisualizerSlidersCard extends StatelessWidget {
           _buildRow(
             context,
             icon: Icons.trending_down,
-            label: 'Плавність затухання (Release)',
-            desc: 'Швидкість опускання смуг після піку',
+            label: l10n.visSliderRelease,
+            desc: l10n.visSliderReleaseDesc,
             value: settings.release.clamp(0.01, 0.5),
             min: 0.01,
             max: 0.5,
@@ -70,8 +73,8 @@ class VisualizerSlidersCard extends StatelessWidget {
           _buildRow(
             context,
             icon: Icons.arrow_downward,
-            label: 'Гравітація пікових крапок',
-            desc: 'Прискорення падіння верхніх точок',
+            label: l10n.visSliderGravity,
+            desc: l10n.visSliderGravityDesc,
             value: settings.gravity.abs().clamp(0.0005, 0.02),
             min: 0.0005,
             max: 0.02,
@@ -85,8 +88,8 @@ class VisualizerSlidersCard extends StatelessWidget {
           _buildRow(
             context,
             icon: Icons.sports_basketball,
-            label: 'Пружність відскоку (Bounce)',
-            desc: 'Ефект пружини при різких ударах',
+            label: l10n.visSliderBounce,
+            desc: l10n.visSliderBounceDesc,
             value: settings.bounce.clamp(0.0, 0.15),
             min: 0.0,
             max: 0.15,

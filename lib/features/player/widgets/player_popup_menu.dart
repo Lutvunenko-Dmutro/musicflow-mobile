@@ -33,12 +33,12 @@ class PlayerPopupMenu extends StatelessWidget {
             if (audioProvider.isLyricsDisabledForCurrentSong) {
               audioProvider.enableLyricsForSong(song.id);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Субтитри увімкнено для цієї пісні'), behavior: SnackBarBehavior.floating),
+                SnackBar(content: Text(strings.lyricsEnabledSnackbar), behavior: SnackBarBehavior.floating),
               );
             } else {
               audioProvider.disableLyricsForSong(song.id);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Збережено: цю пісню залишено без субтитрів'), behavior: SnackBarBehavior.floating),
+                SnackBar(content: Text(strings.lyricsDisabledSnackbar), behavior: SnackBarBehavior.floating),
               );
             }
           }
@@ -80,8 +80,8 @@ class PlayerPopupMenu extends StatelessWidget {
                 const SizedBox(width: 12),
                 Text(
                   audioProvider.isLyricsDisabledForCurrentSong
-                      ? 'Увімкнути субтитри для пісні'
-                      : 'Без субтитрів для цієї пісні',
+                      ? strings.enableLyricsForSong
+                      : strings.disableLyricsForSong,
                 ),
               ],
             ),

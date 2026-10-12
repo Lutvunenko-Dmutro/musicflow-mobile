@@ -5,6 +5,7 @@ import 'package:music_flow_mobile/providers/audio/lyrics_manager_mixin.dart';
 import 'package:music_flow_mobile/providers/audio_provider.dart';
 import 'package:music_flow_mobile/features/lyrics/widgets/lyrics_search_sheet.dart';
 import 'package:music_flow_mobile/features/lyrics/widgets/lyrics_version_card.dart';
+import 'package:music_flow_mobile/l10n/app_strings.dart';
 
 class LyricsVersionSheet extends StatelessWidget {
   final AudioProvider audioProvider;
@@ -31,11 +32,11 @@ class LyricsVersionSheet extends StatelessWidget {
             title: Text(title, style: const TextStyle(color: Colors.white, fontSize: 16)),
             content: Text(msg, style: const TextStyle(color: Colors.white70, fontSize: 14)),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Скасувати', style: TextStyle(color: Colors.white60))),
+              TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(context.l10n.cancel, style: const TextStyle(color: Colors.white60))),
               ElevatedButton(
                 onPressed: () => Navigator.pop(ctx, true),
                 style: ElevatedButton.styleFrom(backgroundColor: btnColor, foregroundColor: Colors.white),
-                child: const Text('Підтвердити'),
+                child: Text(context.l10n.save),
               ),
             ],
           ),
@@ -70,7 +71,7 @@ class LyricsVersionSheet extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Версії субтитрів та караоке', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                      Text(context.l10n.lyricsVersionsSheetTitle, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
                       Text(song?.title ?? '', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, color: Colors.white54)),
                     ],
                   ),
@@ -82,8 +83,8 @@ class LyricsVersionSheet extends StatelessWidget {
               isSelected: isDisabled,
               icon: Icons.subtitles_off_rounded,
               iconColor: Colors.amber,
-              title: 'Без субтитрів (Вимкнено)',
-              subtitle: 'Приховати текст для цієї пісні',
+              title: context.l10n.lyricsDisabledOptionTitle,
+              subtitle: context.l10n.lyricsDisabledOptionSubtitle,
               badge: null,
               onTap: () {
                 audioProvider.changeLyricsTrack(LyricsManagerMixin.disabledLyricsKey, songId: song?.id);
@@ -99,14 +100,14 @@ class LyricsVersionSheet extends StatelessWidget {
                     final isSel = !isDisabled && key == selectedKey;
                     final isKaraoke = key.contains('Караоке') || (available[key] != null && RegExp(r'\[\d+:\d+').hasMatch(available[key]!));
                     return Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
+                       padding: const EdgeInsets.only(bottom: 8),
                       child: LyricsVersionCard(
                         isSelected: isSel,
                         icon: key.toLowerCase().contains('youtube') ? Icons.play_circle_fill_rounded : Icons.mic_external_on_rounded,
                         iconColor: AppColors.primary,
-                        title: key,
-                        subtitle: isKaraoke ? 'Синхронізований текст під музику' : 'Статичний текст пісні',
-                        badge: isKaraoke ? '⏱️ Караоке' : '📄 Текст',
+                        title: context.l10n.formatLyricsTrackKey(key),
+                        subtitle: isKaraoke ? context.l10n.syncedLyricsSubtitle : context.l10n.staticLyricsSubtitle,
+                        badge: isKaraoke ? context.l10n.karaokeBadge : context.l10n.staticTextBadge,
                         onTap: () {
                           audioProvider.changeLyricsTrack(key, songId: song?.id);
                           Navigator.pop(context);
@@ -125,7 +126,7 @@ class LyricsVersionSheet extends StatelessWidget {
                   LyricsSearchSheet.show(context, song: song!);
                 },
                 icon: const Icon(Icons.search_rounded, size: 18),
-                label: const Text('Знайти інше караоке в базі'),
+                label: Text(context.l10n.searchAnotherKaraoke),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: Colors.white,
                   side: BorderSide(color: Colors.white.withValues(alpha: 0.15)),
@@ -140,27 +141,27 @@ class LyricsVersionSheet extends StatelessWidget {
                     Expanded(
                       child: TextButton.icon(
                         onPressed: () async {
-                          final ok = await _confirm(context, 'Видалити версію?', 'Видалити "$selectedKey"?', Colors.redAccent);
+                          final ok = await _confirm(context, context.l10n.deleteLyricsVersionButton, context.l10n.deleteLyricsVersionDialogTitle(selectedKey), Colors.redAccent);
                           if (ok && context.mounted) {
                             await audioProvider.removeLyricsTrack(song!, selectedKey);
                             if (context.mounted) Navigator.pop(context);
                           }
                         },
                         icon: const Icon(Icons.delete_outline_rounded, size: 16, color: Colors.redAccent),
-                        label: const Text('Видалити версію', style: TextStyle(color: Colors.redAccent, fontSize: 12)),
+                        label: Text(context.l10n.deleteLyricsVersionButton, style: const TextStyle(color: Colors.redAccent, fontSize: 12)),
                       ),
                     ),
                   Expanded(
                     child: TextButton.icon(
                       onPressed: () async {
-                        final ok = await _confirm(context, 'Скинути караоке?', 'Скинути версії для "${song!.title}"?', Colors.amber);
+                        final ok = await _confirm(context, context.l10n.resetKaraokeButton, context.l10n.resetKaraokeDialogTitle(song!.title), Colors.amber);
                         if (ok && context.mounted) {
                           await audioProvider.resetAllLyricsForSong(song!);
                           if (context.mounted) Navigator.pop(context);
                         }
                       },
                       icon: const Icon(Icons.restore_rounded, size: 16, color: Colors.amber),
-                      label: const Text('Скинути караоке', style: TextStyle(color: Colors.amber, fontSize: 12)),
+                      label: Text(context.l10n.resetKaraokeButton, style: const TextStyle(color: Colors.amber, fontSize: 12)),
                     ),
                   ),
                 ],

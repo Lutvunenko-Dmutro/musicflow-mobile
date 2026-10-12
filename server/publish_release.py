@@ -79,6 +79,7 @@ def publish_release(changelog=None, bump_type="patch", mode="release", skip_veri
 
     if not changelog:
         notes_path = os.path.join(PROJECT_DIR, "RELEASE_NOTES.md")
+        changelog_path = os.path.join(PROJECT_DIR, "CHANGELOG.md")
         if os.path.exists(notes_path):
             try:
                 with open(notes_path, "r", encoding="utf-8") as f:
@@ -86,6 +87,28 @@ def publish_release(changelog=None, bump_type="patch", mode="release", skip_veri
                     if c:
                         changelog = c
                         print(">> Знайдено RELEASE_NOTES.md — використовую підготовлений опис!")
+            except Exception:
+                pass
+        if not changelog and os.path.exists(changelog_path):
+            try:
+                with open(changelog_path, "r", encoding="utf-8") as f:
+                    raw = f.readlines()
+                entry = []
+                capturing = False
+                for line in raw:
+                    if line.startswith("## "):
+                        if capturing:
+                            break
+                        capturing = True
+                        continue
+                    if capturing:
+                        if line.startswith("---"):
+                            break
+                        entry.append(line)
+                parsed = "".join(entry).strip()
+                if parsed:
+                    changelog = parsed
+                    print(">> Знайдено CHANGELOG.md — використано актуальний журнал змін!")
             except Exception:
                 pass
         if not changelog:

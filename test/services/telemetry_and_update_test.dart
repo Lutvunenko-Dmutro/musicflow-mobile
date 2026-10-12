@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:music_flow_mobile/services/server_discovery_service.dart';
 import 'package:music_flow_mobile/services/telemetry_service.dart';
 import 'package:music_flow_mobile/services/update_service.dart';
 import 'package:music_flow_mobile/services/github_update_client.dart';
@@ -27,8 +29,16 @@ void main() {
       final telemetry = TelemetryService();
       expect(await telemetry.getServerUrl(), equals(TelemetryService.defaultServerUrl));
 
-      await telemetry.setServerUrl('http://192.168.1.50:8080/');
-      expect(await telemetry.getServerUrl(), equals('http://192.168.1.50:8080'));
+      final dynamicIp = InternetAddress.loopbackIPv4.address;
+      await telemetry.setServerUrl('http://$dynamicIp:8080/');
+      expect(await telemetry.getServerUrl(), equals('http://$dynamicIp:8080'));
+    });
+
+    test('ServerDiscoveryService runs discovery without throwing', () async {
+      final url = await ServerDiscoveryService.discoverLocalServer(
+        timeout: const Duration(milliseconds: 150),
+      );
+      expect(url == null || url.startsWith('http://'), isTrue);
     });
 
     test('sendCrashReport returns false immediately when consent is not granted', () async {
@@ -53,7 +63,7 @@ void main() {
         'version': '1.1.0',
         'buildNumber': 3,
         'changelog': '• Оновлення караоке\n• Виправлено помилки',
-        'downloadUrl': 'http://192.168.0.103:8080/api/update/download',
+        'downloadUrl': 'http://127.0.0.1:8080/api/update/download',
         'fileSizeBytes': 25000000,
       };
 
@@ -61,7 +71,7 @@ void main() {
       expect(info.version, equals('1.1.0'));
       expect(info.buildNumber, equals(3));
       expect(info.changelog, contains('Оновлення караоке'));
-      expect(info.downloadUrl, equals('http://192.168.0.103:8080/api/update/download'));
+      expect(info.downloadUrl, equals('http://127.0.0.1:8080/api/update/download'));
       expect(info.fileSizeBytes, equals(25000000));
       expect(info.history, isEmpty);
       expect(info.missedReleases, isEmpty);
@@ -72,7 +82,7 @@ void main() {
         'version': '1.0.8',
         'buildNumber': 8,
         'changelog': '• Зміни в 1.0.8',
-        'downloadUrl': 'http://192.168.0.103:8080/api/update/download',
+        'downloadUrl': 'http://127.0.0.1:8080/api/update/download',
         'fileSizeBytes': 200000000,
         'history': [
           {

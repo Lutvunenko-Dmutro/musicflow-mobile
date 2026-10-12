@@ -25,7 +25,20 @@ def run_preflight_checks(project_dir, skip=False):
 
 def compile_and_copy_apk(project_dir, target_dir, mode_flag, artifact_name, dest_name):
     print(f"       -> Збірка {mode_flag.upper()} (`flutter build apk --{mode_flag}`)...")
-    res = subprocess.run(["flutter", "build", "apk", f"--{mode_flag}"], cwd=project_dir, shell=True)
+    cmd = ["flutter", "build", "apk", f"--{mode_flag}"]
+    env_file = os.path.join(project_dir, ".env")
+    if os.path.exists(env_file):
+        try:
+            with open(env_file, "r", encoding="utf-8") as f:
+                for line in f:
+                    if line.strip().startswith("DEV_SERVER_URL="):
+                        dev_url = line.strip().split("=", 1)[1].strip()
+                        if dev_url:
+                            cmd.append(f"--dart-define=DEV_SERVER_URL={dev_url}")
+                        break
+        except Exception:
+            pass
+    res = subprocess.run(cmd, cwd=project_dir, shell=True)
     if res.returncode != 0:
         print(f"\n❌ Помилка під час збірки {mode_flag} APK!")
         return None

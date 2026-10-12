@@ -10,6 +10,7 @@ import 'package:music_flow_mobile/features/lyrics/screens/lyrics_screen.dart';
 import 'package:music_flow_mobile/features/lyrics/widgets/inline_lyrics.dart';
 import 'package:music_flow_mobile/features/player/widgets/ambient_player_backdrop.dart';
 import 'package:music_flow_mobile/features/player/widgets/player_popup_menu.dart';
+import 'package:music_flow_mobile/utils/cover_color_extractor.dart';
 import 'package:music_flow_mobile/l10n/app_strings.dart';
 
 class PlayerScreen extends StatelessWidget {
@@ -28,7 +29,7 @@ class PlayerScreen extends StatelessWidget {
     if (song == null) {
       return Scaffold(
         appBar: AppBar(),
-        body: const Center(child: Text('Nothing playing')),
+        body: Center(child: Text(context.l10n.noMusicPlaying)),
       );
     }
 
@@ -69,12 +70,12 @@ class PlayerScreen extends StatelessWidget {
             actions: [
               IconButton(
                 icon: const Icon(Icons.lyrics_outlined, size: 24),
-                tooltip: 'Текст пісні',
+                tooltip: context.l10n.lyricsDefaultTitle,
                 onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LyricsScreen())),
               ),
               IconButton(
                 icon: const Icon(Icons.queue_music, size: 26),
-                tooltip: 'Черга',
+                tooltip: context.l10n.queue,
                 onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const QueueScreen())),
               ),
               PlayerPopupMenu(audioProvider: audioProvider),
@@ -161,7 +162,7 @@ class PlayerScreen extends StatelessWidget {
                   const SizedBox(width: 6),
                   Flexible(
                     child: Text(
-                      '${audioProvider.playbackError!} • Натисніть для повтору',
+                      '${audioProvider.playbackError!} • ${context.l10n.playerPlaybackErrorRetry}',
                       style: const TextStyle(color: Colors.amberAccent, fontSize: 12),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -179,12 +180,15 @@ class PlayerScreen extends StatelessWidget {
       return const SizedBox(height: 12);
     }
     final h = (vis?.style == VisualizerStyle.circle) ? 75.0 : 50.0;
+    final s = audioProvider.currentSong;
+    final dominant = s != null ? CoverColorExtractor.getCachedColor(s.id) : null;
     return Flexible(
       child: SizedBox(
         height: h,
         width: double.infinity,
         child: AudioVisualizer(
           isPlaying: audioProvider.isPlaying,
+          dominantColor: dominant,
           width: double.infinity,
           height: h,
         ),

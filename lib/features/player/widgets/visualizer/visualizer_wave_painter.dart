@@ -1,17 +1,24 @@
-import 'package:flutter/material.dart';
-import 'package:music_flow_mobile/core/app_colors.dart';
 import 'dart:math' as math;
+import 'package:flutter/material.dart';
+import 'package:music_flow_mobile/features/player/widgets/visualizer/visualizer_palette_helper.dart';
 
 void paintWave(
   Canvas canvas,
   Size size, {
   required List<double> heights,
   required int barCount,
+  List<Color>? customColors,
 }) {
   if (size.width <= 0 || size.height <= 0 || barCount <= 1) return;
 
   final double centerY = size.height / 2;
   final double maxAmp = (size.height / 2) * 0.92;
+
+  final List<Color> colors = customColors ?? VisualizerPaletteHelper.brandPalette;
+  final c0 = colors[0 % colors.length];
+  final c1 = colors[1 % colors.length];
+  final c2 = colors[2 % colors.length];
+  final c3 = colors[3 % colors.length];
 
   double getSmoothed(int i) {
     if (i <= 0) return heights[0];
@@ -77,8 +84,8 @@ void paintWave(
       begin: Alignment.topCenter,
       end: Alignment.bottomCenter,
       colors: [
-        AppColors.primary.withValues(alpha: 0.35),
-        AppColors.accentOrange.withValues(alpha: 0.15),
+        c0.withValues(alpha: 0.35),
+        c1.withValues(alpha: 0.15),
         Colors.transparent,
       ],
       stops: const [0.0, 0.6, 1.0],
@@ -88,13 +95,13 @@ void paintWave(
   final Paint harmonicPaint = Paint()
     ..style = PaintingStyle.stroke
     ..strokeWidth = 1.6
-    ..color = AppColors.accentYellow.withValues(alpha: 0.65);
+    ..color = c2.withValues(alpha: 0.65);
   canvas.drawPath(harmonicPath, harmonicPaint);
 
   final Paint reflectionPaint = Paint()
     ..style = PaintingStyle.stroke
     ..strokeWidth = 1.8
-    ..color = AppColors.accentBlue.withValues(alpha: 0.5);
+    ..color = c3.withValues(alpha: 0.5);
   canvas.drawPath(bottomPath, reflectionPaint);
 
   final Rect crestRect = Rect.fromLTWH(0, 0, size.width, size.height);
@@ -102,13 +109,9 @@ void paintWave(
     ..style = PaintingStyle.stroke
     ..strokeWidth = 2.8
     ..strokeCap = StrokeCap.round
-    ..shader = const LinearGradient(
-      colors: [
-        AppColors.accentOrange,
-        AppColors.primary,
-        AppColors.accentYellow,
-      ],
-      stops: [0.0, 0.5, 1.0],
+    ..shader = LinearGradient(
+      colors: [c1, c0, c2],
+      stops: const [0.0, 0.5, 1.0],
     ).createShader(crestRect);
   canvas.drawPath(topPath, crestPaint);
 }

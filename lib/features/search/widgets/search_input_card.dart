@@ -156,10 +156,10 @@ class SearchInputCard extends StatelessWidget {
           const SizedBox(height: 28),
           Icon(Icons.graphic_eq_rounded, size: 56, color: Colors.white.withValues(alpha: 0.15)),
           const SizedBox(height: 14),
-          const Text('Що послухаємо сьогодні?', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: -0.3)),
+          Text(context.l10n.searchPrompt, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: -0.3)),
           const SizedBox(height: 8),
           Text(
-            'Знайдіть пісню за назвою чи автором або вставте пряме посилання на трек, відео чи плейліст з YouTube.',
+            context.l10n.searchPlaceholder,
             textAlign: TextAlign.center,
             style: TextStyle(color: Colors.grey[400], fontSize: 13, height: 1.45),
           ),

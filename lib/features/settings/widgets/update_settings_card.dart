@@ -3,6 +3,7 @@ import 'package:music_flow_mobile/core/widgets/custom_card.dart';
 import 'package:music_flow_mobile/features/settings/widgets/dev_server_dialog.dart';
 import 'package:music_flow_mobile/features/settings/widgets/update_dialog.dart';
 import 'package:music_flow_mobile/features/settings/widgets/update_channel_dialogs.dart';
+import 'package:music_flow_mobile/l10n/app_strings.dart';
 import 'package:music_flow_mobile/services/update_preferences.dart';
 import 'package:music_flow_mobile/services/update_service.dart';
 
@@ -24,31 +25,33 @@ class _UpdateSettingsCardState extends State<UpdateSettingsCard> {
   @override
   void initState() {
     super.initState();
-    _loadState();
+    _loadPreferences();
   }
 
-  Future<void> _loadState() async {
-    final ver = await UpdateService.instance.getCurrentVersion();
+  Future<void> _loadPreferences() async {
+    final vInfo = await UpdateService.instance.getCurrentVersion();
+    final v = vInfo.version;
     final auto = await UpdatePreferences.isAutoCheckEnabled();
     final freq = await UpdatePreferences.getFrequency();
-    final channel = await UpdatePreferences.getChannel();
+    final chan = await UpdatePreferences.getChannel();
     final notif = await UpdatePreferences.isSystemNotificationEnabled();
     if (mounted) {
       setState(() {
-        _installedVersion = ver.version;
+        _installedVersion = v;
         _autoCheck = auto;
         _frequency = freq;
-        _channel = channel;
+        _channel = chan;
         _systemNotif = notif;
       });
     }
   }
 
-  Future<void> _checkUpdate({bool force = false}) async {
+  Future<void> _checkUpdate({bool allowChannelSwitch = false}) async {
+    final l10n = context.l10n;
     setState(() => _isChecking = true);
     final info = await UpdateService.instance.checkForUpdate(
-      force: force,
-      allowChannelSwitch: true,
+      force: true,
+      allowChannelSwitch: allowChannelSwitch,
     );
     if (!mounted) return;
     setState(() => _isChecking = false);
@@ -57,10 +60,7 @@ class _UpdateSettingsCardState extends State<UpdateSettingsCard> {
       UpdateDialog.show(context, info);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('У вас встановлена найновіша версія! 🎉'),
-          behavior: SnackBarBehavior.floating,
-        ),
+        SnackBar(content: Text(l10n.latestVersionInstalled), behavior: SnackBarBehavior.floating),
       );
     }
   }
@@ -75,17 +75,13 @@ class _UpdateSettingsCardState extends State<UpdateSettingsCard> {
 
   Future<void> _selectChannel() async {
     final selected = await UpdateChannelDialogs.showChannelDialog(context, _channel);
-    if (selected != null && mounted) {
-      final oldChannel = _channel;
+    if (selected != null && selected != _channel && mounted) {
       await UpdatePreferences.setChannel(selected);
       setState(() => _channel = selected);
-
-      if (selected != oldChannel || selected != UpdatePreferences.currentRunningChannel) {
-        if (!mounted) return;
-        final confirm = await UpdateChannelDialogs.showConfirmChannelSwitch(context, selected);
-        if (confirm == true && mounted) {
-          _checkUpdate(force: true);
-        }
+      if (!mounted) return;
+      final confirm = await UpdateChannelDialogs.showConfirmChannelSwitch(context, selected);
+      if (confirm == true && mounted) {
+        _checkUpdate(allowChannelSwitch: true);
       }
     }
   }
@@ -93,6 +89,8 @@ class _UpdateSettingsCardState extends State<UpdateSettingsCard> {
   @override
   Widget build(BuildContext context) {
     final primary = Theme.of(context).primaryColor;
+    final l10n = context.l10n;
+    final isChannelDiff = _channel != UpdatePreferences.currentRunningChannel;
 
     return CustomCard(
       child: Column(
@@ -101,7 +99,7 @@ class _UpdateSettingsCardState extends State<UpdateSettingsCard> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Оновлення додатку', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              Text(l10n.updateSettingsTitle, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               GestureDetector(
                 onTap: () => DevServerDialog.show(context),
                 onLongPress: () => DevServerDialog.show(context),
@@ -126,8 +124,8 @@ class _UpdateSettingsCardState extends State<UpdateSettingsCard> {
           const SizedBox(height: 8),
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
-            title: const Text('Автоматична перевірка'),
-            subtitle: const Text('Шукати нові версії у фоновому режимі', style: TextStyle(fontSize: 12)),
+            title: Text(l10n.autoCheckTitle),
+            subtitle: Text(l10n.autoCheckSubtitle, style: const TextStyle(fontSize: 12)),
             value: _autoCheck,
             activeColor: primary,
             onChanged: (val) async {
@@ -138,15 +136,15 @@ class _UpdateSettingsCardState extends State<UpdateSettingsCard> {
           if (_autoCheck) ...[
             ListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Частота перевірки'),
-              subtitle: Text(_frequency.label, style: TextStyle(fontSize: 12, color: primary)),
+              title: Text(l10n.checkFrequency),
+              subtitle: Text(_frequency.localizedLabel(l10n), style: TextStyle(fontSize: 12, color: primary)),
               trailing: const Icon(Icons.arrow_forward_ios, size: 14),
               onTap: _selectFrequency,
             ),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
-              title: const Text('Сповіщення на телефоні'),
-              subtitle: const Text('Показувати повідомлення у шторці Android', style: TextStyle(fontSize: 12)),
+              title: Text(l10n.systemNotificationsTitle),
+              subtitle: Text(l10n.systemNotificationsSubtitle, style: const TextStyle(fontSize: 12)),
               value: _systemNotif,
               activeColor: primary,
               onChanged: (val) async {
@@ -159,15 +157,12 @@ class _UpdateSettingsCardState extends State<UpdateSettingsCard> {
           ListTile(
             contentPadding: EdgeInsets.zero,
             leading: const Icon(Icons.manage_accounts_rounded, size: 20),
-            title: const Text('Канал оновлень'),
+            title: Text(l10n.updateChannelTitle),
             subtitle: Text(
-              _channel != UpdatePreferences.currentRunningChannel
-                  ? '${_channel.label} • потрібне перемикання'
-                  : _channel.label,
-              style: TextStyle(
-                fontSize: 12,
-                color: _channel != UpdatePreferences.currentRunningChannel ? Colors.amber : primary,
-              ),
+              isChannelDiff
+                  ? '${_channel.localizedLabel(l10n)} • ${l10n.channelSwitchNeeded}'
+                  : _channel.localizedLabel(l10n),
+              style: TextStyle(fontSize: 12, color: isChannelDiff ? Colors.amber : primary),
             ),
             trailing: const Icon(Icons.arrow_forward_ios, size: 14),
             onTap: _selectChannel,
@@ -180,12 +175,8 @@ class _UpdateSettingsCardState extends State<UpdateSettingsCard> {
               icon: _isChecking
                   ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                   : const Icon(Icons.refresh_rounded, size: 18),
-              label: Text(_isChecking ? 'Перевірка оновлень...' : 'Перевірити оновлення зараз'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-              ),
+              label: Text(_isChecking ? l10n.checkingUpdates : l10n.checkUpdatesNow),
+              style: ElevatedButton.styleFrom(backgroundColor: primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 12)),
             ),
           ),
         ],

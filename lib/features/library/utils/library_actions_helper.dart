@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:music_flow_mobile/models/song_model.dart';
+import 'package:music_flow_mobile/l10n/app_strings.dart';
 import 'package:music_flow_mobile/providers/audio_provider.dart';
 import 'package:music_flow_mobile/providers/local_library_provider.dart';
 import 'package:music_flow_mobile/locator.dart';
@@ -10,16 +11,16 @@ class LibraryActionsHelper {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Видалити пісні?'),
-        content: Text('Ви впевнені, що хочете видалити $count пісень?'),
+        title: Text(context.l10n.deleteSongsDialogTitle),
+        content: Text(context.l10n.deleteSongsDialogMsg(count)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Скасувати', style: TextStyle(color: Colors.grey)),
+            child: Text(context.l10n.cancel, style: const TextStyle(color: Colors.grey)),
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Видалити', style: TextStyle(color: Colors.redAccent)),
+            child: Text(context.l10n.delete, style: const TextStyle(color: Colors.redAccent)),
           ),
         ],
       ),

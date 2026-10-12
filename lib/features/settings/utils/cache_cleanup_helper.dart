@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:music_flow_mobile/l10n/app_strings.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:music_flow_mobile/services/database_service.dart';
@@ -27,11 +28,14 @@ class CacheSizeData {
 }
 
 class CacheCleanupHelper {
-  static String formatBytes(int bytes) {
-    if (bytes <= 0) return '0 Б';
-    if (bytes < 1024) return '$bytes Б';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} КБ';
-    return '${(bytes / (1024 * 1024)).toStringAsFixed(2)} МБ';
+  static String formatBytes(int bytes, [BuildContext? context]) {
+    if (context != null) {
+      return context.l10n.formatBytes(bytes);
+    }
+    if (bytes <= 0) return '0 B';
+    if (bytes < 1024) return '$bytes B';
+    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)} KB';
+    return '${(bytes / (1024 * 1024)).toStringAsFixed(2)} MB';
   }
 
   static Future<bool> confirmAction({
@@ -47,11 +51,11 @@ class CacheCleanupHelper {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Скасувати', style: TextStyle(color: Colors.grey)),
+            child: Text(context.l10n.cancel, style: const TextStyle(color: Colors.grey)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Очистити', style: TextStyle(color: Colors.redAccent)),
+            child: Text(context.l10n.delete, style: const TextStyle(color: Colors.redAccent)),
           ),
         ],
       ),

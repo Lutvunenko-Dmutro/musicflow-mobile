@@ -8,6 +8,7 @@ import 'package:music_flow_mobile/features/search/widgets/search_input_card.dart
 import 'package:music_flow_mobile/features/search/widgets/search_filter_sheet.dart';
 import 'package:music_flow_mobile/features/search/widgets/local_search_results.dart';
 import 'package:music_flow_mobile/features/search/widgets/youtube_search_results.dart';
+import 'package:music_flow_mobile/l10n/app_strings.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -75,9 +76,9 @@ class _SearchScreenState extends State<SearchScreen> {
           _results = [];
         });
         
-        String errorMsg = 'Помилка пошуку.';
+        String errorMsg = context.l10n.searchErrorGeneric;
         if (e.toString().contains('SocketException')) {
-          errorMsg = 'Немає підключення до інтернету.';
+          errorMsg = context.l10n.searchErrorNoInternet;
         }
         
         ScaffoldMessenger.of(context).showSnackBar(

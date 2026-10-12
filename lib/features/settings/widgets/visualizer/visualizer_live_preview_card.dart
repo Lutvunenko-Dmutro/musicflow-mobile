@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:music_flow_mobile/l10n/app_strings.dart';
 import 'package:music_flow_mobile/providers/audio_provider.dart';
 import 'package:music_flow_mobile/providers/visualizer_settings_provider.dart';
 import 'package:music_flow_mobile/features/player/widgets/visualizer/audio_visualizer.dart';
@@ -21,23 +22,24 @@ class VisualizerLivePreviewCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final primary = Theme.of(context).primaryColor;
+    final l10n = context.l10n;
     final isPlaying = audioProvider.isPlaying;
     final isVisEnabled = audioProvider.showVisualizer;
     final currentSong = audioProvider.currentSong;
+
+    final statusText = !isVisEnabled
+        ? l10n.visLiveStatusDisabled
+        : (isPlaying ? l10n.visLiveStatusPlaying : l10n.visLiveStatusTestBeat);
 
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFF1E1E24),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: isVisEnabled ? primary.withValues(alpha: 0.35) : Colors.white10,
-          width: 1.5,
-        ),
+        border: Border.all(color: Colors.white12),
         boxShadow: [
           BoxShadow(
-            color: isVisEnabled ? primary.withValues(alpha: 0.12) : Colors.black45,
-            blurRadius: 20,
-            spreadRadius: 2,
+            color: Colors.black.withValues(alpha: 0.3),
+            blurRadius: 16,
             offset: const Offset(0, 4),
           ),
         ],
@@ -45,7 +47,7 @@ class VisualizerLivePreviewCard extends StatelessWidget {
       child: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -63,9 +65,7 @@ class VisualizerLivePreviewCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      !isVisEnabled
-                          ? 'Вимкнено'
-                          : (isPlaying ? 'В ефірі (Трек)' : 'Тестовий біт'),
+                      statusText,
                       style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.white70),
                     ),
                   ],
@@ -91,7 +91,7 @@ class VisualizerLivePreviewCard extends StatelessWidget {
                         Icon(Icons.bolt, size: 14, color: forceTestMode ? primary : Colors.white60),
                         const SizedBox(width: 4),
                         Text(
-                          'Демо-сигнал',
+                          l10n.visLiveTestBeatBtn,
                           style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
@@ -119,16 +119,16 @@ class VisualizerLivePreviewCard extends StatelessWidget {
                 alignment: Alignment.center,
                 children: [
                   if (!isVisEnabled)
-                    const Center(
+                    Center(
                       child: Text(
-                        'Візуалізатор вимкнено перемикачем угорі',
-                        style: TextStyle(color: Colors.white38, fontSize: 13),
+                        l10n.visLiveDisabledHint,
+                        style: const TextStyle(color: Colors.white38, fontSize: 13),
                       ),
                     )
                   else
                     AudioVisualizer(
                       isPlaying: isPlaying,
-                      testMode: forceTestMode || !isPlaying,
+                      testMode: forceTestMode,
                       height: 100,
                       barCount: 60,
                       width: double.infinity,
@@ -146,13 +146,13 @@ class VisualizerLivePreviewCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        currentSong?.title ?? 'Музику не вибрано',
+                        currentSong?.title ?? l10n.visLiveNoMusic,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white),
                       ),
                       Text(
-                        currentSong?.author ?? 'Увімкніть трек для живої реакції',
+                        currentSong?.author ?? l10n.visLiveStartMusicHint,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(fontSize: 11, color: Colors.white54),

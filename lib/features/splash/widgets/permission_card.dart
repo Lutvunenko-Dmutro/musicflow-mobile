@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:music_flow_mobile/features/splash/services/permission_flow_service.dart';
+import 'package:music_flow_mobile/l10n/app_strings.dart';
 
 class PermissionCard extends StatelessWidget {
   final PermissionItemData item;
@@ -14,7 +15,31 @@ class PermissionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final primary = Theme.of(context).primaryColor;
+    final l10n = context.l10n;
     final isGranted = item.isGranted;
+
+    String title = item.title;
+    String subtitle = item.subtitle;
+    if (title.isEmpty) {
+      switch (item.type) {
+        case AppPermissionType.notifications:
+          title = l10n.notificationPermTitle;
+          subtitle = l10n.notificationPermDesc;
+          break;
+        case AppPermissionType.visualizer:
+          title = l10n.visualizerPermTitle;
+          subtitle = l10n.visualizerPermDesc;
+          break;
+        case AppPermissionType.mediaLibrary:
+          title = l10n.storagePermTitle;
+          subtitle = l10n.storagePermDesc;
+          break;
+        case AppPermissionType.installUpdates:
+          title = l10n.updatePermTitle;
+          subtitle = l10n.updatePermDesc;
+          break;
+      }
+    }
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -51,7 +76,7 @@ class PermissionCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  item.title,
+                  title,
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
@@ -60,7 +85,7 @@ class PermissionCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  item.subtitle,
+                  subtitle,
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.white.withValues(alpha: 0.6),
@@ -78,14 +103,14 @@ class PermissionCard extends StatelessWidget {
                 color: Colors.greenAccent.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: const Row(
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.check_circle_rounded, size: 14, color: Colors.greenAccent),
-                  SizedBox(width: 4),
+                  const Icon(Icons.check_circle_rounded, size: 14, color: Colors.greenAccent),
+                  const SizedBox(width: 4),
                   Text(
-                    'Готово',
-                    style: TextStyle(
+                    l10n.permissionGranted,
+                    style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: Colors.greenAccent,
@@ -106,9 +131,9 @@ class PermissionCard extends StatelessWidget {
                 ),
                 elevation: 0,
               ),
-              child: const Text(
-                'Надати',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+              child: Text(
+                l10n.permissionGrant,
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
               ),
             ),
         ],

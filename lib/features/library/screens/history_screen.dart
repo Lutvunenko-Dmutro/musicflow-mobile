@@ -77,17 +77,17 @@ class _HistoryScreenState extends State<HistoryScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFF222222),
-        title: const Text('Видалити з історії', style: TextStyle(color: Colors.white)),
+        title: Text(context.l10n.deleteFromHistoryTitle, style: const TextStyle(color: Colors.white)),
         content: Text(
-          'Видалити $count ${count == 1 ? 'трек' : 'треків'} з історії?',
+          context.l10n.deleteFromHistoryMsg(count),
           style: const TextStyle(color: Colors.white70),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Скасувати', style: TextStyle(color: Colors.white60))),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(context.l10n.cancel, style: const TextStyle(color: Colors.white60))),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent, foregroundColor: Colors.white),
-            child: const Text('Видалити'),
+            child: Text(context.l10n.delete),
           ),
         ],
       ),
@@ -117,7 +117,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           if (isSelectionMode) ...[
             IconButton(
               icon: Icon(_selectedIds.length == _history.length ? Icons.deselect : Icons.select_all),
-              tooltip: _selectedIds.length == _history.length ? 'Зняти все' : 'Вибрати все',
+              tooltip: _selectedIds.length == _history.length ? strings.deselectAll : strings.selectAll,
               onPressed: () {
                 setState(() {
                   if (_selectedIds.length == _history.length) {

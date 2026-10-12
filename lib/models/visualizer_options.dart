@@ -11,5 +11,11 @@ enum VisualizerCoverShape {
 enum VisualizerColorScheme {
   fire,
   adaptive,
-  cyberpunk,
+}
+
+enum AuraSpectrumMode {
+  live,
+  mirrored2H,
+  mirrored2V,
+  mirrored4Side,
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:music_flow_mobile/features/main/screens/main_screen.dart';
 import 'package:music_flow_mobile/features/splash/screens/permissions_screen.dart';
 import 'package:music_flow_mobile/features/splash/services/permission_flow_service.dart';
+import 'package:music_flow_mobile/l10n/app_strings.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -120,7 +121,7 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Ваша музика. Ваш ритм.',
+                      context.l10n.splashTagline,
                       style: TextStyle(
                         fontSize: 13,
                         color: Colors.white.withValues(alpha: 0.5),

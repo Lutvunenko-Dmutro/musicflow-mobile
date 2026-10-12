@@ -4,6 +4,8 @@ import 'package:music_flow_mobile/main.dart';
 import 'package:music_flow_mobile/services/database_service.dart';
 import 'package:music_flow_mobile/locator.dart';
 import 'package:music_flow_mobile/utils/app_logger.dart';
+import 'package:music_flow_mobile/l10n/app_strings.dart';
+import 'package:music_flow_mobile/l10n/strings_uk.dart';
 
 void handleAudioPlaybackError(dynamic e, StackTrace stacktrace, SongModel song, Function(String) setErrorCallback) {
   final errorMsg = e.toString().replaceAll('Exception: ', '');
@@ -12,36 +14,39 @@ void handleAudioPlaybackError(dynamic e, StackTrace stacktrace, SongModel song, 
     return;
   }
   AppLogger.error('Exception while playing', e, stacktrace, 'AUDIO');
+
+  final ctx = navigatorKey.currentContext;
+  final l10n = (ctx != null && ctx.mounted) ? ctx.l10n : const StringsUk();
   
   if (errorMsg.contains('Локальний файл не знайдено')) {
-    final ctx = navigatorKey.currentContext;
     if (ctx != null && ctx.mounted) {
       showDialog(
         context: ctx,
         builder: (dialogCtx) => AlertDialog(
-          title: const Text('Файл відсутній'),
-          content: const Text('Цей аудіофайл було видалено з пристрою. Бажаєте видалити цей запис з історії?'),
+          title: Text(l10n.missingFileTitle),
+          content: Text(l10n.missingFileContent),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogCtx),
-              child: const Text('Ні', style: TextStyle(color: Colors.grey)),
+              child: Text(l10n.no, style: const TextStyle(color: Colors.grey)),
             ),
             TextButton(
               onPressed: () {
                 locator<DatabaseService>().removeFromHistory(song.id);
                 Navigator.pop(dialogCtx);
               },
-              child: const Text('Видалити', style: TextStyle(color: Colors.redAccent)),
+              child: Text(l10n.delete, style: const TextStyle(color: Colors.redAccent)),
             ),
           ],
         ),
       );
     }
   } else if (errorMsg.contains('SocketException') || errorMsg.contains('Failed host lookup')) {
-    setErrorCallback('Немає підключення до інтернету.');
+    final msg = l10n.noInternetConnection;
+    setErrorCallback(msg);
     scaffoldMessengerKey.currentState?.showSnackBar(
-      const SnackBar(
-        content: Text('Немає підключення до інтернету.'),
+      SnackBar(
+        content: Text(msg),
         backgroundColor: Colors.redAccent,
         behavior: SnackBarBehavior.floating,
       ),
@@ -49,20 +54,21 @@ void handleAudioPlaybackError(dynamic e, StackTrace stacktrace, SongModel song, 
   } else if (errorMsg.contains('VideoUnplayableException') ||
       errorMsg.contains('unplayable') ||
       errorMsg.contains('Streams are not available')) {
-    const friendly = 'Цей трек заблоковано на YouTube (обмеження правовласника). Спробуйте іншу версію.';
+    final friendly = l10n.trackBlockedYouTube;
     setErrorCallback(friendly);
     scaffoldMessengerKey.currentState?.showSnackBar(
-      const SnackBar(
+      SnackBar(
         content: Text(friendly),
         backgroundColor: Colors.redAccent,
         behavior: SnackBarBehavior.floating,
       ),
     );
   } else {
-    setErrorCallback('Помилка: $errorMsg');
+    final msg = l10n.downloadError(errorMsg);
+    setErrorCallback(msg);
     scaffoldMessengerKey.currentState?.showSnackBar(
       SnackBar(
-        content: Text('Помилка: $errorMsg'),
+        content: Text(msg),
         backgroundColor: Colors.redAccent,
         behavior: SnackBarBehavior.floating,
       ),

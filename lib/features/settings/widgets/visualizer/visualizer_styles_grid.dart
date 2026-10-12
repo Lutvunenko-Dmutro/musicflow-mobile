@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:music_flow_mobile/l10n/app_strings.dart';
 import 'package:music_flow_mobile/providers/visualizer_settings_provider.dart';
 
 class VisualizerStylesGrid extends StatelessWidget {
@@ -12,16 +13,30 @@ class VisualizerStylesGrid extends StatelessWidget {
     required this.onStyleChanged,
   });
 
-  static const List<Map<String, dynamic>> styles = [
-    {'style': VisualizerStyle.bars, 'title': 'Стовпчики', 'desc': 'Класичний еквалайзер', 'icon': Icons.equalizer},
-    {'style': VisualizerStyle.mirrored, 'title': 'Дзеркало', 'desc': 'Симетрично від центру', 'icon': Icons.unfold_more},
-    {'style': VisualizerStyle.circle, 'title': 'Коло', 'desc': 'Кругова діаграма', 'icon': Icons.donut_large},
-    {'style': VisualizerStyle.wave, 'title': 'Хвиля', 'desc': 'Плавна звукова лінія', 'icon': Icons.waves},
+  static const List<Map<String, dynamic>> _styleItems = [
+    {'style': VisualizerStyle.bars, 'icon': Icons.equalizer},
+    {'style': VisualizerStyle.mirrored, 'icon': Icons.unfold_more},
+    {'style': VisualizerStyle.circle, 'icon': Icons.donut_large},
+    {'style': VisualizerStyle.wave, 'icon': Icons.waves},
   ];
+
+  (String, String) _getStyleLabels(VisualizerStyle style, AppStrings l10n) {
+    switch (style) {
+      case VisualizerStyle.bars:
+        return (l10n.visStyleBars, l10n.visStyleBarsDesc);
+      case VisualizerStyle.mirrored:
+        return (l10n.visStyleMirrored, l10n.visStyleMirroredDesc);
+      case VisualizerStyle.circle:
+        return (l10n.visStyleCircle, l10n.visStyleCircleDesc);
+      case VisualizerStyle.wave:
+        return (l10n.visStyleWave, l10n.visStyleWaveDesc);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final primary = Theme.of(context).primaryColor;
+    final l10n = context.l10n;
 
     return GridView.builder(
       shrinkWrap: true,
@@ -32,11 +47,12 @@ class VisualizerStylesGrid extends StatelessWidget {
         mainAxisSpacing: 10,
         childAspectRatio: 2.2,
       ),
-      itemCount: styles.length,
+      itemCount: _styleItems.length,
       itemBuilder: (context, index) {
-        final item = styles[index];
+        final item = _styleItems[index];
         final style = item['style'] as VisualizerStyle;
         final isSelected = settings.style == style;
+        final (title, desc) = _getStyleLabels(style, l10n);
 
         return InkWell(
           onTap: () {
@@ -66,7 +82,7 @@ class VisualizerStylesGrid extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        item['title'] as String,
+                        title,
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.bold,
@@ -75,7 +91,7 @@ class VisualizerStylesGrid extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        item['desc'] as String,
+                        desc,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(fontSize: 10, color: Colors.white54),

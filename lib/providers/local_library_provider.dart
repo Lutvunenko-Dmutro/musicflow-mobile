@@ -30,9 +30,9 @@ class LocalLibraryProvider extends ChangeNotifier {
       return;
     }
 
-    var manageStatus = await Permission.manageExternalStorage.status;
-    if (!manageStatus.isGranted) {
-      await Permission.manageExternalStorage.request();
+    var audioStatus = await Permission.audio.status;
+    if (!audioStatus.isGranted) {
+      await Permission.audio.request();
     }
     
     var storageStatus = await Permission.storage.status;

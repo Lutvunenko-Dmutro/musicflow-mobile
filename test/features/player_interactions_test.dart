@@ -154,6 +154,9 @@ class _MockAudioProvider extends ChangeNotifier implements AudioProvider {
   bool prevCalled = false;
 
   @override
+  bool get isPlaying => false;
+
+  @override
   bool get hasNext => true;
 
   @override

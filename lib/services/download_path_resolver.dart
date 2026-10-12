@@ -11,7 +11,8 @@ class DownloadPathResolver {
     
     if (customPath != null &&
         customPath.isNotEmpty &&
-        customPath != 'За замовчуванням (Внутрішня пам\'ять)') {
+        customPath != 'За замовчуванням (Внутрішня пам\'ять)' &&
+        customPath != 'Default (Internal Storage)') {
       final customDir = Directory(customPath);
       if (customDir.existsSync()) return customPath;
     }

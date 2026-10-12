@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:music_flow_mobile/models/release_history_item.dart';
 import 'package:music_flow_mobile/services/update_service.dart';
+import 'package:music_flow_mobile/l10n/app_strings.dart';
 
 class UpdateChangelogView extends StatelessWidget {
   final UpdateInfo info;
 
   const UpdateChangelogView({super.key, required this.info});
 
-  List<String> _parseChangelog(String text) {
+  List<String> _parseChangelog(String text, AppStrings l10n) {
     final lines = text.split('\n');
     final result = <String>[];
 
@@ -18,30 +19,26 @@ class UpdateChangelogView extends StatelessWidget {
       final lower = line.toLowerCase();
       if (lower.contains('sha-256') || lower.contains('sha256') || lower.contains('md5:')) continue;
 
-      final header = line.replaceAll(RegExp(r'[\*\_`#]'), '').trim().toLowerCase();
-      if (header.startsWith('зміни у цій версії') ||
-          header.startsWith('оновлення musicflow') ||
-          header.startsWith('changelog') ||
-          header.startsWith('що нового') ||
-          header == 'зміни:' ||
-          header == 'changes:') {
-        continue;
-      }
-
       var cleaned = line.replaceFirst(RegExp(r'^([•\-\*\+]|\d+[\.\)])\s*'), '').trim();
       cleaned = cleaned.replaceAll('**', '').replaceAll('__', '').replaceAll('`', '').replaceAll(RegExp(r'^\*+|\*+$'), '').trim();
+
+      // Skip section headers (e.g. "Features:", "Зміни:", "Changelog")
+      if (cleaned.endsWith(':') || cleaned.toLowerCase() == 'changelog') {
+        continue;
+      }
 
       if (cleaned.isNotEmpty) result.add(cleaned);
     }
 
-    return result.isEmpty ? const ['Покращення стабільності та оптимізація додатку'] : result;
+    return result.isEmpty ? [l10n.defaultChangelogFallback] : result;
   }
 
   @override
   Widget build(BuildContext context) {
     final primary = Theme.of(context).primaryColor;
+    final l10n = context.l10n;
     final missed = info.missedReleases;
-    final currentItems = _parseChangelog(info.changelog);
+    final currentItems = _parseChangelog(info.changelog, l10n);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -49,13 +46,13 @@ class UpdateChangelogView extends StatelessWidget {
       children: [
         Row(
           children: [
-            Text('Що нового у v${info.version}:', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white70)),
+            Text(l10n.whatsNewInVersion(info.version), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white70)),
             if (missed.isNotEmpty) ...[
               const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(color: Colors.amber.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(6)),
-                child: Text('пропущено ${missed.length}', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.amberAccent)),
+                child: Text(l10n.missedReleasesCount(missed.length), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.amberAccent)),
               ),
             ],
           ],
@@ -70,9 +67,9 @@ class UpdateChangelogView extends StatelessWidget {
                 ...currentItems.map((item) => _buildBulletItem(item, primary)),
                 if (missed.isNotEmpty) ...[
                   const SizedBox(height: 10),
-                  const Text('Пропущені зміни:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.amberAccent)),
+                  Text(l10n.missedChanges, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.amberAccent)),
                   const SizedBox(height: 6),
-                  ...missed.map((rel) => _buildReleaseBlock(rel, primary)),
+                  ...missed.map((rel) => _buildReleaseBlock(rel, primary, l10n)),
                 ],
               ],
             ),
@@ -82,8 +79,8 @@ class UpdateChangelogView extends StatelessWidget {
     );
   }
 
-  Widget _buildReleaseBlock(ReleaseHistoryItem release, Color primary) {
-    final items = _parseChangelog(release.changelog);
+  Widget _buildReleaseBlock(ReleaseHistoryItem release, Color primary, AppStrings l10n) {
+    final items = _parseChangelog(release.changelog, l10n);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),

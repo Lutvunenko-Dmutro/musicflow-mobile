@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:music_flow_mobile/l10n/app_strings.dart';
 
 class EqualizerPresetsWidget extends StatelessWidget {
   final String activePreset;
@@ -11,15 +12,47 @@ class EqualizerPresetsWidget extends StatelessWidget {
     required this.onPresetSelected,
   });
 
+  static const presets = [
+    'Звичайний', 'Рок', 'Поп',
+    'Джаз', 'Класика', 'Хіп-хоп',
+    'Метал', 'Танцювальна', 'Акустика',
+    'Вокал', 'Bass Boost', 'Налаштувати',
+  ];
+
+  static String getPresetLabel(String preset, AppStrings l10n) {
+    switch (preset) {
+      case 'Звичайний':
+        return l10n.eqPresetFlat;
+      case 'Рок':
+        return l10n.eqPresetRock;
+      case 'Поп':
+        return l10n.eqPresetPop;
+      case 'Джаз':
+        return l10n.eqPresetJazz;
+      case 'Класика':
+        return l10n.eqPresetClassical;
+      case 'Хіп-хоп':
+        return l10n.eqPresetHipHop;
+      case 'Метал':
+        return l10n.eqPresetMetal;
+      case 'Танцювальна':
+        return l10n.eqPresetDance;
+      case 'Акустика':
+        return l10n.eqPresetAcoustic;
+      case 'Вокал':
+        return l10n.eqPresetVocal;
+      case 'Bass Boost':
+        return l10n.eqPresetBassBoost;
+      case 'Налаштувати':
+      default:
+        return l10n.eqPresetCustom;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final primary = Theme.of(context).primaryColor;
-    final presets = [
-      'Звичайний', 'Рок', 'Поп',
-      'Джаз', 'Класика', 'Хіп-хоп',
-      'Метал', 'Танцювальна', 'Акустика',
-      'Вокал', 'Bass Boost', 'Налаштувати',
-    ];
+    final l10n = context.l10n;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -30,9 +63,9 @@ class EqualizerPresetsWidget extends StatelessWidget {
             children: [
               Icon(Icons.auto_awesome_rounded, size: 18, color: primary),
               const SizedBox(width: 8),
-              const Text(
-                'Рекомендовані пресети',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+              Text(
+                l10n.eqPresetsTitle,
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
               ),
             ],
           ),
@@ -50,6 +83,8 @@ class EqualizerPresetsWidget extends StatelessWidget {
             itemBuilder: (context, index) {
               final preset = presets[index];
               final isActive = preset == activePreset;
+              final label = getPresetLabel(preset, l10n);
+
               return Material(
                 color: Colors.transparent,
                 child: InkWell(
@@ -89,7 +124,7 @@ class EqualizerPresetsWidget extends StatelessWidget {
                         ],
                         Flexible(
                           child: Text(
-                            preset,
+                            label,
                             textAlign: TextAlign.center,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Захищаємо публічні зовнішні домени: тільки HTTPS -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">github.com</domain>
+        <domain includeSubdomains="true">api.github.com</domain>
+        <domain includeSubdomains="true">googlevideo.com</domain>
+        <domain includeSubdomains="true">youtube.com</domain>
+    </domain-config>
+
+    <!-- Дозволяємо HTTP для локального сервера розробки (Wi-Fi LAN / localhost / emulator) -->
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

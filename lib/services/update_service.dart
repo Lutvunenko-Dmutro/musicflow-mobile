@@ -40,7 +40,7 @@ class UpdateService {
 
   Future<UpdateInfo?> checkForUpdate({
     bool force = false,
-    bool allowChannelSwitch = true,
+    bool allowChannelSwitch = false,
   }) async {
     final current = await getCurrentVersion();
     final channel = await UpdatePreferences.getChannel();
@@ -118,5 +118,47 @@ class UpdateService {
       AppLogger.warning('Не вдалося показати сповіщення: $e', 'UPDATER');
       return false;
     }
+  }
+
+  Future<bool> showDownloadProgressNotification({
+    required String title,
+    required String message,
+    required int progress,
+    bool indeterminate = false,
+  }) async {
+    try {
+      final result = await _installerChannel.invokeMethod<bool>('showDownloadProgress', {
+        'title': title,
+        'message': message,
+        'progress': progress,
+        'indeterminate': indeterminate,
+      });
+      return result ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> showDownloadCompleteNotification({
+    required String title,
+    required String message,
+    required String filePath,
+  }) async {
+    try {
+      final result = await _installerChannel.invokeMethod<bool>('showDownloadComplete', {
+        'title': title,
+        'message': message,
+        'filePath': filePath,
+      });
+      return result ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<void> cancelDownloadNotification() async {
+    try {
+      await _installerChannel.invokeMethod('cancelDownloadNotification');
+    } catch (_) {}
   }
 }

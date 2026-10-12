@@ -65,29 +65,29 @@ class PermissionFlowService {
     return [
       PermissionItemData(
         type: AppPermissionType.notifications,
-        title: 'Сповіщення та Плеєр',
-        subtitle: 'Керування музикою у шторці та на екрані блокування',
+        title: '',
+        subtitle: '',
         icon: Icons.notifications_active_rounded,
         isGranted: notifStatus.isGranted,
       ),
       PermissionItemData(
         type: AppPermissionType.visualizer,
-        title: 'FFT-Візуалізатор',
-        subtitle: 'Апаратне захоплення частот для 60 FPS анімації спектру',
+        title: '',
+        subtitle: '',
         icon: Icons.equalizer_rounded,
         isGranted: micStatus.isGranted,
       ),
       PermissionItemData(
         type: AppPermissionType.mediaLibrary,
-        title: 'Медіатека та Музика',
-        subtitle: 'Доступ до локальних аудіофайлів та збережених треків',
+        title: '',
+        subtitle: '',
         icon: Icons.folder_copy_rounded,
         isGranted: mediaGranted,
       ),
       PermissionItemData(
         type: AppPermissionType.installUpdates,
-        title: 'Оновлення в 1 клік',
-        subtitle: 'Безпечне встановлення нових релізів прямо з додатка',
+        title: '',
+        subtitle: '',
         icon: Icons.system_update_rounded,
         isGranted: installStatus.isGranted,
       ),
@@ -107,9 +107,6 @@ class PermissionFlowService {
         status = await Permission.audio.request();
         if (!status.isGranted) {
           status = await Permission.storage.request();
-        }
-        if (!status.isGranted && await Permission.manageExternalStorage.status.isRestricted == false) {
-          status = await Permission.manageExternalStorage.request();
         }
         break;
       case AppPermissionType.installUpdates:

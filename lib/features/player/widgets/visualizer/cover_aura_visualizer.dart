@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:provider/provider.dart';
@@ -27,13 +28,29 @@ class CoverAuraVisualizer extends StatefulWidget {
 
 class _CoverAuraVisualizerState extends State<CoverAuraVisualizer>
     with SingleTickerProviderStateMixin {
-  static const int _barCount = 48;
+  int _barCount = 96;
   late List<double> _currentHeights, _targetHeights, _dotHeights, _dotVelocities;
   Ticker? _ticker;
   Timer? _testTimer;
   final VisualizerMockGenerator _mock = VisualizerMockGenerator();
   StreamSubscription? _subscription;
   final ValueNotifier<int> _repaintNotifier = ValueNotifier<int>(0);
+
+  static int _computeBarCount(double size, VisualizerCoverShape shape) {
+    final perimeter = shape == VisualizerCoverShape.circleVinyl
+        ? math.pi * size
+        : (4 * (size - 40.0) + 2 * math.pi * 20.0);
+    return (perimeter / 7.8).round().clamp(64, 144);
+  }
+
+  void _ensureBarCount(int count) {
+    if (_barCount == count && _currentHeights.length == count) return;
+    _barCount = count;
+    _currentHeights = List.filled(count, 0.05);
+    _targetHeights = List.filled(count, 0.05);
+    _dotHeights = List.filled(count, 0.05);
+    _dotVelocities = List.filled(count, 0.0);
+  }
 
   @override
   void initState() {
@@ -66,6 +83,8 @@ class _CoverAuraVisualizerState extends State<CoverAuraVisualizer>
     );
   }
 
+  bool _hasRealData = false;
+
   void _processWaveform(List<int> raw) {
     if (!mounted) return;
     final s = context.read<VisualizerSettingsProvider?>();
@@ -83,19 +102,25 @@ class _CoverAuraVisualizerState extends State<CoverAuraVisualizer>
         final provider = context.read<AudioProvider>();
         _subscription = provider.visualizerStream.listen((event) {
           if (event is List<dynamic> || event is List<int>) {
+            _hasRealData = true;
+            _testTimer?.cancel();
+            _testTimer = null;
             _processWaveform((event as List).cast<int>());
           }
         });
       }
-      _testTimer ??= Timer.periodic(const Duration(milliseconds: 30), (_) {
-        if (mounted) _processWaveform(_mock.generateNextFrame());
-      });
+      if (!_hasRealData) {
+        _testTimer ??= Timer.periodic(const Duration(milliseconds: 30), (_) {
+          if (mounted && !_hasRealData) _processWaveform(_mock.generateNextFrame());
+        });
+      }
     } else {
       _ticker?.stop();
       _testTimer?.cancel();
       _testTimer = null;
       _subscription?.cancel();
       _subscription = null;
+      _hasRealData = false;
     }
   }
 
@@ -114,13 +139,16 @@ class _CoverAuraVisualizerState extends State<CoverAuraVisualizer>
     final isPlaying = context.select<AudioProvider, bool>((p) => p.isPlaying);
     final isAura = settings?.position == VisualizerPosition.coverAura;
 
+    if (settings != null) {
+      _ensureBarCount(_computeBarCount(widget.coverSize, settings.coverShape));
+    }
     _updateActiveState(isPlaying, isAura);
 
     if (!isAura || settings == null) {
       return widget.child;
     }
 
-    final totalSize = widget.coverSize + 80.0;
+    final totalSize = widget.coverSize + 96.0;
 
     return SizedBox(
       width: totalSize,
@@ -137,9 +165,10 @@ class _CoverAuraVisualizerState extends State<CoverAuraVisualizer>
                 dotHeights: _dotHeights,
                 shape: settings.coverShape,
                 colorScheme: settings.colorScheme,
+                spectrumMode: settings.auraSpectrumMode,
                 dominantColor: widget.dominantColor,
                 coverSize: widget.coverSize,
-                maxRayLength: 36.0,
+                maxRayLength: 40.0,
               ),
             ),
           ),

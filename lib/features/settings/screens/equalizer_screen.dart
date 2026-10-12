@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:music_flow_mobile/l10n/app_strings.dart';
 import 'package:music_flow_mobile/providers/audio_provider.dart';
 import 'package:music_flow_mobile/providers/equalizer_provider.dart';
 import 'package:music_flow_mobile/features/player/widgets/visualizer/audio_visualizer.dart';
@@ -38,6 +39,8 @@ class _EqualizerScreenBodyState extends State<_EqualizerScreenBody> {
     final provider = Provider.of<EqualizerProvider>(context);
     final audioProvider = context.watch<AudioProvider>();
     final isEnabled = provider.isEnabled;
+    final primary = Theme.of(context).primaryColor;
+    final l10n = context.l10n;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (provider.parameters == null) {
@@ -45,18 +48,16 @@ class _EqualizerScreenBodyState extends State<_EqualizerScreenBody> {
       }
     });
 
-    final primary = Theme.of(context).primaryColor;
-
     return Scaffold(
       backgroundColor: const Color(0xFF1E1E1E),
       appBar: AppBar(
-        title: const Text('10-смуговий Еквалайзер'),
+        title: Text(l10n.equalizerTitle),
         backgroundColor: Colors.transparent,
         actions: [
           if (isEnabled)
             TextButton.icon(
               icon: const Icon(Icons.restart_alt_rounded, size: 16),
-              label: const Text('Скинути', style: TextStyle(fontSize: 12)),
+              label: Text(l10n.reset, style: const TextStyle(fontSize: 12)),
               style: TextButton.styleFrom(foregroundColor: Colors.white70),
               onPressed: () {
                 HapticFeedback.lightImpact();
@@ -75,10 +76,10 @@ class _EqualizerScreenBodyState extends State<_EqualizerScreenBody> {
         ],
       ),
       body: !isEnabled
-          ? const Center(
+          ? Center(
               child: Text(
-                'Еквалайзер вимкнено',
-                style: TextStyle(color: Colors.grey, fontSize: 16),
+                l10n.equalizerDisabled,
+                style: const TextStyle(color: Colors.grey, fontSize: 16),
               ),
             )
           : ListView(
@@ -128,7 +129,7 @@ class _EqualizerScreenBodyState extends State<_EqualizerScreenBody> {
                         } catch (_) {
                           if (!context.mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Не вдалося відкрити налаштування звуку')),
+                            SnackBar(content: Text(l10n.systemSoundSettingsError)),
                           );
                         }
                       },
@@ -150,12 +151,12 @@ class _EqualizerScreenBodyState extends State<_EqualizerScreenBody> {
                               child: Icon(Icons.tune_rounded, color: primary, size: 20),
                             ),
                             const SizedBox(width: 12),
-                            const Expanded(
+                            Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text('Системні звукові ефекти', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white)),
-                                  Text('Dolby Atmos, 3D Sound або системний EQ', style: TextStyle(fontSize: 11, color: Colors.white54)),
+                                  Text(l10n.systemSoundEffectsTitle, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white)),
+                                  Text(l10n.systemSoundEffectsSubtitle, style: const TextStyle(fontSize: 11, color: Colors.white54)),
                                 ],
                               ),
                             ),

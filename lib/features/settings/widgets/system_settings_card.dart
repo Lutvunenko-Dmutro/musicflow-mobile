@@ -42,7 +42,7 @@ class _SystemSettingsCardState extends State<SystemSettingsCard> {
       if (mounted) {
         setState(() => _downloadPath = selectedDirectory);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Папку змінено на: $selectedDirectory')),
+          SnackBar(content: Text(context.l10n.folderChangedTo(selectedDirectory))),
         );
       }
     }

@@ -1,64 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:music_flow_mobile/core/widgets/custom_card.dart';
 import 'package:music_flow_mobile/providers/visualizer_settings_provider.dart';
+import 'package:music_flow_mobile/features/settings/widgets/visualizer/visualizer_segment_button.dart';
 import 'package:music_flow_mobile/l10n/app_strings.dart';
 
 class VisualizerAppearanceCard extends StatelessWidget {
   final VisualizerSettingsProvider settings;
 
   const VisualizerAppearanceCard({super.key, required this.settings});
-
-  Widget _buildSegment<T>({
-    required BuildContext context,
-    required T value,
-    required T groupValue,
-    required String label,
-    required IconData icon,
-    required ValueChanged<T> onSelected,
-  }) {
-    final isSelected = value == groupValue;
-    final primary = Theme.of(context).primaryColor;
-
-    return Expanded(
-      child: GestureDetector(
-        onTap: () {
-          HapticFeedback.selectionClick();
-          onSelected(value);
-        },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-          decoration: BoxDecoration(
-            color: isSelected ? primary.withValues(alpha: 0.18) : Colors.white.withValues(alpha: 0.04),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: isSelected ? primary : Colors.white10,
-              width: isSelected ? 1.5 : 1.0,
-            ),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 20, color: isSelected ? primary : Colors.white60),
-              const SizedBox(height: 6),
-              Text(
-                label,
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                  color: isSelected ? Colors.white : Colors.white70,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -84,8 +33,7 @@ class VisualizerAppearanceCard extends StatelessWidget {
           const SizedBox(height: 8),
           Row(
             children: [
-              _buildSegment<VisualizerPosition>(
-                context: context,
+              VisualizerSegmentButton<VisualizerPosition>(
                 value: VisualizerPosition.bottom,
                 groupValue: settings.position,
                 label: strings.visPosBottom,
@@ -93,8 +41,7 @@ class VisualizerAppearanceCard extends StatelessWidget {
                 onSelected: settings.setPosition,
               ),
               const SizedBox(width: 10),
-              _buildSegment<VisualizerPosition>(
-                context: context,
+              VisualizerSegmentButton<VisualizerPosition>(
                 value: VisualizerPosition.coverAura,
                 groupValue: settings.position,
                 label: strings.visPosCoverAura,
@@ -110,8 +57,7 @@ class VisualizerAppearanceCard extends StatelessWidget {
           const SizedBox(height: 8),
           Row(
             children: [
-              _buildSegment<VisualizerCoverShape>(
-                context: context,
+              VisualizerSegmentButton<VisualizerCoverShape>(
                 value: VisualizerCoverShape.roundedSquare,
                 groupValue: settings.coverShape,
                 label: strings.visShapeSquare,
@@ -119,8 +65,7 @@ class VisualizerAppearanceCard extends StatelessWidget {
                 onSelected: settings.setCoverShape,
               ),
               const SizedBox(width: 10),
-              _buildSegment<VisualizerCoverShape>(
-                context: context,
+              VisualizerSegmentButton<VisualizerCoverShape>(
                 value: VisualizerCoverShape.circleVinyl,
                 groupValue: settings.coverShape,
                 label: strings.visShapeVinyl,
@@ -136,34 +81,68 @@ class VisualizerAppearanceCard extends StatelessWidget {
           const SizedBox(height: 8),
           Row(
             children: [
-              _buildSegment<VisualizerColorScheme>(
-                context: context,
+              VisualizerSegmentButton<VisualizerColorScheme>(
                 value: VisualizerColorScheme.fire,
                 groupValue: settings.colorScheme,
                 label: strings.visColorFire,
-                icon: Icons.local_fire_department_rounded,
+                icon: Icons.palette_rounded,
                 onSelected: settings.setColorScheme,
               ),
               const SizedBox(width: 8),
-              _buildSegment<VisualizerColorScheme>(
-                context: context,
+              VisualizerSegmentButton<VisualizerColorScheme>(
                 value: VisualizerColorScheme.adaptive,
                 groupValue: settings.colorScheme,
                 label: strings.visColorAdaptive,
                 icon: Icons.auto_awesome_rounded,
                 onSelected: settings.setColorScheme,
               ),
-              const SizedBox(width: 8),
-              _buildSegment<VisualizerColorScheme>(
-                context: context,
-                value: VisualizerColorScheme.cyberpunk,
-                groupValue: settings.colorScheme,
-                label: strings.visColorCyberpunk,
-                icon: Icons.bolt_rounded,
-                onSelected: settings.setColorScheme,
-              ),
             ],
           ),
+
+          if (settings.position == VisualizerPosition.coverAura) ...[
+            const SizedBox(height: 18),
+            Text(strings.visSpectrumMode, style: const TextStyle(fontSize: 13, color: Colors.white70)),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                VisualizerSegmentButton<AuraSpectrumMode>(
+                  value: AuraSpectrumMode.live,
+                  groupValue: settings.auraSpectrumMode,
+                  label: strings.visSpectrumLive,
+                  icon: Icons.graphic_eq_rounded,
+                  onSelected: settings.setAuraSpectrumMode,
+                ),
+                const SizedBox(width: 8),
+                VisualizerSegmentButton<AuraSpectrumMode>(
+                  value: AuraSpectrumMode.mirrored4Side,
+                  groupValue: settings.auraSpectrumMode,
+                  label: strings.visSpectrumPulse4,
+                  icon: Icons.flare_rounded,
+                  onSelected: settings.setAuraSpectrumMode,
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                VisualizerSegmentButton<AuraSpectrumMode>(
+                  value: AuraSpectrumMode.mirrored2H,
+                  groupValue: settings.auraSpectrumMode,
+                  label: strings.visSpectrumMirror2H,
+                  icon: Icons.swap_horiz_rounded,
+                  onSelected: settings.setAuraSpectrumMode,
+                ),
+                const SizedBox(width: 8),
+                VisualizerSegmentButton<AuraSpectrumMode>(
+                  value: AuraSpectrumMode.mirrored2V,
+                  groupValue: settings.auraSpectrumMode,
+                  label: strings.visSpectrumMirror2V,
+                  icon: Icons.swap_vert_rounded,
+                  onSelected: settings.setAuraSpectrumMode,
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );

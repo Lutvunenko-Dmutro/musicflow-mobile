@@ -9,6 +9,7 @@ import 'package:music_flow_mobile/providers/audio_provider.dart';
 import 'package:music_flow_mobile/providers/local_library_provider.dart';
 import 'package:music_flow_mobile/core/widgets/song_download_button.dart';
 import 'package:music_flow_mobile/features/player/widgets/smart_cover.dart';
+import 'package:music_flow_mobile/l10n/app_strings.dart';
 
 class HistoryListItem extends StatelessWidget {
   final HistoryModel item;
@@ -40,13 +41,12 @@ class HistoryListItem extends StatelessWidget {
     return false;
   }
 
-  String _formatDate(DateTime date) {
-    final now = DateTime.now();
-    final diff = now.difference(date);
-    if (diff.inDays > 0) return '${diff.inDays} дн. тому';
-    if (diff.inHours > 0) return '${diff.inHours} год. тому';
-    if (diff.inMinutes > 0) return '${diff.inMinutes} хв. тому';
-    return 'Щойно';
+  String _formatDate(DateTime date, BuildContext context) {
+    final diff = DateTime.now().difference(date);
+    if (diff.inDays > 0) return context.l10n.daysAgo(diff.inDays);
+    if (diff.inHours > 0) return context.l10n.hoursAgo(diff.inHours);
+    if (diff.inMinutes > 0) return context.l10n.minutesAgo(diff.inMinutes);
+    return context.l10n.justNow;
   }
 
   @override
@@ -129,7 +129,7 @@ class HistoryListItem extends StatelessWidget {
               const SizedBox(width: 4),
               Expanded(
                 child: Text(
-                  '${item.author} • ${_formatDate(item.lastPlayedAt)}',
+                  '${item.author} • ${_formatDate(item.lastPlayedAt, context)}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(color: Colors.grey[400], fontSize: 12),

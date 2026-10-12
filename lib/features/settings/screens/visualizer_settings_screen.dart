@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:music_flow_mobile/l10n/app_strings.dart';
 import 'package:music_flow_mobile/providers/audio_provider.dart';
 import 'package:music_flow_mobile/providers/visualizer_settings_provider.dart';
 import 'package:music_flow_mobile/features/settings/widgets/visualizer/visualizer_live_preview_card.dart';
@@ -19,7 +20,7 @@ class VisualizerSettingsScreen extends StatefulWidget {
 
 class _VisualizerSettingsScreenState extends State<VisualizerSettingsScreen> {
   bool _forceTestMode = false;
-  String _activePreset = 'Класичний';
+  String _activePreset = 'classic';
 
   @override
   Widget build(BuildContext context) {
@@ -27,23 +28,24 @@ class _VisualizerSettingsScreenState extends State<VisualizerSettingsScreen> {
     final settings = context.watch<VisualizerSettingsProvider>();
     final isVisEnabled = audioProvider.showVisualizer;
     final primary = Theme.of(context).primaryColor;
+    final l10n = context.l10n;
 
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
-        title: const Text('Візуалізатор', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(l10n.visualizer, style: const TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            tooltip: 'Скинути до стандартних',
+            tooltip: l10n.visResetTooltip,
             onPressed: () {
               HapticFeedback.mediumImpact();
               settings.reset();
-              setState(() => _activePreset = 'Класичний');
+              setState(() => _activePreset = 'classic');
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Параметри скинуто до стандартних'), duration: Duration(seconds: 2)),
+                SnackBar(content: Text(l10n.visResetSuccess), duration: const Duration(seconds: 2)),
               );
             },
           ),
@@ -60,7 +62,6 @@ class _VisualizerSettingsScreenState extends State<VisualizerSettingsScreen> {
       ),
       body: Column(
         children: [
-          // Закріплений живий екран візуалізатора (завжди перед очима при налаштуванні)
           Padding(
             padding: const EdgeInsets.fromLTRB(16.0, 4.0, 16.0, 6.0),
             child: VisualizerLivePreviewCard(
@@ -70,12 +71,11 @@ class _VisualizerSettingsScreenState extends State<VisualizerSettingsScreen> {
               onToggleTestMode: (val) => setState(() => _forceTestMode = val),
             ),
           ),
-          // Прокручувана панель регулювань
           Expanded(
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
               children: [
-                _buildSectionHeader(context, 'Швидкі пресети', Icons.auto_awesome),
+                _buildSectionHeader(context, l10n.visQuickPresets, Icons.auto_awesome),
                 const SizedBox(height: 10),
                 VisualizerPresetsRow(
                   settings: settings,
@@ -83,24 +83,24 @@ class _VisualizerSettingsScreenState extends State<VisualizerSettingsScreen> {
                   onSelectPreset: (preset) => setState(() => _activePreset = preset),
                 ),
                 const SizedBox(height: 24),
-                _buildSectionHeader(context, 'Стиль візуалізації', Icons.palette_outlined),
+                _buildSectionHeader(context, l10n.visStyles, Icons.palette_outlined),
                 const SizedBox(height: 12),
                 VisualizerStylesGrid(
                   settings: settings,
-                  onStyleChanged: () => setState(() => _activePreset = 'Користувацький'),
+                  onStyleChanged: () => setState(() => _activePreset = 'custom'),
                 ),
                 const SizedBox(height: 24),
                 VisualizerAppearanceCard(settings: settings),
                 const SizedBox(height: 24),
-                _buildSectionHeader(context, 'Рушій спектру (Core)', Icons.memory),
+                _buildSectionHeader(context, l10n.visCore, Icons.memory),
                 const SizedBox(height: 12),
                 VisualizerCoreSelector(settings: settings),
                 const SizedBox(height: 24),
-                _buildSectionHeader(context, 'Параметри фізики та анімації', Icons.tune),
+                _buildSectionHeader(context, l10n.visPhysicsParams, Icons.tune),
                 const SizedBox(height: 12),
                 VisualizerSlidersCard(
                   settings: settings,
-                  onValuesChanged: () => setState(() => _activePreset = 'Користувацький'),
+                  onValuesChanged: () => setState(() => _activePreset = 'custom'),
                 ),
                 const SizedBox(height: 40),
               ],

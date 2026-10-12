@@ -23,6 +23,7 @@ if sys.platform == "win32":
         pass
 
 from dashboard_template import render_dashboard
+from discovery import start_discovery_server
 from security import is_rate_limited
 from storage import PORT, UPDATES_DIR, get_local_ip, get_version_info, get_all_crashes
 from telemetry_handler import (
@@ -64,6 +65,8 @@ class MusicFlowRequestHandler(http.server.SimpleHTTPRequestHandler):
 
         parsed = urlparse(self.path)
         path = parsed.path
+        if path.startswith("/api/v1/"):
+            path = path.replace("/api/v1/", "/api/", 1)
 
         if path in ("/", "/dashboard"):
             self.handle_dashboard()
@@ -103,6 +106,8 @@ class MusicFlowRequestHandler(http.server.SimpleHTTPRequestHandler):
             return
 
         path = urlparse(self.path).path
+        if path.startswith("/api/v1/"):
+            path = path.replace("/api/v1/", "/api/", 1)
         content_length = int(self.headers.get("Content-Length", 0))
         data = {}
         if content_length > 0:
@@ -176,6 +181,7 @@ def main():
         return
 
     print("🟢 Сервер успішно запущено та очікує підключень...")
+    start_discovery_server(http_port=PORT)
     with httpd:
         try:
             httpd.serve_forever()

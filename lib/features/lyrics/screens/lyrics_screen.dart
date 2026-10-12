@@ -7,6 +7,7 @@ import 'package:music_flow_mobile/features/lyrics/widgets/lyrics_list_view.dart'
 import 'package:music_flow_mobile/features/lyrics/widgets/lyrics_search_sheet.dart';
 import 'package:music_flow_mobile/features/lyrics/widgets/lyrics_empty_views.dart';
 import 'package:music_flow_mobile/features/lyrics/widgets/lyrics_source_banner.dart';
+import 'package:music_flow_mobile/l10n/app_strings.dart';
 
 class LyricsScreen extends StatefulWidget {
   const LyricsScreen({super.key});
@@ -38,7 +39,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              song?.title ?? 'Текст пісні',
+              song?.title ?? context.l10n.lyricsDefaultTitle,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
@@ -59,7 +60,7 @@ class _LyricsScreenState extends State<LyricsScreen> {
           if (song != null)
             IconButton(
               icon: const Icon(Icons.search_rounded),
-              tooltip: 'Знайти інше караоке',
+              tooltip: context.l10n.searchAnotherKaraoke,
               onPressed: () => LyricsSearchSheet.show(context, song: song),
             ),
         ],
@@ -99,9 +100,9 @@ class _LyricsScreenState extends State<LyricsScreen> {
                               ),
                             ),
                             const SizedBox(height: 16),
-                            const Text(
-                              'Завантаження караоке та тексту...',
-                              style: TextStyle(color: Colors.white70, fontSize: 14),
+                            Text(
+                              context.l10n.lyricsLoading,
+                              style: const TextStyle(color: Colors.white70, fontSize: 14),
                             ),
                           ],
                         ),

@@ -6,17 +6,29 @@ import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:music_flow_mobile/services/native_crash_handler.dart';
+import 'package:music_flow_mobile/services/server_discovery_service.dart';
+import 'package:music_flow_mobile/services/telemetry_crash_storage.dart';
 import 'package:music_flow_mobile/utils/app_logger.dart';
 
 class TelemetryService {
-  static const String defaultServerUrl = 'http://192.168.0.229:8080';
+  static const String defaultServerUrl = String.fromEnvironment(
+    'DEV_SERVER_URL',
+    defaultValue: 'http://localhost:8080',
+  );
   static const String consentKey = 'telemetry_consent';
   static const String serverUrlKey = 'telemetry_server_url';
-  static const String lastCrashKey = 'telemetry_last_crash';
+  static const String lastCrashKey = TelemetryCrashStorage.lastCrashKey;
 
   static TelemetryService? _instance;
   static TelemetryService get instance => _instance ??= TelemetryService();
   static String? _cachedVersion;
+  static DateTime? _rateLimitedUntil;
+  static bool get isRateLimited =>
+      _rateLimitedUntil != null && DateTime.now().isBefore(_rateLimitedUntil!);
+
+  static void _check429(int code) {
+    if (code == 429) _rateLimitedUntil = DateTime.now().add(const Duration(seconds: 60));
+  }
 
   Future<String> getAppVersion() async {
     if (_cachedVersion != null) return _cachedVersion!;
@@ -31,43 +43,25 @@ class TelemetryService {
 
   Timer? _heartbeatTimer;
   AppLifecycleListener? _lifecycleListener;
+  String _currentLifecycleState = 'in_app';
 
-  Future<bool> isConsentGranted() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(consentKey) ?? true;
-  }
+  Future<bool> isConsentGranted() async =>
+      (await SharedPreferences.getInstance()).getBool(consentKey) ?? true;
 
   Future<void> setConsent(bool granted) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(consentKey, granted);
+    (await SharedPreferences.getInstance()).setBool(consentKey, granted);
     AppLogger.info('Згода на збір діагностики: ${granted ? "УВІМКНЕНО" : "ВИМКНЕНО"}', 'TELEMETRY');
   }
 
-  static Future<Map<String, dynamic>?> getLastLocalCrash() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(lastCrashKey);
-    if (raw == null) return null;
-    try {
-      return json.decode(raw) as Map<String, dynamic>;
-    } catch (_) {
-      return null;
-    }
-  }
+  static Future<Map<String, dynamic>?> getLastLocalCrash() => TelemetryCrashStorage.getLastLocalCrash();
+  static Future<void> clearLastLocalCrash() => TelemetryCrashStorage.clearLastLocalCrash();
 
-  static Future<void> clearLastLocalCrash() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(lastCrashKey);
-  }
-
-  Future<String> getServerUrl() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(serverUrlKey) ?? defaultServerUrl;
-  }
+  Future<String> getServerUrl() async =>
+      (await SharedPreferences.getInstance()).getString(serverUrlKey) ?? defaultServerUrl;
 
   Future<void> setServerUrl(String url) async {
     final cleanUrl = url.trim().replaceAll(RegExp(r'/+$'), '');
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(serverUrlKey, cleanUrl);
+    (await SharedPreferences.getInstance()).setString(serverUrlKey, cleanUrl);
     AppLogger.info('Адресу сервера телеметрії змінено на: $cleanUrl', 'TELEMETRY');
   }
 
@@ -87,16 +81,32 @@ class TelemetryService {
   void startHeartbeat() {
     _heartbeatTimer?.cancel();
     _lifecycleListener?.dispose();
+    _currentLifecycleState = 'in_app';
 
     _lifecycleListener = AppLifecycleListener(
-      onResume: () => sendHeartbeat(state: 'in_app'),
-      onPause: () => sendHeartbeat(state: 'background'),
-      onDetach: () => sendHeartbeat(state: 'closed'),
+      onResume: () => sendHeartbeat(state: _currentLifecycleState = 'in_app'),
+      onPause: () => sendHeartbeat(state: _currentLifecycleState = 'background'),
+      onDetach: () => sendHeartbeat(state: _currentLifecycleState = 'closed'),
     );
 
     sendHeartbeat(state: 'in_app');
-    _heartbeatTimer = Timer.periodic(const Duration(seconds: 6), (_) {
-      sendHeartbeat(state: 'in_app');
+    _tryAutoDiscovery();
+    _heartbeatTimer = Timer.periodic(const Duration(seconds: 10), (_) {
+      if (_currentLifecycleState == 'in_app') {
+        sendHeartbeat(state: 'in_app');
+      }
+    });
+  }
+
+  void _tryAutoDiscovery() {
+    ServerDiscoveryService.discoverLocalServer().then((discovered) async {
+      if (discovered != null && !isRateLimited) {
+        final current = await getServerUrl();
+        if (current == defaultServerUrl || current.contains('localhost')) {
+          await setServerUrl(discovered);
+          sendHeartbeat(state: _currentLifecycleState);
+        }
+      }
     });
   }
 
@@ -109,9 +119,9 @@ class TelemetryService {
   }
 
   Future<void> sendHeartbeat({String state = 'in_app', String? screen}) async {
+    if (isRateLimited) return;
     try {
       final base = await getServerUrl();
-      final url = Uri.parse('$base/api/telemetry/heartbeat');
       final ver = await getAppVersion();
       final payload = {
         'device': '${Platform.operatingSystem} ${Platform.operatingSystemVersion}',
@@ -120,19 +130,16 @@ class TelemetryService {
         'screen': screen ?? 'MusicFlow App',
         'timestamp': DateTime.now().toIso8601String(),
       };
-      await http.post(
-        url,
+      final res = await http.post(
+        Uri.parse('$base/api/telemetry/heartbeat'),
         headers: {'Content-Type': 'application/json; charset=utf-8'},
         body: json.encode(payload),
       ).timeout(const Duration(seconds: 3));
+      _check429(res.statusCode);
     } catch (_) {}
   }
 
-  Future<bool> sendCrashReport({
-    required String error,
-    StackTrace? stack,
-    Map<String, dynamic>? extra,
-  }) async {
+  Future<bool> sendCrashReport({required String error, StackTrace? stack, Map<String, dynamic>? extra}) async {
     final ver = await getAppVersion();
     final payload = {
       'device': '${Platform.operatingSystem} ${Platform.operatingSystemVersion}',
@@ -144,29 +151,32 @@ class TelemetryService {
       if (extra != null) ...extra,
     };
 
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(lastCrashKey, json.encode(payload));
-    } catch (_) {}
-
-    if (!await isConsentGranted()) return false;
+    await TelemetryCrashStorage.saveLocalCrash(payload);
+    if (!await isConsentGranted() || isRateLimited) return false;
 
     try {
       final base = await getServerUrl();
-      final url = Uri.parse('$base/api/telemetry/crash-report');
-      final response = await http.post(
-        url,
+      final res = await http.post(
+        Uri.parse('$base/api/telemetry/crash-report'),
         headers: {'Content-Type': 'application/json; charset=utf-8'},
         body: json.encode(payload),
       ).timeout(const Duration(seconds: 5));
-      return response.statusCode == 200;
+      _check429(res.statusCode);
+      if (res.statusCode == 200) await clearLastLocalCrash();
+      return res.statusCode == 200;
     } catch (_) {
       return false;
     }
   }
 
+  Future<void> retryPendingCrashReport() async {
+    if (isRateLimited || !await isConsentGranted()) return;
+    final base = await getServerUrl();
+    await TelemetryCrashStorage.retryPendingCrash(base, _check429);
+  }
+
   Future<void> logEvent(String eventName, [Map<String, dynamic>? extra]) async {
-    if (!await isConsentGranted()) return;
+    if (!await isConsentGranted() || isRateLimited) return;
     try {
       final payload = {
         'device': '${Platform.operatingSystem} ${Platform.operatingSystemVersion}',
@@ -175,12 +185,12 @@ class TelemetryService {
         if (extra != null) ...extra,
       };
       final base = await getServerUrl();
-      final url = Uri.parse('$base/api/telemetry/events');
-      await http.post(
-        url,
+      final res = await http.post(
+        Uri.parse('$base/api/telemetry/events'),
         headers: {'Content-Type': 'application/json; charset=utf-8'},
         body: json.encode(payload),
       ).timeout(const Duration(seconds: 3));
+      _check429(res.statusCode);
     } catch (_) {}
   }
 

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:music_flow_mobile/features/settings/widgets/update_changelog_view.dart';
+import 'package:music_flow_mobile/l10n/app_strings.dart';
 import 'package:music_flow_mobile/services/update_service.dart';
 import 'package:music_flow_mobile/services/telemetry_service.dart';
 
@@ -14,7 +15,9 @@ class UpdateDialog extends StatefulWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: const Color(0xFF161616),
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
       builder: (ctx) => UpdateDialog(info: info),
     );
   }
@@ -30,9 +33,10 @@ class _UpdateDialogState extends State<UpdateDialog> {
   File? _downloadedFile;
 
   Future<void> _startDownload() async {
+    final l10n = context.l10n;
     setState(() {
       _isDownloading = true;
-      _statusText = 'Підготовка...';
+      _statusText = l10n.preparing;
     });
     try {
       final file = await UpdateService.instance.downloadApk(widget.info, onProgress: (p, rec, tot) {
@@ -41,23 +45,21 @@ class _UpdateDialogState extends State<UpdateDialog> {
           _progress = p;
           final recMb = (rec / 1048576).toStringAsFixed(1);
           final totMb = tot > 0 ? (tot / 1048576).toStringAsFixed(1) : '?';
-          _statusText = '$recMb MB з $totMb MB (${(p * 100).toInt()}%)';
+          _statusText = '$recMb MB / $totMb MB (${(p * 100).toInt()}%)';
         });
       });
       _downloadedFile = file;
       if (mounted) {
         setState(() {
           _isDownloading = false;
-          _statusText = 'Готово! Відкриваємо інсталятор...';
+          _statusText = l10n.downloadCompleteOpening;
         });
         final ok = await UpdateService.instance.installApk(file, widget.info);
         if (mounted) {
           if (ok) {
             Navigator.pop(context);
           } else {
-            setState(() {
-              _statusText = 'Надайте дозвіл на встановлення і натисніть «Встановити зараз»';
-            });
+            setState(() => _statusText = l10n.grantPermissionPrompt);
           }
         }
       }
@@ -66,7 +68,7 @@ class _UpdateDialogState extends State<UpdateDialog> {
       if (mounted) {
         setState(() {
           _isDownloading = false;
-          _statusText = 'Помилка: $e';
+          _statusText = l10n.downloadError(e.toString());
         });
       }
     }
@@ -75,21 +77,24 @@ class _UpdateDialogState extends State<UpdateDialog> {
   @override
   Widget build(BuildContext context) {
     final primary = Theme.of(context).primaryColor;
-    final sizeMb = widget.info.fileSizeBytes > 0 ? '${(widget.info.fileSizeBytes / 1048576).toStringAsFixed(1)} MB' : 'Новий APK';
+    final l10n = context.l10n;
+    final sizeMb = widget.info.fileSizeBytes > 0 ? '${(widget.info.fileSizeBytes / 1048576).toStringAsFixed(1)} MB' : 'APK';
 
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Center(child: Container(width: 44, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2)))),
-            const SizedBox(height: 18),
-            Row(
-              children: [
-                Container(
-                  width: 52,
+    return PopScope(
+      canPop: !_isDownloading,
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(child: Container(width: 44, height: 4, decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(2)))),
+              const SizedBox(height: 18),
+              Row(
+                children: [
+                  Container(
+                    width: 52,
                   height: 52,
                   decoration: BoxDecoration(
                     gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [primary, primary.withValues(alpha: 0.6)]),
@@ -104,9 +109,7 @@ class _UpdateDialogState extends State<UpdateDialog> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        widget.info.isChannelSwitch
-                            ? 'Зміна каналу (${widget.info.channel.toUpperCase()})'
-                            : 'Нове оновлення!',
+                        widget.info.isChannelSwitch ? l10n.channelSwitchTitle(widget.info.channel) : l10n.updateDialogTitle,
                         style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
                       ),
                       const SizedBox(height: 4),
@@ -121,9 +124,7 @@ class _UpdateDialogState extends State<UpdateDialog> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: widget.info.channel.toLowerCase() == 'debug'
-                                  ? Colors.orange.withValues(alpha: 0.2)
-                                  : Colors.green.withValues(alpha: 0.2),
+                              color: widget.info.channel.toLowerCase() == 'debug' ? Colors.orange.withValues(alpha: 0.2) : Colors.green.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
@@ -174,10 +175,10 @@ class _UpdateDialogState extends State<UpdateDialog> {
               icon: Icon(_downloadedFile != null ? Icons.install_mobile_rounded : Icons.download_rounded, size: 20),
               label: Text(
                 _downloadedFile != null
-                    ? 'Встановити зараз'
+                    ? l10n.installNow
                     : (_isDownloading
-                        ? 'Завантаження...'
-                        : (widget.info.isChannelSwitch ? 'Завантажити та перейти' : 'Завантажити та оновити')),
+                        ? l10n.downloading
+                        : (widget.info.isChannelSwitch ? l10n.downloadAndSwitch : l10n.downloadAndInstall)),
                 style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
               ),
               style: ElevatedButton.styleFrom(backgroundColor: primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)), elevation: 0),
@@ -185,11 +186,11 @@ class _UpdateDialogState extends State<UpdateDialog> {
             if (!_isDownloading)
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('Нагадати пізніше', style: TextStyle(color: Colors.white54, fontSize: 13)),
+                child: Text(l10n.remindLater, style: const TextStyle(color: Colors.white54, fontSize: 13)),
               ),
           ],
         ),
-      ),
+      )),
     );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:music_flow_mobile/models/lrclib_search_result.dart';
+import 'package:music_flow_mobile/l10n/app_strings.dart';
 
 class LyricsResultCard extends StatelessWidget {
   final LrclibSearchResult item;
@@ -56,13 +57,13 @@ class LyricsResultCard extends StatelessWidget {
               children: [
                 _buildHeader(primary, dur),
                 const SizedBox(height: 10),
-                _buildBadges(),
+                _buildBadges(context),
                 if (preview.isNotEmpty) ...[
                   const SizedBox(height: 10),
                   _buildPreviewBox(preview),
                 ],
                 const SizedBox(height: 12),
-                _buildActions(primary),
+                _buildActions(context, primary),
               ],
             ),
           ),
@@ -112,7 +113,7 @@ class LyricsResultCard extends StatelessWidget {
     );
   }
 
-  Widget _buildBadges() {
+  Widget _buildBadges(BuildContext context) {
     final isK = item.isKaraoke;
     final color = isK ? const Color(0xFF00E676) : Colors.amber;
     return Row(
@@ -125,7 +126,7 @@ class LyricsResultCard extends StatelessWidget {
             children: [
               Icon(isK ? Icons.timer_outlined : Icons.article_outlined, size: 13, color: color),
               const SizedBox(width: 5),
-              Text(isK ? 'Синхронізоване' : 'Статичний текст', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: color)),
+              Text(isK ? context.l10n.karaokeBadge : context.l10n.staticTextBadge, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: color)),
             ],
           ),
         ),
@@ -144,14 +145,14 @@ class LyricsResultCard extends StatelessWidget {
     );
   }
 
-  Widget _buildActions(Color primary) {
+  Widget _buildActions(BuildContext context, Color primary) {
     return Row(
       children: [
         Expanded(
           child: OutlinedButton.icon(
             onPressed: onPreview,
             icon: const Icon(Icons.remove_red_eye_outlined, size: 16),
-            label: const Text('Переглянути'),
+            label: Text(context.l10n.previewLyrics),
             style: OutlinedButton.styleFrom(
               foregroundColor: Colors.white,
               side: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
@@ -165,7 +166,7 @@ class LyricsResultCard extends StatelessWidget {
           child: ElevatedButton.icon(
             onPressed: onSelect,
             icon: const Icon(Icons.check_rounded, size: 16),
-            label: const Text('Вибрати'),
+            label: Text(context.l10n.selectLyrics),
             style: ElevatedButton.styleFrom(
               backgroundColor: primary,
               foregroundColor: Colors.white,

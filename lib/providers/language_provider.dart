@@ -5,6 +5,9 @@ import 'package:music_flow_mobile/l10n/app_strings.dart';
 
 class LanguageProvider extends ChangeNotifier {
   static const String _prefKey = 'app_language';
+  static AppLanguage currentAppLanguage = AppLanguage.uk;
+  static AppStrings get currentStrings => AppStrings.get(currentAppLanguage);
+
   AppLanguage _currentLanguage = AppLanguage.uk;
   bool _isInitialized = false;
 
@@ -23,6 +26,7 @@ class LanguageProvider extends ChangeNotifier {
       final code = prefs.getString(_prefKey);
       if (code != null) {
         _currentLanguage = AppLanguage.fromCode(code);
+        currentAppLanguage = _currentLanguage;
       }
     } catch (_) {
       // Fallback to default
@@ -35,6 +39,7 @@ class LanguageProvider extends ChangeNotifier {
   Future<void> setLanguage(AppLanguage language) async {
     if (_currentLanguage == language) return;
     _currentLanguage = language;
+    currentAppLanguage = language;
     notifyListeners();
 
     try {

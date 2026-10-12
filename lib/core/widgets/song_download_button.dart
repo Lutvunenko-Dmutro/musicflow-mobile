@@ -3,14 +3,24 @@ import 'package:music_flow_mobile/core/app_colors.dart';
 import 'package:music_flow_mobile/models/song_model.dart';
 import 'package:music_flow_mobile/services/download_service.dart';
 import 'package:music_flow_mobile/locator.dart';
+import 'package:music_flow_mobile/l10n/app_strings.dart';
 
 class SongDownloadButton extends StatelessWidget {
   final SongModel song;
 
   const SongDownloadButton({super.key, required this.song});
 
+  String _formatSpeed(String speed, AppStrings l10n) {
+    if (speed == "З'єднання..." || speed == "Connecting...") return l10n.connecting;
+    if (speed == "Обчислення..." || speed == "Calculating...") return l10n.calculating;
+    if (speed == "Помилка" || speed == "Error") return l10n.errorLabel;
+    if (speed == "Вже завантажено" || speed == "Already downloaded") return l10n.alreadyDownloaded;
+    return speed;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return ValueListenableBuilder<Map<String, DownloadInfo>>(
       valueListenable: locator<DownloadService>().downloadProgress,
       builder: (context, progressMap, child) {
@@ -18,7 +28,7 @@ class SongDownloadButton extends StatelessWidget {
         
         if (info != null) {
           final progress = info.progress;
-          final speed = info.speedText;
+          final speed = _formatSpeed(info.speedText, l10n);
 
           if (progress < 0) {
             return const Padding(
@@ -87,20 +97,20 @@ class SongDownloadButton extends StatelessWidget {
   }
 
   void _startDownload(BuildContext context) async {
-    // 1. Ask for general download confirmation
+    final l10n = context.l10n;
     final confirmDownload = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Завантаження'),
-        content: Text('Завантажити пісню "${song.title}" на пристрій?'),
+        title: Text(l10n.download),
+        content: Text(l10n.downloadSongPrompt(song.title)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Скасувати', style: TextStyle(color: Colors.grey)),
+            child: Text(l10n.cancel, style: const TextStyle(color: Colors.grey)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Завантажити', style: TextStyle(color: Colors.blueAccent)),
+            child: Text(l10n.download, style: const TextStyle(color: Colors.blueAccent)),
           ),
         ],
       ),
@@ -111,7 +121,7 @@ class SongDownloadButton extends StatelessWidget {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Завантаження: ${song.title}'),
+          content: Text(l10n.downloadStarted(song.title)),
           backgroundColor: AppColors.surfaceElevated,
           behavior: SnackBarBehavior.floating,
           duration: const Duration(seconds: 2),
@@ -122,20 +132,19 @@ class SongDownloadButton extends StatelessWidget {
     locator<DownloadService>().downloadSong(
       song,
       onFileExists: () async {
-        // If we get here, it means the file already exists on the disk
         return await showDialog<bool>(
-          context: context, // Note: Make sure context is still valid, or handle accordingly
+          context: context,
           builder: (ctx) => AlertDialog(
-            title: const Text('Файл вже існує'),
-            content: const Text('Ця пісня вже завантажена. Бажаєте завантажити її знову (перезаписати)?'),
+            title: Text(l10n.fileAlreadyExists),
+            content: Text(l10n.fileAlreadyExistsPrompt),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                child: const Text('Скасувати', style: TextStyle(color: Colors.grey)),
+                child: Text(l10n.cancel, style: const TextStyle(color: Colors.grey)),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(ctx, true),
-                child: const Text('Перезаписати', style: TextStyle(color: Colors.redAccent)),
+                child: Text(l10n.overwrite, style: const TextStyle(color: Colors.redAccent)),
               ),
             ],
           ),

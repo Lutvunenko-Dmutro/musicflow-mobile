@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
-import 'package:music_flow_mobile/core/app_colors.dart';
 import 'dart:math' as math;
+import 'package:flutter/material.dart';
+import 'package:music_flow_mobile/features/player/widgets/visualizer/visualizer_palette_helper.dart';
 
 void paintCircle(
   Canvas canvas,
@@ -8,6 +8,8 @@ void paintCircle(
   required List<double> heights,
   required List<double> dotHeights,
   required int barCount,
+  List<Color>? customColors,
+  List<Color>? customDotColors,
 }) {
   if (size.width <= 0 || size.height <= 0 || barCount <= 0) return;
 
@@ -16,26 +18,13 @@ void paintCircle(
   final baseRadius = minDim * 0.30;
   final maxBarLength = minDim * 0.16;
 
-  final List<Color> barColors = [
-    AppColors.primary,
-    AppColors.accentOrange,
-    AppColors.accentYellow,
-    AppColors.accentBlue,
-    AppColors.accentDeepBlue,
-  ];
-
-  final List<Color> dotColors = [
-    AppColors.dotRed,
-    AppColors.dotOrange,
-    AppColors.dotYellow,
-    AppColors.dotLightBlue,
-    AppColors.dotBlue,
-  ];
+  final List<Color> barColors = customColors ?? VisualizerPaletteHelper.brandPalette;
+  final List<Color> dotColors = customDotColors ?? VisualizerPaletteHelper.dotPalette;
 
   final ringPaint = Paint()
     ..style = PaintingStyle.stroke
     ..strokeWidth = 1.5
-    ..color = AppColors.primary.withValues(alpha: 0.25);
+    ..color = barColors.first.withValues(alpha: 0.25);
   canvas.drawCircle(center, baseRadius, ringPaint);
 
   final Paint linePaint = Paint()

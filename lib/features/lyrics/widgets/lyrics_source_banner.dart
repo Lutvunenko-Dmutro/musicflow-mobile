@@ -3,6 +3,7 @@ import 'package:music_flow_mobile/core/app_colors.dart';
 import 'package:music_flow_mobile/models/song_model.dart';
 import 'package:music_flow_mobile/providers/audio_provider.dart';
 import 'package:music_flow_mobile/features/lyrics/widgets/lyrics_version_sheet.dart';
+import 'package:music_flow_mobile/l10n/app_strings.dart';
 
 class LyricsSourceBanner extends StatelessWidget {
   final AudioProvider provider;
@@ -75,7 +76,7 @@ class LyricsSourceBanner extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              isKaraoke ? 'Синхронізовано ⏱️' : 'Статичний текст 📄',
+                              isKaraoke ? context.l10n.karaokeBadge : context.l10n.staticTextBadge,
                               style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.bold,
@@ -104,7 +105,7 @@ class LyricsSourceBanner extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        key,
+                        context.l10n.formatLyricsTrackKey(key),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
@@ -125,14 +126,14 @@ class LyricsSourceBanner extends StatelessWidget {
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: AppColors.primary.withValues(alpha: 0.45)),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.tune_rounded, size: 14, color: Colors.white),
-                        SizedBox(width: 5),
+                        const Icon(Icons.tune_rounded, size: 14, color: Colors.white),
+                        const SizedBox(width: 5),
                         Text(
-                          'Версії',
-                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                          context.l10n.lyricsVersionsButton,
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
                         ),
                       ],
                     ),

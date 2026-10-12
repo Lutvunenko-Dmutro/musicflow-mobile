@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:music_flow_mobile/l10n/app_strings.dart';
 import 'package:music_flow_mobile/providers/audio_provider.dart';
 
 class EqualizerPlaybackBar extends StatelessWidget {
@@ -37,7 +38,7 @@ class EqualizerPlaybackBar extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  audioProvider.currentSong?.title ?? 'Музика не грає',
+                  audioProvider.currentSong?.title ?? context.l10n.noMusicPlaying,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.white),

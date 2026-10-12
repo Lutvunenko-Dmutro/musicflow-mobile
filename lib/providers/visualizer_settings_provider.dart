@@ -55,6 +55,7 @@ class VisualizerSettingsProvider extends ChangeNotifier {
   VisualizerPosition _position = VisualizerPosition.bottom;
   VisualizerCoverShape _coverShape = VisualizerCoverShape.roundedSquare;
   VisualizerColorScheme _colorScheme = VisualizerColorScheme.fire;
+  AuraSpectrumMode _auraSpectrumMode = AuraSpectrumMode.live;
 
   VisualizerSettingsProvider() { _loadSettings(); }
 
@@ -71,6 +72,7 @@ class VisualizerSettingsProvider extends ChangeNotifier {
   VisualizerPosition     get position       => _position;
   VisualizerCoverShape   get coverShape     => _coverShape;
   VisualizerColorScheme  get colorScheme    => _colorScheme;
+  AuraSpectrumMode       get auraSpectrumMode => _auraSpectrumMode;
 
   // ── Setters (write into the ACTIVE core's settings) ────────────────────
   void setAttack(double v)             { _current.attack = v;          _save(); notifyListeners(); }
@@ -78,10 +80,16 @@ class VisualizerSettingsProvider extends ChangeNotifier {
   void setGravity(double v)            { _current.gravity = v;         _save(); notifyListeners(); }
   void setBounce(double v)             { _current.bounce = v;          _save(); notifyListeners(); }
   void setAmplitudeBoost(double v)     { _current.amplitudeBoost = v;  _save(); notifyListeners(); }
-  void setStyle(VisualizerStyle v)     { _style = v;                    _save(); notifyListeners(); }
+  void setStyle(VisualizerStyle v) {
+    _style = v;
+    _position = VisualizerPosition.bottom;
+    _save();
+    notifyListeners();
+  }
   void setPosition(VisualizerPosition v) { _position = v;              _save(); notifyListeners(); }
   void setCoverShape(VisualizerCoverShape v) { _coverShape = v;        _save(); notifyListeners(); }
   void setColorScheme(VisualizerColorScheme v) { _colorScheme = v;     _save(); notifyListeners(); }
+  void setAuraSpectrumMode(AuraSpectrumMode v) { _auraSpectrumMode = v; _save(); notifyListeners(); }
 
   Future<void> setCore(VisualizerCore value) async {
     _core = value;
@@ -111,6 +119,7 @@ class VisualizerSettingsProvider extends ChangeNotifier {
     _position = VisualizerPosition.values[prefs.getInt('visualizer_position') ?? 0];
     _coverShape = VisualizerCoverShape.values[prefs.getInt('visualizer_cover_shape') ?? 0];
     _colorScheme = VisualizerColorScheme.values[prefs.getInt('visualizer_color_scheme') ?? 0];
+    _auraSpectrumMode = AuraSpectrumMode.values[prefs.getInt('visualizer_aura_spectrum_mode') ?? 0];
 
     _sw.loadFrom({
       'attack':         prefs.getDouble('sw_attack'),
@@ -138,6 +147,7 @@ class VisualizerSettingsProvider extends ChangeNotifier {
     await prefs.setInt('visualizer_position', _position.index);
     await prefs.setInt('visualizer_cover_shape', _coverShape.index);
     await prefs.setInt('visualizer_color_scheme', _colorScheme.index);
+    await prefs.setInt('visualizer_aura_spectrum_mode', _auraSpectrumMode.index);
     final prefix = _core == VisualizerCore.hardware ? 'hw' : 'sw';
     await prefs.setDouble('${prefix}_attack',         _current.attack);
     await prefs.setDouble('${prefix}_release',        _current.release);

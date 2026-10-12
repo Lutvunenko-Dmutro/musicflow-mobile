@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:music_flow_mobile/l10n/app_strings.dart';
 import 'package:music_flow_mobile/providers/visualizer_settings_provider.dart';
 
 class VisualizerPresetsRow extends StatelessWidget {
@@ -14,17 +15,43 @@ class VisualizerPresetsRow extends StatelessWidget {
     required this.onSelectPreset,
   });
 
-  static const List<String> presets = [
-    'Класичний',
-    'Динамічний Бас',
-    'Плавна Хвиля',
-    'Неонове Коло',
-    'Стерео Дзеркало',
-    'Мінімалізм',
+  static const List<String> presetKeys = [
+    'classic',
+    'dynamic_bass',
+    'smooth_wave',
+    'neon_circle',
+    'stereo_mirror',
+    'minimal',
   ];
 
-  static void applyPreset(String name, VisualizerSettingsProvider settings) {
-    switch (name) {
+  static String getPresetLabel(String key, AppStrings l10n) {
+    switch (key) {
+      case 'classic':
+      case 'Класичний':
+        return l10n.visPresetClassic;
+      case 'dynamic_bass':
+      case 'Динамічний Бас':
+        return l10n.visPresetDynamicBass;
+      case 'smooth_wave':
+      case 'Плавна Хвиля':
+        return l10n.visPresetSmoothWave;
+      case 'neon_circle':
+      case 'Неонове Коло':
+        return l10n.visPresetNeonCircle;
+      case 'stereo_mirror':
+      case 'Стерео Дзеркало':
+        return l10n.visPresetStereoMirror;
+      case 'minimal':
+      case 'Мінімалізм':
+        return l10n.visPresetMinimal;
+      default:
+        return l10n.visCustom;
+    }
+  }
+
+  static void applyPreset(String key, VisualizerSettingsProvider settings) {
+    switch (key) {
+      case 'classic':
       case 'Класичний':
         settings.setStyle(VisualizerStyle.bars);
         settings.setAmplitudeBoost(1.0);
@@ -33,6 +60,7 @@ class VisualizerPresetsRow extends StatelessWidget {
         settings.setGravity(-0.008);
         settings.setBounce(0.06);
         break;
+      case 'dynamic_bass':
       case 'Динамічний Бас':
         settings.setStyle(VisualizerStyle.bars);
         settings.setAmplitudeBoost(1.35);
@@ -41,6 +69,7 @@ class VisualizerPresetsRow extends StatelessWidget {
         settings.setGravity(-0.012);
         settings.setBounce(0.08);
         break;
+      case 'smooth_wave':
       case 'Плавна Хвиля':
         settings.setStyle(VisualizerStyle.wave);
         settings.setAmplitudeBoost(1.0);
@@ -49,6 +78,7 @@ class VisualizerPresetsRow extends StatelessWidget {
         settings.setGravity(-0.004);
         settings.setBounce(0.02);
         break;
+      case 'neon_circle':
       case 'Неонове Коло':
         settings.setStyle(VisualizerStyle.circle);
         settings.setAmplitudeBoost(1.20);
@@ -57,6 +87,7 @@ class VisualizerPresetsRow extends StatelessWidget {
         settings.setGravity(-0.008);
         settings.setBounce(0.05);
         break;
+      case 'stereo_mirror':
       case 'Стерео Дзеркало':
         settings.setStyle(VisualizerStyle.mirrored);
         settings.setAmplitudeBoost(1.15);
@@ -65,6 +96,7 @@ class VisualizerPresetsRow extends StatelessWidget {
         settings.setGravity(-0.009);
         settings.setBounce(0.06);
         break;
+      case 'minimal':
       case 'Мінімалізм':
         settings.setStyle(VisualizerStyle.bars);
         settings.setAmplitudeBoost(0.85);
@@ -79,34 +111,40 @@ class VisualizerPresetsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final primary = Theme.of(context).primaryColor;
+    final l10n = context.l10n;
 
     return SizedBox(
       height: 38,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        itemCount: presets.length,
+        itemCount: presetKeys.length,
         separatorBuilder: (_, __) => const SizedBox(width: 8),
         itemBuilder: (context, index) {
-          final p = presets[index];
-          final isSelected = activePreset == p;
+          final key = presetKeys[index];
+          final label = getPresetLabel(key, l10n);
+          final isSelected = activePreset == key || activePreset == label;
 
           return ChoiceChip(
-            label: Text(p),
+            label: Text(label),
             selected: isSelected,
             onSelected: (_) {
               HapticFeedback.lightImpact();
-              applyPreset(p, settings);
-              onSelectPreset(p);
+              applyPreset(key, settings);
+              onSelectPreset(key);
             },
             selectedColor: primary,
             backgroundColor: const Color(0xFF1E1E24),
             labelStyle: TextStyle(
+              color: isSelected ? Colors.white : Colors.white70,
               fontSize: 12,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              color: isSelected ? Colors.black : Colors.white70,
             ),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            side: BorderSide(color: isSelected ? primary : Colors.white12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+              side: BorderSide(
+                color: isSelected ? primary : Colors.white10,
+              ),
+            ),
           );
         },
       ),

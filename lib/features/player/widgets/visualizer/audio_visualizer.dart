@@ -13,9 +13,9 @@ import 'package:music_flow_mobile/providers/audio_provider.dart';
 class AudioVisualizer extends StatefulWidget {
   final int? barCount;
   final bool isPlaying;
-  final double width;
-  final double height;
+  final double width, height;
   final bool testMode;
+  final Color? dominantColor;
 
   const AudioVisualizer({
     super.key,
@@ -24,6 +24,7 @@ class AudioVisualizer extends StatefulWidget {
     this.width = double.infinity,
     this.height = 50,
     this.testMode = false,
+    this.dominantColor,
   });
 
   @override
@@ -51,7 +52,9 @@ class _AudioVisualizerState extends State<AudioVisualizer>
     _dotVelocities = List.filled(c, 0.0);
   }
 
-  void _ensureBars(int c) { if (_currentHeights.length != c) _initBars(c); }
+  void _ensureBars(int c) {
+    if (_currentHeights.length != c) _initBars(c);
+  }
 
   @override
   void initState() {
@@ -72,12 +75,12 @@ class _AudioVisualizerState extends State<AudioVisualizer>
   void didUpdateWidget(AudioVisualizer oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.isPlaying != oldWidget.isPlaying || widget.testMode != oldWidget.testMode) {
-      if (widget.isPlaying) {
-        _stopTestSimulation();
-        _startListening();
-      } else if (widget.testMode) {
+      if (widget.testMode) {
         _stopListening();
         _startTestSimulation();
+      } else if (widget.isPlaying) {
+        _stopTestSimulation();
+        _startListening();
       } else {
         _stopTestSimulation();
         _stopListening();
@@ -181,8 +184,9 @@ class _AudioVisualizerState extends State<AudioVisualizer>
               return SizedBox.expand(
                 child: CustomPaint(
                   painter: VisualizerPainter(
-                    heights: _currentHeights, dotHeights: _dotHeights,
-                    barCount: bars, style: _settings.style, repaint: _repaintNotifier,
+                    heights: _currentHeights, dotHeights: _dotHeights, barCount: bars,
+                    style: _settings.style, colorScheme: _settings.colorScheme,
+                    dominantColor: widget.dominantColor, repaint: _repaintNotifier,
                   ),
                 ),
               );
