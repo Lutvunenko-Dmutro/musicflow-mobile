@@ -20,13 +20,17 @@ class CoverColorExtractor {
       provider = CachedNetworkImageProvider(song.coverUrl);
     }
 
-    if (provider == null) return AppColors.primary;
+    if (provider == null) {
+      _cache[song.id] = AppColors.primary;
+      return AppColors.primary;
+    }
 
     try {
       final color = await _extractFromProvider(provider);
       _cache[song.id] = color;
       return color;
     } catch (_) {
+      _cache[song.id] = AppColors.primary;
       return AppColors.primary;
     }
   }
