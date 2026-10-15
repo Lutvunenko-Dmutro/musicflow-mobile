@@ -63,7 +63,7 @@ class PlayerPopupMenu extends StatelessWidget {
             children: [
               const Icon(Icons.manage_search_rounded, size: 20),
               const SizedBox(width: 12),
-              Text(strings.searchKaraoke),
+              Expanded(child: Text(strings.searchKaraoke, overflow: TextOverflow.ellipsis)),
             ],
           ),
         ),
@@ -78,10 +78,13 @@ class PlayerPopupMenu extends StatelessWidget {
                   color: audioProvider.isLyricsDisabledForCurrentSong ? Colors.amber : null,
                 ),
                 const SizedBox(width: 12),
-                Text(
-                  audioProvider.isLyricsDisabledForCurrentSong
-                      ? strings.enableLyricsForSong
-                      : strings.disableLyricsForSong,
+                Expanded(
+                  child: Text(
+                    audioProvider.isLyricsDisabledForCurrentSong
+                        ? strings.enableLyricsForSong
+                        : strings.disableLyricsForSong,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ],
             ),
@@ -90,12 +93,14 @@ class PlayerPopupMenu extends StatelessWidget {
           value: 'toggle_lyrics',
           child: Row(
             children: [
-              Icon(
-                audioProvider.showInlineLyrics ? Icons.lyrics : Icons.lyrics_outlined, 
-                size: 20
-              ),
+              Icon(audioProvider.showInlineLyrics ? Icons.lyrics : Icons.lyrics_outlined, size: 20),
               const SizedBox(width: 12),
-              Text(audioProvider.showInlineLyrics ? strings.hideMiniKaraoke : strings.showMiniKaraoke),
+              Expanded(
+                child: Text(
+                  audioProvider.showInlineLyrics ? strings.hideMiniKaraoke : strings.showMiniKaraoke,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
             ],
           ),
         ),
@@ -103,12 +108,14 @@ class PlayerPopupMenu extends StatelessWidget {
           value: 'toggle_visualizer',
           child: Row(
             children: [
-              Icon(
-                audioProvider.showVisualizer ? Icons.graphic_eq : Icons.graphic_eq_outlined, 
-                size: 20
-              ),
+              Icon(audioProvider.showVisualizer ? Icons.graphic_eq : Icons.graphic_eq_outlined, size: 20),
               const SizedBox(width: 12),
-              Text(audioProvider.showVisualizer ? strings.hideVisualizer : strings.showVisualizer),
+              Expanded(
+                child: Text(
+                  audioProvider.showVisualizer ? strings.hideVisualizer : strings.showVisualizer,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
             ],
           ),
         ),
@@ -118,7 +125,7 @@ class PlayerPopupMenu extends StatelessWidget {
             children: [
               const Icon(Icons.tune, size: 20),
               const SizedBox(width: 12),
-              Text(strings.visualizerSettings),
+              Expanded(child: Text(strings.visualizerSettings, overflow: TextOverflow.ellipsis)),
             ],
           ),
         ),
@@ -128,7 +135,7 @@ class PlayerPopupMenu extends StatelessWidget {
             children: [
               const Icon(Icons.timer_outlined, size: 20),
               const SizedBox(width: 12),
-              Text(strings.sleepTimer),
+              Expanded(child: Text(strings.sleepTimer, overflow: TextOverflow.ellipsis)),
             ],
           ),
         ),
@@ -138,7 +145,7 @@ class PlayerPopupMenu extends StatelessWidget {
             children: [
               const Icon(Icons.equalizer, size: 20),
               const SizedBox(width: 12),
-              Text(strings.equalizer),
+              Expanded(child: Text(strings.equalizer, overflow: TextOverflow.ellipsis)),
             ],
           ),
         ),
